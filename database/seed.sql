@@ -1,8 +1,8 @@
 -- Seed Users
-INSERT INTO users (name, email, password, role) VALUES
-('Admin User', 'admin@dental.com', '$2b$10$9JnIvG7.R16B/pp.12gt9OhstdHjoNChMUERVzL2fegCmsHlMkkN6u', 'admin'),
-('Dr. Smith', 'smith@dental.com', '$2b$10$9JnIvG7.R16B/pp.12gt9OhstdHjoNChMUERVzL2fegCmsHlMkkN6u', 'dentist'),
-('John Doe', 'john@example.com', '$2b$10$9JnIvG7.R16B/pp.12gt9OhstdHjoNChMUERVzL2fegCmsHlMkkN6u', 'client');
+INSERT INTO users (name, email, password, role, email_verified) VALUES
+('Admin User', 'admin@dental.com', '$2b$10$9JnIvG7.R16B/pp.12gt9OhstdHjoNChMUERVzL2fegCmsHlMkkN6u', 'admin', TRUE),
+('Dr. Smith', 'smith@dental.com', '$2b$10$9JnIvG7.R16B/pp.12gt9OhstdHjoNChMUERVzL2fegCmsHlMkkN6u', 'doctor', TRUE),
+('John Doe', 'john@example.com', '$2b$10$9JnIvG7.R16B/pp.12gt9OhstdHjoNChMUERVzL2fegCmsHlMkkN6u', 'user', TRUE);
 
 
 -- Seed Services

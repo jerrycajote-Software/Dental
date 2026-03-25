@@ -4,7 +4,10 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role VARCHAR(50) DEFAULT 'client', -- 'admin', 'dentist', 'staff', 'client'
+    role VARCHAR(50) DEFAULT 'user', -- 'admin', 'doctor', 'user'
+    email_verified BOOLEAN DEFAULT FALSE,
+    verification_token VARCHAR(255),
+    verification_token_expires TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -30,7 +33,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create Schedules table (for dentists)
+-- Create Schedules table (for doctors)
 CREATE TABLE IF NOT EXISTS schedules (
     id SERIAL PRIMARY KEY,
     dentist_id INTEGER REFERENCES users(id),

@@ -10,6 +10,8 @@ const Register = () => {
     password: '',
   });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -19,11 +21,17 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setSuccess('');
+    setIsSubmitting(true);
+    
     try {
-      await register(formData);
-      navigate('/dashboard');
+      const data = await register(formData);
+      setSuccess(data.message || 'Registration successful! Please check your email to verify your account.');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -35,73 +43,94 @@ const Register = () => {
             <div className="heading">Sign Up</div>
             
             {error && (
-              <div style={{ color: 'red', textAlign: 'center', margin: '10px 0', fontSize: '14px', fontWeight: 'bold' }}>
+              <div style={{ color: '#e53e3e', textAlign: 'center', margin: '10px 0', fontSize: '14px', fontWeight: 'bold', background: '#fed7d7', padding: '10px 15px', borderRadius: '12px' }}>
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="form">
-              <input 
-                required 
-                className="input" 
-                type="text" 
-                name="name" 
-                placeholder="Full Name" 
-                value={formData.name}
-                onChange={handleChange}
-              />
-              <input 
-                required 
-                className="input" 
-                type="email" 
-                name="email" 
-                placeholder="E-mail" 
-                value={formData.email}
-                onChange={handleChange}
-              />
-              <input 
-                required 
-                className="input" 
-                type="password" 
-                name="password" 
-                placeholder="Password" 
-                value={formData.password}
-                onChange={handleChange}
-              />
-              
-              <div className="terms-container">
-                <div className="checkbox-wrapper-12">
-                  <div className="cbx">
-                    <input id="cbx-12" type="checkbox" required />
-                    <label htmlFor="cbx-12" />
-                    <svg width={15} height={14} viewBox="0 0 15 14" fill="none">
-                      <path d="M2 8.36364L6.23077 12L13 2" />
-                    </svg>
-                  </div>
-                  <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style={{ position: 'absolute', width: 0, height: 0 }}>
-                    <defs>
-                      <filter id="goo-12">
-                        <feGaussianBlur in="SourceGraphic" stdDeviation={4} result="blur" />
-                        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -7" result="goo-12" />
-                        <feBlend in="SourceGraphic" in2="goo-12" />
-                      </filter>
-                    </defs>
-                  </svg>
-                </div>
-                <label htmlFor="cbx-12" className="terms-label">
-                  I agree to the <span>Terms of Service</span> and <span>Privacy Policy</span>
-                </label>
+            {success ? (
+              <div className="success-container">
+                <div className="success-icon">✉️</div>
+                <h3 style={{ color: '#1a237e', fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>Check Your Email</h3>
+                <p style={{ color: '#555', fontSize: '14px', lineHeight: '1.6', marginBottom: '20px' }}>
+                  {success}
+                </p>
+                <Link to="/login" className="back-to-login">
+                  Go to Sign In
+                </Link>
               </div>
+            ) : (
+              <>
+                <form onSubmit={handleSubmit} className="form">
+                  <input 
+                    required 
+                    className="input" 
+                    type="text" 
+                    name="name" 
+                    placeholder="Full Name" 
+                    value={formData.name}
+                    onChange={handleChange}
+                  />
+                  <input 
+                    required 
+                    className="input" 
+                    type="email" 
+                    name="email" 
+                    placeholder="E-mail" 
+                    value={formData.email}
+                    onChange={handleChange}
+                  />
+                  <input 
+                    required 
+                    className="input" 
+                    type="password" 
+                    name="password" 
+                    placeholder="Password (min 8 characters)" 
+                    minLength={8}
+                    value={formData.password}
+                    onChange={handleChange}
+                  />
+                  
+                  <div className="terms-container">
+                    <div className="checkbox-wrapper-12">
+                      <div className="cbx">
+                        <input id="cbx-12" type="checkbox" required />
+                        <label htmlFor="cbx-12" />
+                        <svg width={15} height={14} viewBox="0 0 15 14" fill="none">
+                          <path d="M2 8.36364L6.23077 12L13 2" />
+                        </svg>
+                      </div>
+                      <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style={{ position: 'absolute', width: 0, height: 0 }}>
+                        <defs>
+                          <filter id="goo-12">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation={4} result="blur" />
+                            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -7" result="goo-12" />
+                            <feBlend in="SourceGraphic" in2="goo-12" />
+                          </filter>
+                        </defs>
+                      </svg>
+                    </div>
+                    <label htmlFor="cbx-12" className="terms-label">
+                      I agree to the <span>Terms of Service</span> and <span>Privacy Policy</span>
+                    </label>
+                  </div>
 
-              <input className="login-button" type="submit" value="Sign Up" />
-            </form>
-            
-            <div className="agreement-container">
-              <span className="agreement">
-                <span style={{ color: '#aaa', fontSize: '12px', marginRight: '4px' }}>Already have an account?</span> 
-                <Link to="/login">Sign In</Link>
-              </span>
-            </div>
+                  <input 
+                    className="login-button" 
+                    type="submit" 
+                    value={isSubmitting ? "Creating Account..." : "Sign Up"} 
+                    disabled={isSubmitting}
+                  />
+                </form>
+                
+                <div className="agreement-container">
+                  <span className="agreement">
+                    <span style={{ color: '#aaa', fontSize: '12px', marginRight: '4px' }}>Already have an account?</span> 
+                    <Link to="/login">Sign In</Link>
+                  </span>
+                </div>
+              </>
+            )}
             
           </div>
         </StyledWrapper>
@@ -157,6 +186,32 @@ const StyledWrapper = styled.div`
     border-inline: 2px solid #12B1D1;
   }
 
+  .success-container {
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  .success-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+  }
+
+  .back-to-login {
+    display: inline-block;
+    background: linear-gradient(45deg, rgb(16, 137, 211) 0%, rgb(18, 177, 209) 100%);
+    color: white;
+    padding: 12px 30px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .back-to-login:hover {
+    transform: scale(1.03);
+  }
+
   .terms-container {
     display: flex;
     align-items: center;
@@ -202,6 +257,12 @@ const StyledWrapper = styled.div`
   .form .login-button:active {
     transform: scale(0.95);
     box-shadow: rgba(133, 189, 215, 0.8784313725) 0px 15px 10px -10px;
+  }
+
+  .form .login-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
   }
 
   .agreement-container {

@@ -24,4 +24,12 @@ const adminMiddleware = (req, res, next) => {
   }
 };
 
-module.exports = { authMiddleware, adminMiddleware };
+const doctorMiddleware = (req, res, next) => {
+  if (req.user && req.user.role === 'doctor') {
+    next();
+  } else {
+    res.status(403).json({ message: 'Access denied: Doctors only' });
+  }
+};
+
+module.exports = { authMiddleware, adminMiddleware, doctorMiddleware };

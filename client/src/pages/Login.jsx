@@ -1,26 +1,54 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import authService from '../services/authService';
 import styled from 'styled-components';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
+  const [isResending, setIsResending] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setNeedsVerification(false);
+    setResendMessage('');
     try {
       const data = await login(email, password);
       if (data.user.role === 'admin') {
         navigate('/admin');
+      } else if (data.user.role === 'doctor') {
+        navigate('/doctor');
       } else {
         navigate('/dashboard');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      const responseData = err.response?.data;
+      if (responseData?.needsVerification) {
+        setNeedsVerification(true);
+        setError(responseData.message);
+      } else {
+        setError(responseData?.message || 'Login failed');
+      }
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    setResendMessage('');
+    try {
+      const data = await authService.resendVerification(email);
+      setResendMessage(data.message || 'Verification email sent!');
+    } catch (err) {
+      setResendMessage(err.response?.data?.message || 'Failed to resend verification email');
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -32,8 +60,44 @@ const Login = () => {
             <div className="heading">Sign In</div>
             
             {error && (
-              <div style={{ color: 'red', textAlign: 'center', margin: '10px 0', fontSize: '14px', fontWeight: 'bold' }}>
+              <div style={{ 
+                color: needsVerification ? '#c05621' : '#e53e3e', 
+                textAlign: 'center', 
+                margin: '10px 0', 
+                fontSize: '13px', 
+                fontWeight: 'bold', 
+                background: needsVerification ? '#fefcbf' : '#fed7d7', 
+                padding: '10px 15px', 
+                borderRadius: '12px',
+                lineHeight: '1.5'
+              }}>
                 {error}
+              </div>
+            )}
+
+            {needsVerification && (
+              <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+                <button
+                  onClick={handleResendVerification}
+                  disabled={isResending}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#0099ff',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    cursor: isResending ? 'not-allowed' : 'pointer',
+                    textDecoration: 'underline',
+                    opacity: isResending ? 0.6 : 1,
+                  }}
+                >
+                  {isResending ? 'Sending...' : 'Resend Verification Email'}
+                </button>
+                {resendMessage && (
+                  <p style={{ color: '#38a169', fontSize: '12px', marginTop: '5px', fontWeight: 'bold' }}>
+                    {resendMessage}
+                  </p>
+                )}
               </div>
             )}
 

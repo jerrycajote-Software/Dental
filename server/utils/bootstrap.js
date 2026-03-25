@@ -2,34 +2,37 @@ const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 
 const bootstrapAdmin = async () => {
-  const adminEmail = 'admin@dental.com';
-  const defaultPassword = 'admin123';
+  const adminEmail = process.env.ADMIN_EMAIL || '';
+  const adminPassword = process.env.ADMIN_PASSWORD || '';
 
   try {
-    // Check if the admin already exists
-    const result = await db.query('SELECT * FROM users WHERE email = $1', [adminEmail]);
-
-    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
-
-    if (result.rows.length === 0) {
-      // Create admin if not exists
-      await db.query(
-        'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)',
-        ['Admin User', adminEmail, hashedPassword, 'admin']
-      );
-      console.log('✅ Default Admin account created: admin@dental.com / admin123');
-    } else {
-      // Verify the stored password works; if not, update it
-      const user = result.rows[0];
-      const isValid = await bcrypt.compare(defaultPassword, user.password).catch(() => false);
-      if (!isValid) {
+    // Check if ANY admin account exists
+    const adminResult = await db.query("SELECT * FROM users WHERE role = 'admin' ORDER BY created_at ASC LIMIT 1");
+    
+    if (adminResult.rows.length > 0) {
+      const existingAdmin = adminResult.rows[0];
+      
+      // If the existing admin's email or password doesn't match the current .env values, update it
+      const passwordMatch = await bcrypt.compare(adminPassword, existingAdmin.password).catch(() => false);
+      
+      if (existingAdmin.email !== adminEmail || !passwordMatch) {
+        const hashedPassword = await bcrypt.hash(adminPassword, 10);
         await db.query(
-          'UPDATE users SET password = $1 WHERE email = $2',
-          [hashedPassword, adminEmail]
+          'UPDATE users SET email = $1, password = $2, email_verified = TRUE WHERE id = $3',
+          [adminEmail, hashedPassword, existingAdmin.id]
         );
-        console.log('✅ Default Admin password updated to: admin123');
+        console.log(`✅ Admin account updated to: ${adminEmail}`);
       }
+      return;
     }
+
+    // No admin exists — create one
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+    await db.query(
+      'INSERT INTO users (name, email, password, role, email_verified) VALUES ($1, $2, $3, $4, TRUE)',
+      ['Admin User', adminEmail, hashedPassword, 'admin']
+    );
+    console.log(`✅ Admin account created: ${adminEmail}`);
   } catch (err) {
     console.error('❌ Error during Admin bootstrap:', err.message);
   }

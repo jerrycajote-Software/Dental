@@ -11,10 +11,10 @@ const getAppointments = async (req, res) => {
     `;
     let params = [];
 
-    if (req.user.role === 'client') {
+    if (req.user.role === 'user') {
       query += ' WHERE a.client_id = $1';
       params.push(req.user.id);
-    } else if (req.user.role === 'dentist') {
+    } else if (req.user.role === 'doctor') {
       query += ' WHERE a.dentist_id = $1';
       params.push(req.user.id);
     }

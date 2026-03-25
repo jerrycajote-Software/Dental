@@ -11,7 +11,7 @@ const getServices = async (req, res) => {
 
 const getDentists = async (req, res) => {
   try {
-    const dentists = await db.query('SELECT id, name FROM users WHERE role = $1', ['dentist']);
+    const dentists = await db.query('SELECT id, name FROM users WHERE role = $1', ['doctor']);
     res.json(dentists.rows);
   } catch (err) {
     res.status(500).json({ message: err.message });

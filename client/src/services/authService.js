@@ -11,10 +11,7 @@ const login = async (email, password) => {
 
 const register = async (userData) => {
   const response = await api.post('/auth/register', userData);
-  if (response.data.token) {
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
-  }
+  // Don't store token/user — email verification is required first
   return response.data;
 };
 
@@ -27,4 +24,9 @@ const getCurrentUser = () => {
   return JSON.parse(localStorage.getItem('user'));
 };
 
-export default { login, register, logout, getCurrentUser };
+const resendVerification = async (email) => {
+  const response = await api.post('/auth/resend-verification', { email });
+  return response.data;
+};
+
+export default { login, register, logout, getCurrentUser, resendVerification };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import appointmentService from '../services/appointmentService';
+import api from '../services/api';
 import {
   LayoutDashboard,
   Calendar,
@@ -67,8 +68,16 @@ const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
 
+  // Doctor management state
+  const [doctors, setDoctors] = useState([]);
+  const [doctorForm, setDoctorForm] = useState({ name: '', email: '', password: '' });
+  const [doctorError, setDoctorError] = useState('');
+  const [doctorSuccess, setDoctorSuccess] = useState('');
+  const [isCreatingDoctor, setIsCreatingDoctor] = useState(false);
+
   useEffect(() => {
     fetchAppointments();
+    fetchDoctors();
   }, []);
 
   const fetchAppointments = async () => {
@@ -100,11 +109,50 @@ const AdminDashboard = () => {
     }
   };
 
+  // Doctor management functions
+  const fetchDoctors = async () => {
+    try {
+      const response = await api.get('/auth/doctors');
+      setDoctors(response.data);
+    } catch (err) {
+      console.error('Failed to fetch doctors', err);
+    }
+  };
+
+  const handleCreateDoctor = async (e) => {
+    e.preventDefault();
+    setDoctorError('');
+    setDoctorSuccess('');
+    setIsCreatingDoctor(true);
+    try {
+      const response = await api.post('/auth/doctors', doctorForm);
+      setDoctorSuccess(response.data.message || 'Doctor account created successfully!');
+      setDoctorForm({ name: '', email: '', password: '' });
+      fetchDoctors();
+    } catch (err) {
+      setDoctorError(err.response?.data?.message || 'Failed to create doctor account');
+    } finally {
+      setIsCreatingDoctor(false);
+    }
+  };
+
+  const handleDeleteDoctor = async (id, name) => {
+    if (window.confirm(`Are you sure you want to delete Dr. ${name}'s account?`)) {
+      try {
+        await api.delete(`/auth/doctors/${id}`);
+        fetchDoctors();
+      } catch (err) {
+        console.error('Failed to delete doctor', err);
+      }
+    }
+  };
+
   // Sidebar navigation items
   const navItems = [
     { name: 'Overview', icon: LayoutDashboard },
     { name: 'Appointments', icon: Calendar },
     { name: 'Patients', icon: Users },
+    { name: 'Doctors', icon: Stethoscope },
     { name: 'Settings', icon: Settings },
   ];
 
@@ -966,6 +1014,177 @@ const AdminDashboard = () => {
                     </tr>
                   </tbody>
                 </table>
+              </div>
+            </>
+          )}
+
+          {/* ---- DOCTORS TAB ---- */}
+          {activeTab === 'Doctors' && (
+            <>
+              {/* Header */}
+              <div className="flex justify-between items-end mb-8">
+                <div>
+                  <h1 className="text-2xl font-bold text-slate-900 mb-1">Manage Doctors</h1>
+                  <p className="text-slate-500 text-sm">Create and manage doctor accounts.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                {/* CREATE DOCTOR FORM */}
+                <div className="lg:col-span-1 bg-white rounded-[1.25rem] shadow-sm border border-slate-100 overflow-hidden">
+                  <div className="bg-[#f0fdf4] p-6 border-b border-green-50/50">
+                    <div className="flex items-center gap-2">
+                      <Stethoscope className="text-green-600" size={20} />
+                      <h3 className="text-lg font-bold text-slate-900">Add New Doctor</h3>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium mt-1">Create a doctor account with verified email</p>
+                  </div>
+
+                  <form onSubmit={handleCreateDoctor} className="p-6 space-y-4">
+                    {doctorError && (
+                      <div className="bg-red-50 border border-red-200 text-red-600 text-xs font-bold px-4 py-3 rounded-xl">
+                        {doctorError}
+                      </div>
+                    )}
+                    {doctorSuccess && (
+                      <div className="bg-green-50 border border-green-200 text-green-600 text-xs font-bold px-4 py-3 rounded-xl">
+                        {doctorSuccess}
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-2">Full Name</label>
+                      <div className="relative">
+                        <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          required
+                          placeholder="Dr. Full Name"
+                          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 font-medium focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors placeholder:text-slate-400"
+                          value={doctorForm.name}
+                          onChange={(e) => setDoctorForm({ ...doctorForm, name: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-2">Email Address</label>
+                      <div className="relative">
+                        <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="email"
+                          required
+                          placeholder="doctor@dental.com"
+                          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 font-medium focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors placeholder:text-slate-400"
+                          value={doctorForm.email}
+                          onChange={(e) => setDoctorForm({ ...doctorForm, email: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-2">Password</label>
+                      <div className="relative">
+                        <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="password"
+                          required
+                          minLength={8}
+                          placeholder="Min 8 characters"
+                          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 font-medium focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors placeholder:text-slate-400"
+                          value={doctorForm.password}
+                          onChange={(e) => setDoctorForm({ ...doctorForm, password: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isCreatingDoctor}
+                      className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed text-white px-4 py-3 rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center justify-center gap-2 mt-2"
+                    >
+                      <Plus size={16} strokeWidth={2.5} />
+                      {isCreatingDoctor ? 'Creating...' : 'Create Doctor Account'}
+                    </button>
+                  </form>
+                </div>
+
+                {/* DOCTOR LIST */}
+                <div className="lg:col-span-2 bg-white rounded-[1.25rem] shadow-sm border border-slate-100 overflow-hidden">
+                  <div className="bg-[#f0f9ff] p-6 border-b border-blue-50/50 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <Users className="text-blue-600" size={20} />
+                      <h3 className="text-lg font-bold text-slate-900">Registered Doctors</h3>
+                    </div>
+                    <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                      {doctors.length} doctor{doctors.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+
+                  <div className="p-0">
+                    {doctors.length > 0 ? (
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-[#f8fbff] text-[10px] font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                            <th className="px-6 py-4">Doctor</th>
+                            <th className="px-6 py-4">Email</th>
+                            <th className="px-6 py-4">Joined</th>
+                            <th className="px-6 py-4">Status</th>
+                            <th className="px-6 py-4 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {doctors.map((doc) => (
+                            <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 rounded-full bg-green-100 shrink-0 overflow-hidden">
+                                    <img
+                                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=059669&color=fff`}
+                                      alt="Avatar"
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                  <span className="text-sm font-bold text-slate-800">{doc.name}</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className="text-sm font-medium text-slate-500">{doc.email}</span>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className="text-xs font-medium text-slate-500">
+                                  {new Date(doc.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className="px-2.5 py-1 bg-green-100 text-green-600 text-[10px] font-bold rounded-full">Verified</span>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex justify-end">
+                                  <button
+                                    onClick={() => handleDeleteDoctor(doc.id, doc.name)}
+                                    className="text-slate-400 hover:text-red-500 transition-colors"
+                                    title="Delete doctor"
+                                  >
+                                    <Trash2 size={16} strokeWidth={1.5} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="p-12 text-center">
+                        <Stethoscope className="mx-auto text-slate-300 mb-3" size={40} />
+                        <p className="text-sm font-semibold text-slate-400">No doctors registered yet</p>
+                        <p className="text-xs text-slate-400 mt-1">Use the form to create a doctor account</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
               </div>
             </>
           )}

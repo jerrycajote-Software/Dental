@@ -22,8 +22,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
+    // Registration now requires email verification before login
+    // So we don't auto-set the user — just return the response data
     const data = await authService.register(userData);
-    setUser(data.user);
     return data;
   };
 
