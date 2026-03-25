@@ -98,7 +98,7 @@ const Dashboard = () => {
                   <Calendar className="text-blue-600" size={20} />
                   <h3 className="text-[17px] font-bold text-slate-800">Upcoming Appointment</h3>
                 </div>
-                {mockupUpcoming ? getStatusBadge(mockupUpcoming.status) : getStatusBadge('confirmed')}
+                {mockupUpcoming ? getStatusBadge(mockupUpcoming.status) : null}
               </div>
 
               <div className="p-6">
@@ -166,18 +166,7 @@ const Dashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    <tr className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-5 text-sm font-medium text-slate-800">Apr 10, 2025</td>
-                      <td className="px-6 py-5 text-sm font-medium text-slate-800">Dr. John Doe</td>
-                      <td className="px-6 py-5 text-sm font-medium text-slate-500">Cleaning</td>
-                      <td className="px-6 py-5">{getStatusBadge('completed')}</td>
-                    </tr>
-                    <tr className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-5 text-sm font-medium text-slate-800">Mar 5, 2025</td>
-                      <td className="px-6 py-5 text-sm font-medium text-slate-800">Dr. Emily Johnson</td>
-                      <td className="px-6 py-5 text-sm font-medium text-slate-500">Extraction</td>
-                      <td className="px-6 py-5">{getStatusBadge('cancelled')}</td>
-                    </tr>
+                    {/* Past appointments will be rendered below dynamically from the database */}
                     {pastAppointments.slice(0, 3).map(apt => (
                       <tr key={apt.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-5 text-sm font-medium text-slate-800">

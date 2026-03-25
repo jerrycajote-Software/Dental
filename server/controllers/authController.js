@@ -186,6 +186,10 @@ const createDoctor = async (req, res) => {
       return res.status(400).json({ message: 'Please provide a valid email address' });
     }
 
+    if (!trimmedEmail.endsWith('@gmail.com')) {
+      return res.status(400).json({ message: 'Doctor account must use a valid Gmail address' });
+    }
+
     if (password.length < 8) {
       return res.status(400).json({ message: 'Password must be at least 8 characters long' });
     }
@@ -197,15 +201,25 @@ const createDoctor = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
     const newDoctor = await db.query(
-      `INSERT INTO users (name, email, password, role, email_verified) 
-       VALUES ($1, $2, $3, 'doctor', TRUE) 
+      `INSERT INTO users (name, email, password, role, email_verified, verification_token, verification_token_expires) 
+       VALUES ($1, $2, $3, 'doctor', FALSE, $4, $5) 
        RETURNING id, name, email, role, email_verified, created_at`,
-      [name.trim(), trimmedEmail, hashedPassword]
+      [name.trim(), trimmedEmail, hashedPassword, verificationToken, tokenExpires]
     );
 
+    // Send verification email
+    try {
+      await sendVerificationEmail(trimmedEmail, name.trim(), verificationToken);
+    } catch (emailErr) {
+      console.error('Failed to send verification email to doctor:', emailErr.message);
+    }
+
     res.status(201).json({
-      message: 'Doctor account created successfully!',
+      message: 'Doctor account created successfully! A verification email has been sent to their Gmail.',
       doctor: newDoctor.rows[0],
     });
   } catch (err) {

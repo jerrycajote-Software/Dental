@@ -21,9 +21,11 @@ const getTransporter = async () => {
         pass: process.env.SMTP_PASS,
       },
     });
-    console.log('📧 Email configured with custom SMTP');
+    console.log('✅ Email configured with custom SMTP');
+    console.log(`   User: ${process.env.SMTP_USER}`);
   } else {
     // Use Ethereal (free fake SMTP for testing)
+    console.log('⚠️  Real SMTP not configured. Using Ethereal test mode...');
     const testAccount = await nodemailer.createTestAccount();
     transporter = nodemailer.createTransport({
       host: 'smtp.ethereal.email',
@@ -34,8 +36,8 @@ const getTransporter = async () => {
         pass: testAccount.pass,
       },
     });
-    console.log('📧 Email configured with Ethereal (test mode)');
-    console.log(`   Ethereal user: ${testAccount.user}`);
+    console.log('📧 Ethereal test account created successfully');
+    console.log(`   Preview User: ${testAccount.user}`);
   }
 
   return transporter;
@@ -87,15 +89,28 @@ const sendVerificationEmail = async (to, name, token) => {
     `,
   };
 
-  const info = await transport.sendMail(mailOptions);
+  try {
+    const info = await transport.sendMail(mailOptions);
 
-  // Log Ethereal preview URL for development
-  const previewUrl = nodemailer.getTestMessageUrl(info);
-  if (previewUrl) {
-    console.log('📧 Email Preview URL:', previewUrl);
+    // Log Ethereal preview URL for development
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    if (previewUrl) {
+      console.log('🔗 Email Preview URL:', previewUrl);
+      console.log('   Check this link to see the verification email in Test Mode.');
+    } else {
+      console.log(`✉️  Verification email sent to: ${to}`);
+    }
+
+    return info;
+  } catch (error) {
+    console.error('❌ Error sending verification email:');
+    console.error(`   To: ${to}`);
+    console.error(`   Error: ${error.message}`);
+    if (error.code === 'EAUTH') {
+      console.error('   Hint: Authentication failed. If using Gmail, make sure to use an App Password.');
+    }
+    throw error;
   }
-
-  return info;
 };
 
 module.exports = { sendVerificationEmail };

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import styled from 'styled-components';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ const Register = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -80,16 +82,25 @@ const Register = () => {
                     value={formData.email}
                     onChange={handleChange}
                   />
-                  <input 
-                    required 
-                    className="input" 
-                    type="password" 
-                    name="password" 
-                    placeholder="Password (min 8 characters)" 
-                    minLength={8}
-                    value={formData.password}
-                    onChange={handleChange}
-                  />
+                  <div className="password-container">
+                    <input 
+                      required 
+                      className="input" 
+                      type={showPassword ? "text" : "password"} 
+                      name="password" 
+                      placeholder="Password (min 8 characters)" 
+                      minLength={8}
+                      value={formData.password}
+                      onChange={handleChange}
+                    />
+                    <button 
+                      type="button"
+                      className="toggle-password"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+                    </button>
+                  </div>
                   
                   <div className="terms-container">
                     <div className="checkbox-wrapper-12">
@@ -184,6 +195,31 @@ const StyledWrapper = styled.div`
   .form .input:focus {
     outline: none;
     border-inline: 2px solid #12B1D1;
+  }
+
+  .password-container {
+    position: relative;
+    width: 100%;
+  }
+
+  .toggle-password {
+    position: absolute;
+    right: 15px;
+    top: 58%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    transition: color 0.2s;
+  }
+
+  .toggle-password:hover {
+    color: #12B1D1;
   }
 
   .success-container {

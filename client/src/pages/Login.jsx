@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import authService from '../services/authService';
 import styled from 'styled-components';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -11,6 +12,7 @@ const Login = () => {
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
   const [isResending, setIsResending] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -112,16 +114,25 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <input 
-                required 
-                className="input" 
-                type="password" 
-                name="password" 
-                id="password" 
-                placeholder="Password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="password-container">
+                <input 
+                  required 
+                  className="input" 
+                  type={showPassword ? "text" : "password"} 
+                  name="password" 
+                  id="password" 
+                  placeholder="Password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button 
+                  type="button"
+                  className="toggle-password"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+                </button>
+              </div>
               <span className="forgot-password">
                 <Link to="/forgot-password">Forgot Password ?</Link>
               </span>
@@ -183,6 +194,31 @@ const StyledWrapper = styled.div`
   .form .input:focus {
     outline: none;
     border-inline: 2px solid #12B1D1;
+  }
+
+  .password-container {
+    position: relative;
+    width: 100%;
+  }
+
+  .toggle-password {
+    position: absolute;
+    right: 15px;
+    top: 58%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    transition: color 0.2s;
+  }
+
+  .toggle-password:hover {
+    color: #12B1D1;
   }
 
   .form .forgot-password {

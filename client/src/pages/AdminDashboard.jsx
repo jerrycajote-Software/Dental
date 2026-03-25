@@ -43,16 +43,8 @@ import {
   ResponsiveContainer
 } from 'recharts';
 
-// Dummy data for the chart
-const chartData = [
-  { name: 'Mon', appointments: 4 },
-  { name: 'Tue', appointments: 7 },
-  { name: 'Wed', appointments: 5 },
-  { name: 'Thu', appointments: 9 },
-  { name: 'Fri', appointments: 12 },
-  { name: 'Sat', appointments: 8 },
-  { name: 'Sun', appointments: 3 },
-];
+// No dummy data for the chart - we will use real data or empty state
+const chartData = [];
 
 // Helper to get initials
 const getInitials = (name) => {
@@ -124,6 +116,12 @@ const AdminDashboard = () => {
     setDoctorError('');
     setDoctorSuccess('');
     setIsCreatingDoctor(true);
+    if (!doctorForm.email.toLowerCase().endsWith('@gmail.com')) {
+      setDoctorError('Doctor account must use a valid Gmail address');
+      setIsCreatingDoctor(false);
+      return;
+    }
+    
     try {
       const response = await api.post('/auth/doctors', doctorForm);
       setDoctorSuccess(response.data.message || 'Doctor account created successfully!');
@@ -279,9 +277,9 @@ const AdminDashboard = () => {
                       <Calendar size={20} />
                     </div>
                   </div>
-                  <h3 className="text-3xl font-bold text-slate-800 mb-2">1,248</h3>
+                  <h3 className="text-3xl font-bold text-slate-800 mb-2">{appointments.length}</h3>
                   <p className="text-xs font-medium text-slate-400 flex items-center gap-1">
-                    <span className="text-green-500 flex items-center"><TrendingUp size={12} className="mr-0.5" /> +12.5%</span> vs last month
+                    Total in database
                   </p>
                 </div>
 
@@ -292,9 +290,9 @@ const AdminDashboard = () => {
                       <Users size={20} />
                     </div>
                   </div>
-                  <h3 className="text-3xl font-bold text-slate-800 mb-2">35</h3>
+                  <h3 className="text-3xl font-bold text-slate-800 mb-2">{[...new Set(appointments.map(a => a.client_id))].length}</h3>
                   <p className="text-xs font-medium text-slate-400 flex items-center gap-1">
-                    <span className="text-green-500 flex items-center"><TrendingUp size={12} className="mr-0.5" /> +8.2%</span> vs last month
+                    Unique patients
                   </p>
                 </div>
 
@@ -306,9 +304,9 @@ const AdminDashboard = () => {
                       <Activity size={20} />
                     </div>
                   </div>
-                  <h3 className="text-3xl font-bold text-slate-800 mb-2">12</h3>
+                  <h3 className="text-3xl font-bold text-slate-800 mb-2">{appointments.filter(a => a.status === 'cancelled').length}</h3>
                   <p className="text-xs font-medium text-slate-400 flex items-center gap-1">
-                    <span className="text-red-500 flex items-center"><TrendingDown size={12} className="mr-0.5" /> -2.1%</span> vs last month
+                    Total cancelled
                   </p>
                 </div>
               </div>
@@ -374,44 +372,8 @@ const AdminDashboard = () => {
 
                   <div className="space-y-6">
 
-                    <div className="flex gap-4">
-                      <div className="mt-1 flex flex-col items-center">
-                        <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0"></div>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800">New appointment booked by John Doe</p>
-                        <p className="text-xs text-slate-400 font-medium mt-1">2 mins ago</p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                      <div className="mt-1 flex flex-col items-center">
-                        <div className="w-2.5 h-2.5 rounded-full bg-green-500 shrink-0"></div>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800">Dr. Sarah completed a checkup</p>
-                        <p className="text-xs text-slate-400 font-medium mt-1">1 hour ago</p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                      <div className="mt-1 flex flex-col items-center">
-                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-500 shrink-0"></div>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800">Patient record updated for Emily Blunt</p>
-                        <p className="text-xs text-slate-400 font-medium mt-1">3 hours ago</p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                      <div className="mt-1 flex flex-col items-center">
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0"></div>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800">Appointment cancelled by Michael Scott</p>
-                        <p className="text-xs text-slate-400 font-medium mt-1">5 hours ago</p>
-                      </div>
+                    <div className="p-4 text-center text-sm text-slate-400 italic">
+                      No recent activity logged yet.
                     </div>
 
                   </div>
@@ -434,47 +396,12 @@ const AdminDashboard = () => {
                       <Users className="text-[#a855f7]" size={20} />
                       <h3 className="text-lg font-bold text-slate-900">Patient Queue</h3>
                     </div>
-                    <p className="text-xs text-slate-500 font-medium">3 patients waiting</p>
+                    <p className="text-xs text-slate-500 font-medium">0 patients waiting</p>
                   </div>
                   {/* List */}
                   <div className="p-6 flex-1 max-h-[350px] overflow-y-auto">
                     <div className="space-y-4">
-                      {/* Patient 1 */}
-                      <div className="pb-4 border-b border-slate-100 last:border-0 last:pb-0">
-                        <div className="flex flex-col gap-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 shrink-0 overflow-hidden">
-                              <img src="https://ui-avatars.com/api/?name=Cedric+Torres&background=0284c7&color=fff" alt="Avatar" className="w-full h-full object-cover" />
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-bold text-slate-900">Cedric Torres</h4>
-                              <p className="text-[11px] text-slate-500">Root Canal</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-slate-500 font-medium flex items-center gap-1.5"><Clock size={12} /> 15 mins</span>
-                            <span className="px-3 py-1 bg-green-100 text-green-600 text-[10px] font-bold rounded-full">in-room</span>
-                          </div>
-                        </div>
-                      </div>
-                      {/* Patient 2 */}
-                      <div className="pb-4 border-b border-slate-100 last:border-0 last:pb-0">
-                        <div className="flex flex-col gap-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 shrink-0 overflow-hidden">
-                              <img src="https://ui-avatars.com/api/?name=Luke+Delacruz&background=0284c7&color=fff" alt="Avatar" className="w-full h-full object-cover" />
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-bold text-slate-900">Luke Delacruz</h4>
-                              <p className="text-[11px] text-slate-500">Consultation</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-slate-500 font-medium flex items-center gap-1.5"><Clock size={12} /> 5 mins</span>
-                            <span className="px-3 py-1 bg-amber-100 text-amber-600 text-[10px] font-bold rounded-full">waiting</span>
-                          </div>
-                        </div>
-                      </div>
+                      <p className="text-center text-xs text-slate-400 py-8 italic">No patients in queue</p>
                     </div>
                   </div>
                 </div>
@@ -491,86 +418,7 @@ const AdminDashboard = () => {
                   {/* List */}
                   <div className="p-6 flex-1 max-h-[350px] overflow-y-auto">
                     <div className="space-y-4">
-                      {/* Patient 1 */}
-                      <div className="pb-4 border-b border-slate-100 last:border-0 last:pb-0">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 shrink-0 overflow-hidden">
-                              <img src="https://ui-avatars.com/api/?name=Jerry+Cajote&background=0284c7&color=fff" alt="Avatar" className="w-full h-full object-cover" />
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-bold text-slate-900 leading-tight">Jerry Cajote</h4>
-                              <p className="text-[11px] text-slate-500">3 treatments</p>
-                            </div>
-                          </div>
-                          <ChevronRight className="text-slate-300" size={16} />
-                        </div>
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="text-[10px] text-slate-400 uppercase tracking-wide mb-1">Last Visit</p>
-                            <p className="text-xs font-bold text-slate-800 mb-2">Mar 6</p>
-                            <span className="px-2.5 py-1 bg-green-100 text-green-600 text-[10px] font-bold rounded-full">Healthy</span>
-                          </div>
-                          <div className="text-left pr-4">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-wide mb-1">Next Visit</p>
-                            <p className="text-xs font-bold text-slate-800">Sep 6</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Patient 2 */}
-                      <div className="pb-4 border-b border-slate-100 last:border-0 last:pb-0">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 shrink-0 overflow-hidden">
-                              <img src="https://ui-avatars.com/api/?name=Cedric+Torres&background=0284c7&color=fff" alt="Avatar" className="w-full h-full object-cover" />
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-bold text-slate-900 leading-tight">Cedric Torres</h4>
-                              <p className="text-[11px] text-slate-500">5 treatments</p>
-                            </div>
-                          </div>
-                          <ChevronRight className="text-slate-300" size={16} />
-                        </div>
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="text-[10px] text-slate-400 uppercase tracking-wide mb-1">Last Visit</p>
-                            <p className="text-xs font-bold text-slate-800 mb-2">Mar 6</p>
-                            <span className="px-2.5 py-1 bg-blue-100 text-blue-600 text-[10px] font-bold rounded-full">In Treatment</span>
-                          </div>
-                          <div className="text-left pr-4">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-wide mb-1">Next Visit</p>
-                            <p className="text-xs font-bold text-slate-800">Mar 20</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Patient 3 */}
-                      <div className="pb-4 border-b border-slate-100 last:border-0 last:pb-0">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 shrink-0 overflow-hidden">
-                              <img src="https://ui-avatars.com/api/?name=Luke+Delacruz&background=0284c7&color=fff" alt="Avatar" className="w-full h-full object-cover" />
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-bold text-slate-900 leading-tight">Luke Delacruz</h4>
-                              <p className="text-[11px] text-slate-500">2 treatments</p>
-                            </div>
-                          </div>
-                          <ChevronRight className="text-slate-300" size={16} />
-                        </div>
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="text-[10px] text-slate-400 uppercase tracking-wide mb-1">Last Visit</p>
-                            <p className="text-xs font-bold text-slate-800 mb-2">Mar 3</p>
-                            <span className="px-2.5 py-1 bg-orange-100 text-orange-600 text-[10px] font-bold rounded-full whitespace-nowrap">Follow-up Required</span>
-                          </div>
-                          <div className="text-left pr-4">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-wide mb-1">Next Visit</p>
-                            <p className="text-xs font-bold text-slate-800">Mar 17</p>
-                          </div>
-                        </div>
-                      </div>
+                      <p className="text-center text-xs text-slate-400 py-8 italic">No recent patients found</p>
                     </div>
                   </div>
                 </div>
@@ -592,132 +440,7 @@ const AdminDashboard = () => {
                 {/* List */}
                 <div className="p-0">
                   <div className="flex flex-col">
-                    {/* Item 1 */}
-                    <div className="flex flex-col md:flex-row gap-6 p-6 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
-                      {/* Left: Time */}
-                      <div className="w-24 shrink-0 pt-1">
-                        <p className="text-sm font-bold text-slate-900">09:00 AM</p>
-                        <p className="text-xs text-slate-400 font-medium mt-0.5">30 mins</p>
-                      </div>
-
-                      {/* Center: Details */}
-                      <div className="flex-1">
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-3 gap-3">
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 shrink-0 overflow-hidden">
-                              <img src="https://ui-avatars.com/api/?name=Jerry+Cajote&background=0284c7&color=fff" alt="Avatar" className="w-full h-full object-cover" />
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-bold text-slate-900 leading-tight">Jerry Cajote</h4>
-                              <p className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-1"><Phone size={10} /> +1 (555) 123-4567</p>
-                            </div>
-                          </div>
-                          <span className="self-start sm:self-center px-3 py-1 rounded-full text-[10px] font-bold border border-green-200 text-green-600 flex items-center gap-1.5 bg-green-50/50">
-                            <CheckCircle2 size={12} /> completed
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-5 mb-2">
-                          <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
-                            <Stethoscope size={14} className="text-slate-400" /> Dental Cleaning
-                          </div>
-                          <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
-                            <MapPin size={14} className="text-slate-400" /> Room 101
-                          </div>
-                        </div>
-
-                        <p className="text-xs text-slate-500 italic mt-3">Regular checkup, no issues found</p>
-                      </div>
-                    </div>
-
-                    {/* Item 2 */}
-                    <div className="flex flex-col md:flex-row gap-6 p-6 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
-                      {/* Left: Time */}
-                      <div className="w-24 shrink-0 pt-1">
-                        <p className="text-sm font-bold text-slate-900">09:45 AM</p>
-                        <p className="text-xs text-slate-400 font-medium mt-0.5">90 mins</p>
-                      </div>
-
-                      {/* Center: Details */}
-                      <div className="flex-1">
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-3 gap-3">
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 shrink-0 overflow-hidden">
-                              <img src="https://ui-avatars.com/api/?name=Cedric+Torres&background=0284c7&color=fff" alt="Avatar" className="w-full h-full object-cover" />
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-bold text-slate-900 leading-tight">Cedric Torres</h4>
-                              <p className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-1"><Phone size={10} /> +1 (555) 234-5678</p>
-                            </div>
-                          </div>
-                          <span className="self-start sm:self-center px-3 py-1 rounded-full text-[10px] font-bold border border-orange-200 text-orange-600 flex items-center gap-1.5 bg-orange-50/50">
-                            <Activity size={12} /> in progress
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-5 mb-2">
-                          <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
-                            <Stethoscope size={14} className="text-slate-400" /> Root Canal
-                          </div>
-                          <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
-                            <MapPin size={14} className="text-slate-400" /> Room 102
-                          </div>
-                        </div>
-
-                        <p className="text-xs text-slate-500 italic mt-3 mb-4">Follow-up treatment on tooth #18</p>
-
-                        <button className="bg-[#059669] hover:bg-[#047857] text-white text-[11px] font-bold px-4 py-2 rounded-lg transition-colors shadow-sm">
-                          Mark Complete
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Item 3 */}
-                    <div className="flex flex-col md:flex-row gap-6 p-6 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
-                      {/* Left: Time */}
-                      <div className="w-24 shrink-0 pt-1">
-                        <p className="text-sm font-bold text-slate-900">11:30 AM</p>
-                        <p className="text-xs text-slate-400 font-medium mt-0.5">45 mins</p>
-                      </div>
-
-                      {/* Center: Details */}
-                      <div className="flex-1">
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-3 gap-3">
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 shrink-0 overflow-hidden">
-                              <img src="https://ui-avatars.com/api/?name=Luke+Delacruz&background=0284c7&color=fff" alt="Avatar" className="w-full h-full object-cover" />
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-bold text-slate-900 leading-tight">Luke Delacruz</h4>
-                              <p className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-1"><Phone size={10} /> +1 (555) 345-6789</p>
-                            </div>
-                          </div>
-                          <span className="self-start sm:self-center px-3 py-1 rounded-full text-[10px] font-bold border border-blue-200 text-blue-600 flex items-center gap-1.5 bg-blue-50/50">
-                            <Clock size={12} /> upcoming
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-5 mb-2">
-                          <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
-                            <Stethoscope size={14} className="text-slate-400" /> Consultation
-                          </div>
-                          <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
-                            <MapPin size={14} className="text-slate-400" /> Room 101
-                          </div>
-                        </div>
-
-                        <p className="text-xs text-slate-500 italic mt-3 mb-4">First visit, general checkup</p>
-
-                        <div className="flex flex-wrap gap-2.5">
-                          <button className="bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold px-4 py-2 rounded-lg transition-colors shadow-sm">
-                            Start Session
-                          </button>
-                          <button className="bg-slate-50 hover:bg-slate-100 text-slate-600 text-[11px] font-bold px-4 py-2 rounded-lg transition-colors border border-slate-200">
-                            View Records
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                    <p className="text-center text-xs text-slate-400 py-12 italic">No appointments scheduled for today.</p>
                   </div>
                 </div>
               </div>
@@ -902,114 +625,9 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {/* Row 1 */}
-                    <tr className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 shrink-0 overflow-hidden">
-                            <img src="https://ui-avatars.com/api/?name=Jerry+Cajote&background=0284c7&color=fff" alt="Avatar" className="w-full h-full object-cover" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900 leading-tight">Jerry Cajote</p>
-                            <p className="text-[11px] text-slate-500 mt-0.5">32 yrs • Male</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1 text-[11px] text-slate-500 font-medium">
-                          <span className="flex items-center gap-1.5"><Phone size={12} className="text-slate-400" /> 555-0123</span>
-                          <span className="flex items-center gap-1.5"><Mail size={12} className="text-slate-400" /> jerry.cajote@example.com</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs font-medium text-slate-600">2023-12-15</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs font-medium text-slate-600">2024-06-15</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-2.5 py-1 bg-green-100 text-green-600 text-[10px] font-bold rounded-full">Active</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex justify-end">
-                          <button className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 text-xs font-bold transition-colors">
-                            <FileText size={14} /> Details
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-
-                    {/* Row 2 */}
-                    <tr className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 shrink-0 overflow-hidden">
-                            <img src="https://ui-avatars.com/api/?name=Cedric+Torres&background=0284c7&color=fff" alt="Avatar" className="w-full h-full object-cover" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900 leading-tight">Cedric Torres</p>
-                            <p className="text-[11px] text-slate-500 mt-0.5">28 yrs • Male</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1 text-[11px] text-slate-500 font-medium">
-                          <span className="flex items-center gap-1.5"><Phone size={12} className="text-slate-400" /> 555-0124</span>
-                          <span className="flex items-center gap-1.5"><Mail size={12} className="text-slate-400" /> cedric.torres@example.com</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs font-medium text-slate-600">2024-01-20</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs font-medium text-slate-600">2024-07-20</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-2.5 py-1 bg-green-100 text-green-600 text-[10px] font-bold rounded-full">Active</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex justify-end">
-                          <button className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 text-xs font-bold transition-colors">
-                            <FileText size={14} /> Details
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-
-                    {/* Row 3 */}
-                    <tr className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 shrink-0 overflow-hidden">
-                            <img src="https://ui-avatars.com/api/?name=Luke+Delacruz&background=0284c7&color=fff" alt="Avatar" className="w-full h-full object-cover" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900 leading-tight">Luke Delacruz</p>
-                            <p className="text-[11px] text-slate-500 mt-0.5">45 yrs • Male</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1 text-[11px] text-slate-500 font-medium">
-                          <span className="flex items-center gap-1.5"><Phone size={12} className="text-slate-400" /> 555-0125</span>
-                          <span className="flex items-center gap-1.5"><Mail size={12} className="text-slate-400" /> luke.delacruz@example.com</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs font-medium text-slate-600">2023-11-10</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs font-medium text-slate-600">2024-05-10</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-2.5 py-1 bg-green-100 text-green-600 text-[10px] font-bold rounded-full">Active</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex justify-end">
-                          <button className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 text-xs font-bold transition-colors">
-                            <FileText size={14} /> Details
-                          </button>
-                        </div>
+                    <tr>
+                      <td colSpan="6" className="px-6 py-8 text-center text-sm font-medium text-slate-400 italic">
+                        No patient records found.
                       </td>
                     </tr>
                   </tbody>
@@ -1075,7 +693,7 @@ const AdminDashboard = () => {
                         <input
                           type="email"
                           required
-                          placeholder="doctor@dental.com"
+                          placeholder="doctor@gmail.com"
                           className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 font-medium focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors placeholder:text-slate-400"
                           value={doctorForm.email}
                           onChange={(e) => setDoctorForm({ ...doctorForm, email: e.target.value })}
