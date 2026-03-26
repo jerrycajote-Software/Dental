@@ -15,6 +15,51 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  // SESSION TIMEOUT LOGIC
+  useEffect(() => {
+    if (!user) return;
+
+    // Timeout duration: 24 hour (86,400 000 ms)
+    const TIMEOUT_DURATION = 86400000;
+    let timeoutId;
+
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        console.log('Session expired due to inactivity');
+        logout();
+        window.location.href = '/login?expired=true';
+      }, TIMEOUT_DURATION);
+    };
+
+    // Events to track activity
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
+    
+    // Set initial timer
+    resetTimer();
+
+    // Add event listeners
+    events.forEach(event => {
+      window.addEventListener(event, resetTimer);
+    });
+
+    // Handle logout in other tabs
+    const handleStorageChange = (e) => {
+      if (e.key === 'token' && !e.newValue) {
+        setUser(null);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      events.forEach(event => {
+        window.removeEventListener(event, resetTimer);
+      });
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [user]);
+
   const login = async (email, password) => {
     const data = await authService.login(email, password);
     setUser(data.user);

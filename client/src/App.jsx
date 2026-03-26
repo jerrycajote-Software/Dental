@@ -25,6 +25,19 @@ const ProtectedRoute = ({ children, adminOnly = false, doctorOnly = false }) => 
   return children;
 };
 
+const PublicRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) return null;
+  if (user) {
+    if (user.role === 'admin') return <Navigate to="/admin" />;
+    if (user.role === 'doctor') return <Navigate to="/doctor" />;
+    return <Navigate to="/dashboard" />;
+  }
+
+  return children;
+};
+
 const AppContent = () => {
   const location = useLocation();
   const isFullScreenPage = ['/login', '/register', '/admin', '/doctor', '/forgot-password'].includes(location.pathname) 
@@ -37,8 +50,8 @@ const AppContent = () => {
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+          <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/verify-email/:token" element={<VerifyEmail />} />

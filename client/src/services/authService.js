@@ -29,4 +29,9 @@ const resendVerification = async (email) => {
   return response.data;
 };
 
-export default { login, register, logout, getCurrentUser, resendVerification };
+const deleteAccount = async () => {
+  const response = await api.post('/auth/delete-account');
+  return response.data;
+};
+
+export default { login, register, logout, getCurrentUser, resendVerification, deleteAccount };

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import authService from '../services/authService';
 import styled from 'styled-components';
@@ -15,6 +15,8 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isExpired = new URLSearchParams(location.search).get('expired') === 'true';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -61,6 +63,23 @@ const Login = () => {
           <div className="container">
             <div className="heading">Sign In</div>
             
+            {isExpired && !error && (
+              <div style={{ 
+                color: '#c05621', 
+                textAlign: 'center', 
+                margin: '10px 0', 
+                fontSize: '13px', 
+                fontWeight: 'bold', 
+                background: '#fefcbf', 
+                padding: '10px 15px', 
+                borderRadius: '12px',
+                lineHeight: '1.5',
+                border: '1px solid #fbd38d'
+              }}>
+                Your session has expired due to inactivity. Please sign in again.
+              </div>
+            )}
+
             {error && (
               <div style={{ 
                 color: needsVerification ? '#c05621' : '#e53e3e', 

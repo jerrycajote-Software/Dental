@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import styled from 'styled-components';
@@ -7,6 +7,7 @@ const VerifyEmail = () => {
   const { token } = useParams();
   const [status, setStatus] = useState('verifying'); // 'verifying', 'success', 'error'
   const [message, setMessage] = useState('');
+  const verificationStarted = useRef(false);
 
   useEffect(() => {
     const verify = async () => {
@@ -20,7 +21,8 @@ const VerifyEmail = () => {
       }
     };
 
-    if (token) {
+    if (token && !verificationStarted.current) {
+      verificationStarted.current = true;
       verify();
     }
   }, [token]);

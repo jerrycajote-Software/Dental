@@ -6,12 +6,15 @@ import {
   MapPin, Plus, FileText, Activity, User as UserIcon
 } from 'lucide-react';
 import AppointmentForm from '../components/AppointmentForm';
+import authService from '../services/authService';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [activeTab, setActiveTab] = useState('Overview');
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchAppointments();
@@ -27,6 +30,27 @@ const Dashboard = () => {
       setLoading(false);
     }
   };
+
+  const handleDeleteAccount = async () => {
+    const confirmation = window.confirm(
+      "Are you sure you want to delete your account? This action cannot be undone, and you won't be able to re-register with this email for 24 hours."
+    );
+
+    if (confirmation) {
+      try {
+        setDeleting(true);
+        await authService.deleteAccount();
+        alert('Your account has been deleted. You will now be logged out.');
+        logout();
+      } catch (err) {
+        alert(err.response?.data?.message || 'Failed to delete account');
+      } finally {
+        setDeleting(false);
+      }
+    }
+  };
+
+  // ... (getStatusBadge, getStatusColor, etc. remain same)
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -60,24 +84,72 @@ const Dashboard = () => {
     <div className="min-h-screen bg-[#e7f0fa] py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-5xl mx-auto space-y-8">
 
-        {/* HEADER SECTION */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-2">
-          <div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
-              Welcome back, {user?.name ? user.name.split(' ')[0] : 'John'}!
-            </h2>
-            <p className="text-slate-500 font-medium mt-2 text-md">
-              Here is your dental health overview.
-            </p>
-          </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="w-full md:w-auto bg-[#1d4ed8] text-white px-6 py-3.5 rounded-xl hover:bg-blue-800 transition-all duration-300 shadow-md shadow-blue-900/10 font-bold flex items-center justify-center gap-2 transform active:scale-95"
-          >
-            <Plus size={20} strokeWidth={2.5} />
-            <span>Book New Appointment</span>
-          </button>
+        {/* NAVIGATION TABS */}
+        <div className="flex items-center gap-4 mb-2">
+          {['Overview', 'Settings'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${
+                activeTab === tab 
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                  : 'text-slate-500 hover:bg-white hover:text-slate-800'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
+
+        {activeTab === 'Overview' ? (
+          <>
+            {/* HEADER SECTION */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-2">
+              <div>
+                <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                  Welcome back, {user?.name ? user.name.split(' ')[0] : 'John'}!
+                </h2>
+                <p className="text-slate-500 font-medium mt-2 text-md">
+                  Here is your dental health overview.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowForm(true)}
+                className="w-full md:w-auto bg-[#1d4ed8] text-white px-6 py-3.5 rounded-xl hover:bg-blue-800 transition-all duration-300 shadow-md shadow-blue-900/10 font-bold flex items-center justify-center gap-2 transform active:scale-95"
+              >
+                <Plus size={20} strokeWidth={2.5} />
+                <span>Book New Appointment</span>
+              </button>
+            </div>
+
+            {/* ... rest of the Overview content ... */}
+          </>
+        ) : (
+          /* SETTINGS TAB CONTENT */
+          <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-blue-900/5 overflow-hidden border border-blue-50 p-10">
+            <h3 className="text-2xl font-black text-slate-900 mb-8">Account Settings</h3>
+            
+            <div className="space-y-10">
+              <div className="p-8 rounded-3xl bg-red-50 border border-red-100">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="space-y-2">
+                    <h4 className="text-lg font-black text-red-600">Delete Account</h4>
+                    <p className="text-sm font-medium text-red-400 max-w-md">
+                      Permanently remove your account and all associated data. You won't be able to re-register with this email address for 24 hours.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={handleDeleteAccount}
+                    disabled={deleting}
+                    className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-red-600/20 disabled:opacity-50"
+                  >
+                    {deleting ? 'Deleting...' : 'Delete My Account'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showForm && (
           <AppointmentForm

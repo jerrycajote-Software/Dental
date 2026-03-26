@@ -67,10 +67,37 @@ const AdminDashboard = () => {
   const [doctorSuccess, setDoctorSuccess] = useState('');
   const [isCreatingDoctor, setIsCreatingDoctor] = useState(false);
 
+  // Patient management state
+  const [patients, setPatients] = useState([]);
+
   useEffect(() => {
     fetchAppointments();
     fetchDoctors();
+    fetchPatients();
   }, []);
+
+  // ... (fetchAppointments, handleStatusChange, handleDelete remain same)
+
+  // Patient management functions
+  const fetchPatients = async () => {
+    try {
+      const response = await api.get('/auth/patients');
+      setPatients(response.data);
+    } catch (err) {
+      console.error('Failed to fetch patients', err);
+    }
+  };
+
+  const handleDeletePatient = async (id, name) => {
+    if (window.confirm(`Are you sure you want to delete ${name}'s account?`)) {
+      try {
+        await api.delete(`/auth/patients/${id}`);
+        fetchPatients();
+      } catch (err) {
+        console.error('Failed to delete patient', err);
+      }
+    }
+  };
 
   const fetchAppointments = async () => {
     try {
@@ -612,24 +639,79 @@ const AdminDashboard = () => {
               </div>
 
               {/* Patients Table */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden text-slate-800">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-[#f8fbff] text-[10px] font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100">
                       <th className="px-6 py-4">Name</th>
                       <th className="px-6 py-4">Contact</th>
-                      <th className="px-6 py-4">Last Visit</th>
-                      <th className="px-6 py-4">Next Visit</th>
+                      <th className="px-6 py-4">Joined</th>
                       <th className="px-6 py-4">Status</th>
                       <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    <tr>
-                      <td colSpan="6" className="px-6 py-8 text-center text-sm font-medium text-slate-400 italic">
-                        No patient records found.
-                      </td>
-                    </tr>
+                  <tbody className="divide-y divide-slate-100 text-slate-800">
+                    {patients.length > 0 ? (
+                      patients.map((patient) => (
+                        <tr key={patient.id} className={`hover:bg-slate-50 transition-colors ${patient.is_deleted ? 'opacity-70 bg-slate-50/30' : ''}`}>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-9 h-9 rounded-full ${patient.is_deleted ? 'bg-slate-200' : 'bg-blue-100'} shrink-0 overflow-hidden`}>
+                                <img
+                                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(patient.name)}&background=${patient.is_deleted ? '94a3b8' : '3b82f6'}&color=fff`}
+                                  alt="Avatar"
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div>
+                                <span className={`text-sm font-bold ${patient.is_deleted ? 'text-slate-500 line-through' : 'text-slate-800'}`}>
+                                  {patient.name}
+                                </span>
+                                {patient.is_deleted && (
+                                  <div className="text-[10px] font-black text-red-500 uppercase mt-0.5">Deleted Account</div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm font-medium text-slate-500">{patient.email}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-xs font-medium text-slate-500">
+                              {new Date(patient.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-slate-800">
+                            {patient.is_deleted ? (
+                              <span className="px-2.5 py-1 bg-red-50 text-red-500 text-[10px] font-bold rounded-full border border-red-100 uppercase tracking-wider">Deleted</span>
+                            ) : (
+                              <span className={`px-2.5 py-1 ${patient.email_verified ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'} text-[10px] font-bold rounded-full border uppercase tracking-wider`}>
+                                {patient.email_verified ? 'Verified' : 'Unverified'}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex justify-end">
+                              {!patient.is_deleted && (
+                                <button
+                                  onClick={() => handleDeletePatient(patient.id, patient.name)}
+                                  className="text-slate-400 hover:text-red-500 transition-colors p-2 hover:bg-red-50 rounded-lg"
+                                  title="Delete patient"
+                                >
+                                  <Trash2 size={16} strokeWidth={2} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" className="px-6 py-12 text-center text-slate-400 italic font-medium">
+                          No patient records found.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
