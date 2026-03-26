@@ -21,12 +21,7 @@ const DashboardScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [isChatBotVisible, setIsChatBotVisible] = useState(false);
 
-  // Using some mock user data placeholder for now, 
-  // normally you'd fetch this from a context/store
-  const user = { name: 'Cedric' };
-
   useEffect(() => {
-    // Let's pretend we fetch appointments, but use mock data for the UI if endpoint fails
     fetchAppointments();
   }, []);
 
@@ -36,17 +31,7 @@ const DashboardScreen = ({ navigation }) => {
       const response = await api.get('/appointments');
       setAppointments(response.data);
     } catch (err) {
-      console.log('Using mock data, failed to fetch:', err.message);
-      // Mock data to match screenshot
-      setAppointments([
-        { id: 1, service_name: 'Cleaning', dentist_name: 'Smith', appointment_date: '2026-03-08', appointment_time: '10:00:00', status: 'confirmed' },
-        { id: 2, service_name: 'Cleaning', dentist_name: 'Smith', appointment_date: '2026-03-10', appointment_time: '13:00:00', status: 'pending' },
-        { id: 3, service_name: 'Checkup', dentist_name: 'Alvin', appointment_date: '2026-03-07', appointment_time: '10:00:00', status: 'pending' },
-        { id: 4, service_name: 'Checkup', dentist_name: 'Smith', appointment_date: '2026-03-09', appointment_time: '11:00:00', status: 'cancelled' },
-        // Add past appointments for history
-        { id: 5, service_name: 'Cleaning', dentist_name: 'John Doe', appointment_date: '2025-04-10', appointment_time: '09:00:00', status: 'completed' },
-        { id: 6, service_name: 'Extraction', dentist_name: 'Emily Johnson', appointment_date: '2025-03-05', appointment_time: '14:00:00', status: 'cancelled' },
-      ]);
+      console.error('Failed to fetch appointments:', err.message);
     } finally {
       setLoading(false);
     }
@@ -55,7 +40,16 @@ const DashboardScreen = ({ navigation }) => {
   const upcomingAppointments = appointments.filter(a => a.status === 'confirmed' || a.status === 'pending');
   const pastAppointments = appointments.filter(a => a.status === 'completed' || a.status === 'cancelled');
 
-  const mockupUpcoming = upcomingAppointments.length > 0 ? upcomingAppointments[0] : null;
+  const nextAppointment = upcomingAppointments.length > 0 ? upcomingAppointments[0] : null;
+
+  const formatTime12h = (time24) => {
+    if (!time24) return '';
+    const [hours, minutes] = time24.split(':');
+    const h = parseInt(hours);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${minutes} ${ampm}`;
+  };
 
   const getBadgeStyle = (status) => {
     switch (status) {
@@ -89,7 +83,7 @@ const DashboardScreen = ({ navigation }) => {
         {/* HEADER SECTION */}
         <View style={styles.header}>
           <Text style={styles.welcomeText}>
-            Welcome back, {user?.name ? user.name.split(' ')[0] : 'John'}!
+            Welcome back!
           </Text>
           <Text style={styles.subtitleText}>
             Here is your dental health overview.
@@ -108,23 +102,23 @@ const DashboardScreen = ({ navigation }) => {
               <Calendar size={20} color="#2563eb" />
               <Text style={styles.cardTitle}>Upcoming Appointment</Text>
             </View>
-            {mockupUpcoming ? renderBadge(mockupUpcoming.status) : renderBadge('confirmed')}
+            {nextAppointment ? renderBadge(nextAppointment.status) : null}
           </View>
 
           <View style={styles.cardBody}>
             {loading ? (
               <ActivityIndicator size="large" color="#2563eb" style={{ marginVertical: 20 }} />
-            ) : mockupUpcoming ? (
+            ) : nextAppointment ? (
               <View style={styles.upcomingContent}>
                 <View style={styles.upcomingRow1}>
                   <View style={styles.dateCircle}>
                     <Text style={styles.dateCircleText}>
-                      {new Date(mockupUpcoming.appointment_date).getDate()}
+                      {new Date(nextAppointment.appointment_date).getDate()}
                     </Text>
                   </View>
                   <View style={styles.upcomingDetails}>
-                    <Text style={styles.doctorName}>Dr. {mockupUpcoming.dentist_name || 'Dr. Smith'}</Text>
-                    <Text style={styles.serviceText}>Dentist • {mockupUpcoming.service_name || 'Cleaning'}</Text>
+                    <Text style={styles.doctorName}>Dr. {nextAppointment.dentist_name}</Text>
+                    <Text style={styles.serviceText}>Dentist • {nextAppointment.service_name}</Text>
                   </View>
                 </View>
 
@@ -133,7 +127,7 @@ const DashboardScreen = ({ navigation }) => {
                     <View style={styles.infoRow}>
                       <Clock size={16} color="#94a3b8" />
                       <Text style={styles.infoText}>
-                        {mockupUpcoming.appointment_time.substring(0, 5)} AM - {(parseInt(mockupUpcoming.appointment_time.substring(0, 2)) + 1).toString().padStart(2, '0')}:00 AM
+                        {formatTime12h(nextAppointment.appointment_time)}
                       </Text>
                     </View>
                     <View style={styles.infoRow}>

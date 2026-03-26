@@ -13,7 +13,7 @@ export default defineConfig({
         name: 'DentCarePlus',
         short_name: 'DentCare',
         description: 'Experience the Best Dental Care',
-        theme_color: '#3b82f6', // Your brand blue
+        theme_color: '#3b82f6',
         background_color: '#ffffff',
         display: 'standalone',
         icons: [
@@ -37,4 +37,8 @@ export default defineConfig({
       }
     })
   ],
+  server: {
+    port: 5173,
+    strictPort: true, // Fail if 5173 is taken instead of moving to another port
+  },
 })

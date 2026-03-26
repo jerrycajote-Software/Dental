@@ -15,9 +15,13 @@ const updateStatus = async (id, status) => {
   return response.data;
 };
 
-const deleteAppointment = async (id) => {
-  const response = await api.delete(`/appointments/${id}`);
+const updateAppointment = async (id, appointmentData) => {
+  const response = await api.patch(`/appointments/${id}`, appointmentData);
   return response.data;
 };
 
-export default { getAppointments, createAppointment, updateStatus, deleteAppointment };
+const cancelAppointment = async (id) => {
+  return updateStatus(id, 'cancelled');
+};
+
+export default { getAppointments, createAppointment, updateStatus, updateAppointment, cancelAppointment };

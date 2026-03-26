@@ -56,6 +56,21 @@ const updateAppointmentStatus = async (req, res) => {
   }
 };
 
+const updateAppointment = async (req, res) => {
+  const { id } = req.params;
+  const { dentist_id, service_id, appointment_date, appointment_time, notes } = req.body;
+
+  try {
+    const updated = await db.query(
+      'UPDATE appointments SET dentist_id = $1, service_id = $2, appointment_date = $3, appointment_time = $4, notes = $5 WHERE id = $6 RETURNING *',
+      [dentist_id, service_id, appointment_date, appointment_time, notes, id]
+    );
+    res.json(updated.rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 const deleteAppointment = async (req, res) => {
   const { id } = req.params;
   try {
@@ -72,4 +87,4 @@ const deleteAppointment = async (req, res) => {
   }
 };
 
-module.exports = { getAppointments, createAppointment, updateAppointmentStatus, deleteAppointment };
+module.exports = { getAppointments, createAppointment, updateAppointmentStatus, updateAppointment, deleteAppointment };

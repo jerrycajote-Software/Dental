@@ -15,6 +15,16 @@ const Dashboard = () => {
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState('Overview');
   const [deleting, setDeleting] = useState(false);
+  const [reschedulingAppointment, setReschedulingAppointment] = useState(null);
+
+  const formatTime12h = (time24) => {
+    if (!time24) return '';
+    const [hours, minutes] = time24.split(':');
+    const h = parseInt(hours);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${minutes} ${ampm}`;
+  };
 
   useEffect(() => {
     fetchAppointments();
@@ -50,6 +60,22 @@ const Dashboard = () => {
     }
   };
 
+  const handleCancel = async (id) => {
+    if (window.confirm('Are you sure you want to cancel this appointment?')) {
+      try {
+        await appointmentService.cancelAppointment(id);
+        fetchAppointments();
+      } catch (err) {
+        alert('Failed to cancel appointment');
+      }
+    }
+  };
+
+  const handleReschedule = (appointment) => {
+    setReschedulingAppointment(appointment);
+    setShowForm(true);
+  };
+
   // ... (getStatusBadge, getStatusColor, etc. remain same)
 
   const getStatusBadge = (status) => {
@@ -77,8 +103,7 @@ const Dashboard = () => {
   const upcomingAppointments = appointments.filter(a => a.status === 'confirmed' || a.status === 'pending');
   const pastAppointments = appointments.filter(a => a.status === 'completed' || a.status === 'cancelled');
 
-  // Hardcode next appointment for mockup demonstration if none available
-  const mockupUpcoming = upcomingAppointments.length > 0 ? upcomingAppointments[0] : null;
+  const nextAppointment = upcomingAppointments.length > 0 ? upcomingAppointments[0] : null;
 
   return (
     <div className="min-h-screen bg-[#e7f0fa] py-12 px-4 sm:px-6 lg:px-8 font-sans">
@@ -114,7 +139,10 @@ const Dashboard = () => {
                 </p>
               </div>
               <button
-                onClick={() => setShowForm(true)}
+                onClick={() => {
+                  setReschedulingAppointment(null);
+                  setShowForm(true);
+                }}
                 className="w-full md:w-auto bg-[#1d4ed8] text-white px-6 py-3.5 rounded-xl hover:bg-blue-800 transition-all duration-300 shadow-md shadow-blue-900/10 font-bold flex items-center justify-center gap-2 transform active:scale-95"
               >
                 <Plus size={20} strokeWidth={2.5} />
@@ -153,7 +181,11 @@ const Dashboard = () => {
 
         {showForm && (
           <AppointmentForm
-            onClose={() => setShowForm(false)}
+            appointment={reschedulingAppointment}
+            onClose={() => {
+              setShowForm(false);
+              setReschedulingAppointment(null);
+            }}
             onSuccess={fetchAppointments}
           />
         )}
@@ -170,7 +202,7 @@ const Dashboard = () => {
                   <Calendar className="text-blue-600" size={20} />
                   <h3 className="text-[17px] font-bold text-slate-800">Upcoming Appointment</h3>
                 </div>
-                {mockupUpcoming ? getStatusBadge(mockupUpcoming.status) : null}
+                {nextAppointment ? getStatusBadge(nextAppointment.status) : null}
               </div>
 
               <div className="p-6">
@@ -178,25 +210,31 @@ const Dashboard = () => {
                   <div className="animate-pulse flex flex-col items-center py-8 text-slate-400">
                     Loading...
                   </div>
-                ) : mockupUpcoming ? (
+                ) : nextAppointment ? (
                   <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
                     <div className="flex flex-col items-center justify-center w-20 h-20 rounded-full bg-blue-100/50 text-blue-600 shrink-0">
                       <span className="text-2xl font-black leading-none">
-                        {new Date(mockupUpcoming.appointment_date).getDate()}
+                        {new Date(nextAppointment.appointment_date).getDate()}
                       </span>
                     </div>
 
                     <div className="flex-1">
-                      <h4 className="text-lg font-bold text-slate-900">Dr. {mockupUpcoming.dentist_name || 'Sarah Smith'}</h4>
+                      <h4 className="text-lg font-bold text-slate-900">Dr. {nextAppointment.dentist_name}</h4>
                       <p className="text-sm font-medium text-slate-500 mt-1">
-                        Dentist • {mockupUpcoming.service_name || 'Routine Checkup'}
+                        Dentist • {nextAppointment.service_name}
                       </p>
 
                       <div className="flex items-center gap-4 mt-6">
-                        <button className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">
+                        <button 
+                          onClick={() => handleReschedule(nextAppointment)}
+                          className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                        >
                           Reschedule
                         </button>
-                        <button className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors">
+                        <button 
+                          onClick={() => handleCancel(nextAppointment.id)}
+                          className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors"
+                        >
                           Cancel
                         </button>
                       </div>
@@ -205,11 +243,7 @@ const Dashboard = () => {
                     <div className="flex flex-col gap-3 text-sm font-medium text-slate-600 sm:items-end">
                       <div className="flex items-center gap-2">
                         <Clock size={16} className="text-slate-400" />
-                        <span>{mockupUpcoming.appointment_time.substring(0, 5)} AM - {(parseInt(mockupUpcoming.appointment_time.substring(0, 2)) + 1).toString().padStart(2, '0')}:00 AM</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin size={16} className="text-slate-400" />
-                        <span>Room 302</span>
+                        <span>{formatTime12h(nextAppointment.appointment_time)}</span>
                       </div>
                     </div>
                   </div>
@@ -310,7 +344,7 @@ const Dashboard = () => {
                       <div className="mt-2 space-y-1">
                         <p className="text-slate-500 font-bold text-sm flex items-center gap-2">
                           <Clock size={16} className="text-[#a1c4fd]" />
-                          {new Date(apt.appointment_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at {apt.appointment_time.substring(0, 5)}
+                          {new Date(apt.appointment_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at {formatTime12h(apt.appointment_time)}
                         </p>
                         <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Dentist: {apt.dentist_name}</p>
                       </div>
@@ -321,7 +355,10 @@ const Dashboard = () => {
                       {apt.status}
                     </span>
                     {apt.status === 'pending' && (
-                      <button className="text-red-500 hover:text-red-700 text-sm font-black hover:underline transition-all underline-offset-4">
+                      <button 
+                        onClick={() => handleCancel(apt.id)}
+                        className="text-red-500 hover:text-red-700 text-sm font-black hover:underline transition-all underline-offset-4"
+                      >
                         Cancel Request
                       </button>
                     )}

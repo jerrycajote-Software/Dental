@@ -3,15 +3,15 @@ import api from '../services/api';
 import appointmentService from '../services/appointmentService';
 import { X } from 'lucide-react';
 
-const AppointmentForm = ({ onClose, onSuccess }) => {
+const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
   const [services, setServices] = useState([]);
   const [dentists, setDentists] = useState([]);
   const [formData, setFormData] = useState({
-    service_id: '',
-    dentist_id: '',
-    appointment_date: '',
-    appointment_time: '',
-    notes: '',
+    service_id: appointment?.service_id || '',
+    dentist_id: appointment?.dentist_id || '',
+    appointment_date: appointment?.appointment_date ? new Date(appointment.appointment_date).toISOString().split('T')[0] : '',
+    appointment_time: appointment?.appointment_time || '',
+    notes: appointment?.notes || '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -41,7 +41,11 @@ const AppointmentForm = ({ onClose, onSuccess }) => {
     setLoading(true);
     setError('');
     try {
-      await appointmentService.createAppointment(formData);
+      if (appointment) {
+        await appointmentService.updateAppointment(appointment.id, formData);
+      } else {
+        await appointmentService.createAppointment(formData);
+      }
       onSuccess();
       onClose();
     } catch (err) {
@@ -56,8 +60,10 @@ const AppointmentForm = ({ onClose, onSuccess }) => {
       <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-blue-50 animate-in zoom-in-95 duration-300">
         <div className="bg-gradient-to-r from-[#1a237e] to-[#42a5f5] p-8 text-white flex justify-between items-center">
           <div>
-            <h3 className="text-2xl font-black">Book Appointment</h3>
-            <p className="text-blue-100 text-sm font-bold opacity-80 mt-1">Schedule your next dental visit</p>
+            <h3 className="text-2xl font-black">{appointment ? 'Reschedule Appointment' : 'Book Appointment'}</h3>
+            <p className="text-blue-100 text-sm font-bold opacity-80 mt-1">
+              {appointment ? 'Update your visit details' : 'Schedule your next dental visit'}
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -161,7 +167,7 @@ const AppointmentForm = ({ onClose, onSuccess }) => {
                 </svg>
                 Processing...
               </span>
-            ) : 'Confirm Appointment'}
+            ) : (appointment ? 'Update Appointment' : 'Confirm Appointment')}
           </button>
         </form>
       </div>

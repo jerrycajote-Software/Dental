@@ -21,7 +21,8 @@ const logout = () => {
 };
 
 const getCurrentUser = () => {
-  return JSON.parse(localStorage.getItem('user'));
+  const stored = localStorage.getItem('user');
+  return stored ? JSON.parse(stored) : null;
 };
 
 const resendVerification = async (email) => {
