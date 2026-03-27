@@ -16,10 +16,19 @@ const ALL_SLOTS = [
   { label: '5:00 PM',  value: '17:00' },
 ];
 
+const SLOT_DURATION_MINS = 60;
+
+const timeToMinutes = (timeStr) => {
+  if (!timeStr || typeof timeStr !== 'string') return 0;
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + m;
+};
+
 const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
   const [services, setServices] = useState([]);
   const [dentists, setDentists] = useState([]);
-  const [bookedSlots, setBookedSlots] = useState([]); // array of "HH:MM" strings
+  const [bookedSlots, setBookedSlots] = useState([]); // array of { time, duration } objects
+  const [doctorSchedule, setDoctorSchedule] = useState(null); // { start, end } or null
   const [formData, setFormData] = useState({
     service_id: appointment?.service_id || '',
     dentist_id: appointment?.dentist_id || '',
@@ -55,32 +64,69 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
     fetch();
   }, [formData.appointment_date]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Re-fetch booked slots whenever doctor or date changes
+  // Re-fetch booked slots whenever doctor or date changes, with 30s polling for real-time accuracy
   useEffect(() => {
     if (!formData.dentist_id || !formData.appointment_date) {
       setBookedSlots([]);
+      setDoctorSchedule(null);
       return;
     }
-    const fetch = async () => {
+
+    const fetchBookedSlots = async () => {
       try {
         const res = await api.get(
           `/appointments/booked-slots?dentist_id=${formData.dentist_id}&date=${formData.appointment_date}`
         );
-        setBookedSlots(res.data);
-        // Clear selected slot if it's now booked (e.g. rescheduling)
-        if (formData.appointment_time && res.data.includes(formData.appointment_time)) {
-          const isSelf = appointment &&
-            appointment.appointment_time?.slice(0, 5) === formData.appointment_time &&
-            String(appointment.dentist_id) === String(formData.dentist_id) &&
-            new Date(appointment.appointment_date).toISOString().split('T')[0] === formData.appointment_date;
-          if (!isSelf) setFormData(prev => ({ ...prev, appointment_time: '' }));
+        
+        const { booked, schedule } = res.data || {};
+        
+        // Defensive: handle case where backend might still return old array format
+        // or where booked is missing
+        const finalBooked = Array.isArray(res.data) ? res.data.map(t => typeof t === 'string' ? { time: t, duration: 60 } : t)
+                         : Array.isArray(booked) ? booked
+                         : [];
+        
+        setDoctorSchedule(schedule || null);
+        setBookedSlots(finalBooked);
+
+        // If the currently selected slot was just booked by someone else (or overlaps), clear it
+        if (formData.appointment_time && finalBooked.length > 0) {
+          const isBooked = finalBooked.some(b => {
+            const slotStart = timeToMinutes(formData.appointment_time);
+            const slotEnd = slotStart + SLOT_DURATION_MINS;
+            const bookedStart = timeToMinutes(b?.time);
+            const bookedEnd = bookedStart + (b?.duration || 60);
+            return Math.max(slotStart, bookedStart) < Math.min(slotEnd, bookedEnd);
+          });
+          
+          const isOutsideSchedule = schedule && (
+            timeToMinutes(formData.appointment_time) < timeToMinutes(schedule.start) ||
+            timeToMinutes(formData.appointment_time) + SLOT_DURATION_MINS > timeToMinutes(schedule.end)
+          );
+
+          if (isBooked || isOutsideSchedule) {
+            // Check if it's the user's own appointment being edited
+            const isSelf = appointment &&
+              appointment.appointment_time?.slice(0, 5) === formData.appointment_time &&
+              String(appointment.dentist_id) === String(formData.dentist_id) &&
+              new Date(appointment.appointment_date).toISOString().split('T')[0] === formData.appointment_date;
+            
+            if (!isSelf) {
+              setFormData(prev => ({ ...prev, appointment_time: '' }));
+              setError(isBooked ? 'The selected time slot was just booked. Please choose another.' : 'The selected time is outside the doctor\'s working hours.');
+            }
+          }
         }
       } catch (err) {
         console.error('Failed to fetch booked slots', err);
       }
     };
-    fetch();
-  }, [formData.dentist_id, formData.appointment_date]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    fetchBookedSlots();
+    const interval = setInterval(fetchBookedSlots, 30000); // Poll every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [formData.dentist_id, formData.appointment_date, formData.appointment_time, appointment]); // added appointment_time and appointment to deps for safety
 
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -100,7 +146,23 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
     ) {
       return false;
     }
-    return bookedSlots.includes(slotValue);
+
+    const slotStart = timeToMinutes(slotValue);
+    const slotEnd = slotStart + SLOT_DURATION_MINS;
+
+    // Check doctor's schedule (if available)
+    if (doctorSchedule) {
+      if (slotStart < timeToMinutes(doctorSchedule.start) || slotEnd > timeToMinutes(doctorSchedule.end)) {
+        return true;
+      }
+    }
+
+    return (bookedSlots || []).some(booked => {
+      const bookedStart = timeToMinutes(booked?.time);
+      const bookedEnd = bookedStart + (booked?.duration || 60);
+      // Overlap if max(start1, start2) < min(end1, end2)
+      return Math.max(slotStart, bookedStart) < Math.min(slotEnd, bookedEnd);
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -208,7 +270,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
             {!formData.dentist_id || !formData.appointment_date ? (
               <p className="text-xs text-slate-400 italic px-1">Select a dentist and date to see available slots.</p>
             ) : (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="flex flex-wrap gap-2">
                 {ALL_SLOTS.map(slot => {
                   const booked = isSlotBooked(slot.value);
                   const selected = formData.appointment_time === slot.value;
@@ -218,7 +280,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
                       type="button"
                       disabled={booked}
                       onClick={() => handleSlotSelect(slot.value)}
-                      className={`py-3 rounded-2xl text-sm font-bold transition-all duration-200 border-2 ${
+                      className={`flex-1 min-w-[100px] py-3 rounded-2xl text-sm font-bold transition-all duration-200 border-2 ${
                         booked
                           ? 'bg-red-50 text-red-300 border-red-100 cursor-not-allowed line-through'
                           : selected

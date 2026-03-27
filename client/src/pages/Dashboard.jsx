@@ -214,14 +214,14 @@ const Dashboard = () => {
                   <Calendar className="text-blue-600" size={20} />
                   <h3 className="text-[17px] font-bold text-slate-800">Upcoming Appointments</h3>
                 </div>
-                <span className="text-xs font-bold text-blue-500 bg-blue-50 px-3 py-1 rounded-full">
+                <span className="px-3 py-1 text-xs font-bold text-blue-500 rounded-full bg-blue-50">
                   {upcomingAppointments.length} scheduled
                 </span>
               </div>
 
               <div>
                 {loading ? (
-                  <div className="flex flex-col items-center py-8 animate-pulse text-slate-400 text-sm">
+                  <div className="flex flex-col items-center py-8 text-sm animate-pulse text-slate-400">
                     Loading...
                   </div>
                 ) : upcomingAppointments.length > 0 ? (
@@ -233,9 +233,9 @@ const Dashboard = () => {
                         return dateCompare !== 0 ? dateCompare : a.appointment_time.localeCompare(b.appointment_time);
                       })
                       .map(apt => (
-                        <div key={apt.id} className="p-5 hover:bg-slate-50/60 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div key={apt.id} className="flex flex-col justify-between gap-4 p-5 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
                           <div className="flex items-center gap-4">
-                            <div className="flex flex-col items-center justify-center w-14 h-14 text-blue-600 rounded-2xl bg-blue-50 shrink-0 font-black leading-none">
+                            <div className="flex flex-col items-center justify-center font-black leading-none text-blue-600 w-14 h-14 rounded-2xl bg-blue-50 shrink-0">
                               <span className="text-xl">
                                 {new Date(apt.appointment_date).getUTCDate()}
                               </span>
@@ -245,7 +245,7 @@ const Dashboard = () => {
                             </div>
                             <div>
                               <p className="font-bold text-slate-900">{apt.service_name}</p>
-                              <p className="text-sm text-slate-500 font-medium">Dr. {apt.dentist_name}</p>
+                              <p className="text-sm font-medium text-slate-500">Dr. {apt.dentist_name}</p>
                               <div className="flex items-center gap-1 mt-1">
                                 <Clock size={12} className="text-slate-400" />
                                 <span className="text-xs font-semibold text-slate-500">{formatTime12h(apt.appointment_time)}</span>
@@ -256,13 +256,13 @@ const Dashboard = () => {
                             {getStatusBadge(apt.status)}
                             <button
                               onClick={() => handleReschedule(apt)}
-                              className="text-xs font-bold text-blue-500 hover:text-blue-700 transition-colors"
+                              className="text-xs font-bold text-blue-500 transition-colors hover:text-blue-700"
                             >
                               Reschedule
                             </button>
                             <button
                               onClick={() => handleCancel(apt.id)}
-                              className="text-xs font-bold text-red-400 hover:text-red-600 transition-colors"
+                              className="text-xs font-bold text-red-400 transition-colors hover:text-red-600"
                             >
                               Cancel
                             </button>

@@ -26,21 +26,41 @@ const getAppointments = async (req, res) => {
   }
 };
 
-// Returns booked time slots for a given doctor + date (for the slot picker UI)
+// Returns booked time slots and their durations for a given doctor + date
+// Returns booked time slots and doctor's schedule for a given doctor + date
 const getBookedSlots = async (req, res) => {
   const { dentist_id, date } = req.query;
   if (!dentist_id || !date) {
     return res.status(400).json({ message: 'dentist_id and date are required' });
   }
   try {
-    const result = await db.query(
-      `SELECT appointment_time FROM appointments
-       WHERE dentist_id = $1 AND appointment_date = $2
-         AND status IN ('pending', 'confirmed')`,
+    const dayOfWeek = new Date(date).getDay();
+
+    // Fetch schedule for the specific doctor and day
+    const scheduleRes = await db.query(
+      'SELECT start_time, end_time FROM schedules WHERE dentist_id = $1 AND day_of_week = $2',
+      [dentist_id, dayOfWeek]
+    );
+
+    const appointmentsRes = await db.query(
+      `SELECT a.appointment_time, s.duration_minutes 
+       FROM appointments a
+       JOIN services s ON a.service_id = s.id
+       WHERE a.dentist_id = $1 AND a.appointment_date = $2
+         AND a.status IN ('pending', 'confirmed', 'completed')`,
       [dentist_id, date]
     );
-    // Return as array of "HH:MM" strings
-    res.json(result.rows.map(r => r.appointment_time.slice(0, 5)));
+
+    res.json({
+      schedule: scheduleRes.rows[0] ? {
+        start: (scheduleRes.rows[0].start_time || "").toString().slice(0, 5),
+        end: (scheduleRes.rows[0].end_time || "").toString().slice(0, 5)
+      } : null,
+      booked: appointmentsRes.rows.map(r => ({
+        time: (r.appointment_time || "").toString().slice(0, 5),
+        duration: r.duration_minutes
+      }))
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
