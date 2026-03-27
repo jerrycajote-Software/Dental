@@ -1,245 +1,140 @@
-## Dental System Monorepo
+# Dental Care Plus - Monorepo
 
-A full-stack dental clinic management system with:
-- **Admin side** for dentists/staff to manage appointments, schedules, services, and patients.
-- **Client side** for patients to browse services, book appointments, and chat with an AI assistant.
-
-This project is structured as a monorepo with separate frontend, backend, and database layers.
+A modern, full-stack dental clinic management system designed for seamless patient booking and efficient administrative oversight.
 
 ---
 
-## Tech Stack
+## 🚀 Overview
 
-- **Frontend**
-  - React (Vite)
-  - Tailwind CSS v4
-  - React Router
-  - Axios
-  - Lucide React (icons)
-
-- **Backend**
-  - Node.js + Express
-  - PostgreSQL (via `pg`)
-  - JWT authentication (`jsonwebtoken`)
-  - Password hashing (`bcryptjs`)
-  - OpenAI API (for AI assistant)
-  - (Optional) SendGrid for email notifications
-
-- **Database**
-  - PostgreSQL
-  - SQL schema and seed scripts
+Dental Care Plus provides a dual-interface experience:
+- **Client Portal**: Empowering patients to browse premium dental services, book appointments with real-time availability, and interact with an AI-powered dental assistant.
+- **Admin Dashboard**: A centralized hub for clinic staff to manage schedules, confirm appointments, and monitor clinic performance.
 
 ---
 
-## Project Structure
+## 🛠️ Tech Stack
 
-```text
-Dental/
-├── client/           # React frontend (Vite + Tailwind)
-├── server/           # Node.js + Express backend API
-├── database/         # SQL schema and seed data
-└── README.md         # This file
+### Frontend
+- **Framework**: React (Vite-powered)
+- **Styling**: Tailwind CSS v4 (Modern transitions and grid layouts)
+- **Icons**: Lucide React
+- **State Management**: React Context API (Auth & UI state)
+- **API Client**: Axios with interceptors for JWT handling
+
+### Backend
+- **Runtime**: Node.js & Express
+- **Database**: PostgreSQL (Robust relational storage)
+- **Security**: JWT Authentication & Bcrypt password hashing
+- **Integration**: OpenAI API (AI Dental Assistant)
+- **Communication**: SMTP/Nodemailer for verification and notifications
+
+---
+
+## 🗺️ Project Roadmap
+
+### Phase 1: Foundation (Completed)
+- [x] Initial monorepo structure
+- [x] Comprehensive database schema
+- [x] Secure authentication system (JWT)
+- [x] Basic CRUD for appointments and services
+
+### Phase 2: User Experience (Completed)
+- [x] **Real-Time Availability**: Booking form polls every 30s to prevent double-booking.
+- [x] **Smart Overlap Detection**: Advanced algorithm to handle flexible appointment durations.
+- [x] **Doctor Schedules**: Integration with specific working hours per doctor.
+- [x] **Modern UI**: Horizontal, responsive time-slot selection.
+
+### Phase 3: Advanced Features (Ongoing)
+- [ ] Automated SMS/Push reminders
+- [ ] Patient medical history tracking
+- [ ] Integrated billing and payment gateway
+- [ ] Multi-branch support
+
+---
+
+## 📊 Application Flow
+
+```mermaid
+graph TD
+    A[Visitor] -->|Registers/Logs In| B(Dashboard)
+    B --> C{Action}
+    C -->|Book| D[Service/Doctor Selection]
+    D -->|Real-time| E[Time Slot Selection]
+    E -->|Success| F[Pending Appointment]
+    C -->|AI Chat| G[Dental Assistant]
+    F -->|Admin View| H[Admin Dashboard]
+    H -->|Confirm/Cancel| I[Status Update]
+    I -->|Notify| A
 ```
 
-Key directories:
-
-- Frontend entry: `client/src/main.jsx`, `client/src/App.jsx`
-- Backend entry: `server/server.js`
-- Database scripts: `database/schema.sql`, `database/seed.sql`
-
 ---
 
-## Prerequisites
+## 📥 Setup Guide
 
-- Node.js (LTS recommended)
-- npm
-- PostgreSQL server running locally (or accessible remotely)
+### 1. Prerequisites
+- **Node.js**: v18+ recommended
+- **PostgreSQL**: Local instance running on port 5432
 
----
-
-## Environment Variables
-
-In `server/.env`:
-
-```bash
+### 2. Environment Configuration
+Create a `.env` file in the `server/` directory:
+```env
 PORT=5000
-DATABASE_URL=postgres://USER:PASSWORD@localhost:5432/dental_db
-JWT_SECRET=your_jwt_secret_key
-OPENAI_API_KEY=your_openai_api_key
-# SENDGRID_API_KEY=your_sendgrid_api_key
+DATABASE_URL=postgres://postgres:PASSWORD@localhost:5432/dental_db
+JWT_SECRET=your_secure_secret
+OPENAI_API_KEY=your_openai_key
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_app_password
 ```
 
-- `PORT` – API server port (default 5000).
-- `DATABASE_URL` – connection string to your PostgreSQL database.
-- `JWT_SECRET` – secret used to sign JWT tokens.
-- `OPENAI_API_KEY` – OpenAI API key for AI chatbot.
-- `SENDGRID_API_KEY` – optional, for email notifications (not required to run the app).
-
-> The app will run without `SENDGRID_API_KEY`; email features are simply inactive.
-
----
-
-## Setup Instructions
-
-### 1. Clone and install dependencies
-
-From the project root:
-
+### 3. Installation
 ```bash
-# Frontend
-cd client
-npm install
-
-# Backend
-cd ../server
-npm install
+# Install root (if using workspaces) or individual
+cd client && npm install
+cd ../server && npm install
 ```
 
-### 2. Configure the database
-
-1. Create a PostgreSQL database, for example:
-
-```sql
-CREATE DATABASE dental_db;
-```
-
-2. Run the schema script:
-
+### 4. Database Initialization
 ```bash
-psql -d dental_db -f database/schema.sql
+# Using psql
+psql -U postgres -f database/schema.sql
+psql -U postgres -f database/seed.sql
 ```
 
-3. Run the seed script:
-
+### 5. Start Development
 ```bash
-psql -d dental_db -f database/seed.sql
-```
-
-Adjust paths as necessary depending on where you run the commands from.
-
-### 3. Configure backend environment
-
-Create `server/.env` and fill in the variables described above.
-
----
-
-## Running the App
-
-### Backend (Express API)
-
-From the `server` folder:
-
-```bash
+# Start Backend (Server folder)
 npm start
-```
 
-The API will be available at:
-
-- `http://localhost:5000/`
-- `http://localhost:5000/api/...` for specific routes
-
-### Frontend (React + Vite)
-
-From the `client` folder:
-
-```bash
+# Start Frontend (Client folder)
 npm run dev
 ```
 
-Vite will show the local URL, typically:
+---
 
-- `http://localhost:5173/` (or next available port)
+## 📂 Project Structure
 
-Open that URL in your browser to use the app.
+```text
+Dental/
+├── client/           # React + Vite + Tailwind
+│   ├── src/components/ # Reusable UI 
+│   ├── src/pages/      # View layouts
+│   └── src/context/    # State management
+├── server/           # Express API
+│   ├── controllers/    # Business logic
+│   ├── routes/         # API endpoints
+│   └── middleware/     # Auth & validation
+└── database/         # SQL Migrations
+```
 
 ---
 
-## Main Features
-
-### Client Portal
-
-- Landing page with services overview and hero section.
-- User registration and login.
-- Client dashboard:
-  - View upcoming appointments.
-  - Book new appointments (date, time, dentist, service, notes).
-- AI chatbot integrated with OpenAI for answering dental-related questions.
-
-### Admin Dashboard
-
-- View and manage appointment requests.
-- Confirm or cancel appointments.
-- Overview cards (patients, appointments, pending requests, revenue – currently partly static).
-- Designed to extend to:
-  - Patient management
-  - Service management
-  - Dentist schedules
-
-### API Overview
-
-Base URL: `http://localhost:5000/api`
-
-- `POST /auth/register` – create a new user.
-- `POST /auth/login` – authenticate and return JWT + user info.
-- `GET /appointments` – get appointments for the logged-in user.
-- `POST /appointments` – create an appointment for the logged-in client.
-- `PATCH /appointments/:id/status` – update appointment status (e.g. confirmed, cancelled).
-- `GET /services` – list dental services.
-- `GET /services/dentists` – list dentists (users with role `dentist`).
-- `POST /ai/chat` – send a message to the AI assistant (requires auth).
-
-> Protected routes require an `Authorization: Bearer <token>` header. The frontend handles this automatically using Axios interceptors.
+## 🔐 Security & Role Management
+- **Patients**: Access to booking, history, and AI chat.
+- **Admins**: Full control over appointment status and clinic data.
+- **Verification**: Mandatory email verification for all new accounts to ensure data integrity.
 
 ---
 
-## Frontend Structure (client)
-
-Relevant files:
-
-- `src/main.jsx` – React entry, wraps app with `AuthProvider`.
-- `src/App.jsx` – router and page layout.
-- `src/pages/Home.jsx` – landing page with hero and services.
-- `src/pages/Login.jsx` / `src/pages/Register.jsx` – auth forms.
-- `src/pages/Dashboard.jsx` – client dashboard.
-- `src/pages/AdminDashboard.jsx` – admin dashboard.
-- `src/components/Navbar.jsx` – top navigation bar.
-- `src/components/Footer.jsx` – footer.
-- `src/components/AppointmentForm.jsx` – appointment booking modal.
-- `src/components/Chatbot.jsx` – AI assistant widget.
-- `src/context/AuthContext.jsx` – global auth state.
-- `src/services/api.js` – Axios instance.
-- `src/services/authService.js` – auth-related API calls.
-- `src/services/appointmentService.js` – appointment-related API calls.
-
----
-
-## Backend Structure (server)
-
-Key files:
-
-- `server.js` – Express app entry, route mounting.
-- `config/db.js` – PostgreSQL connection pool.
-- `controllers/authController.js` – registration and login logic.
-- `controllers/appointmentController.js` – appointment CRUD.
-- `controllers/serviceController.js` – services and dentists listing.
-- `controllers/aiController.js` – OpenAI chat integration.
-- `routes/authRoutes.js` – `/api/auth` routes.
-- `routes/appointmentRoutes.js` – `/api/appointments` routes.
-- `routes/serviceRoutes.js` – `/api/services` routes.
-- `routes/aiRoutes.js` – `/api/ai` routes.
-- `middleware/authMiddleware.js` – JWT auth and admin checks.
-
----
-
-## Notes and Next Steps
-
-- **Email notifications** via SendGrid are not wired yet; once you set `SENDGRID_API_KEY`, you can extend controllers to send emails for appointment confirmations and reminders.
-- **Role management** (client, dentist, admin) is basic. You may want to build dedicated admin pages for managing roles and users.
-- Consider adding tests, linting commands, and CI workflow as the project grows.
-
----
-
-## License
-
-This project is for educational and internal use. Add a specific license here if you plan to distribute it.
+## 📄 License
+Internal Development - All Rights Reserved.
 
