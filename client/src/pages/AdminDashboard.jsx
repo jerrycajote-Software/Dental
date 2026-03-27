@@ -203,6 +203,29 @@ const AdminDashboard = () => {
     return matchesSearch && matchesStatus;
   });
 
+  // Helpers for today's data
+  const formatTime12h = (time24) => {
+    if (!time24) return '';
+    const [hours, minutes] = time24.split(':');
+    const h = parseInt(hours);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${minutes} ${ampm}`;
+  };
+
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const todaysAppointments = appointments
+    .filter(apt => {
+      const aptDate = new Date(apt.appointment_date).toISOString().split('T')[0];
+      return aptDate === todayStr;
+    })
+    .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
+
+  const patientQueue = todaysAppointments
+    .filter(apt => apt.status === 'confirmed' || apt.status === 'pending')
+    .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
+
   return (
     <div className="flex h-screen bg-[#c2e9fb] overflow-hidden text-slate-800 font-sans">
 
@@ -341,8 +364,8 @@ const AdminDashboard = () => {
               {/* LOWER SECTION: CHART & ACTIVITY */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                {/* Appointments Overview Chart (Takes 2 columns) */}
-                <div className="lg:col-span-2 bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
+              {/* Appointments Overview Chart (Takes full width) */}
+                <div className="lg:col-span-3 bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-bold text-slate-800">Appointments Overview</h3>
                     <select className="text-xs font-semibold text-slate-500 bg-transparent border-none outline-none cursor-pointer hover:text-slate-700">
@@ -392,25 +415,6 @@ const AdminDashboard = () => {
                     </ResponsiveContainer>
                   </div>
                 </div>
-
-                {/* Recent Activity (Takes 1 column) */}
-                <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
-                  <h3 className="text-lg font-bold text-slate-800 mb-6">Recent Activity</h3>
-
-                  <div className="space-y-6">
-
-                    <div className="p-4 text-center text-sm text-slate-400 italic">
-                      No recent activity logged yet.
-                    </div>
-
-                  </div>
-
-                  <div className="mt-8 text-center pt-4 border-t border-slate-100">
-                    <button className="text-blue-500 text-xs font-bold hover:text-blue-600 transition-colors">
-                      View All Activity
-                    </button>
-                  </div>
-                </div>
               </div>
 
               {/* NEW WIDGETS SECTION */}
@@ -423,12 +427,30 @@ const AdminDashboard = () => {
                       <Users className="text-[#a855f7]" size={20} />
                       <h3 className="text-lg font-bold text-slate-900">Patient Queue</h3>
                     </div>
-                    <p className="text-xs text-slate-500 font-medium">0 patients waiting</p>
+                    <p className="text-xs text-slate-500 font-medium">
+                      {patientQueue.length} patient{patientQueue.length !== 1 ? 's' : ''} waiting today
+                    </p>
                   </div>
                   {/* List */}
                   <div className="p-6 flex-1 max-h-[350px] overflow-y-auto">
                     <div className="space-y-4">
-                      <p className="text-center text-xs text-slate-400 py-8 italic">No patients in queue</p>
+                      {patientQueue.length > 0 ? patientQueue.map((apt, i) => (
+                        <div key={apt.id} className="flex items-center gap-3">
+                          <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-600 text-[10px] font-black flex items-center justify-center shrink-0">{i + 1}</span>
+                          <div className="w-8 h-8 rounded-full bg-[#ecf2fa] text-slate-600 flex items-center justify-center text-xs font-bold ring-1 ring-slate-200 shrink-0">
+                            {getInitials(apt.client_name)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-slate-800 truncate">{apt.client_name}</p>
+                            <p className="text-[11px] font-medium text-slate-400">{apt.service_name}</p>
+                          </div>
+                          <span className="text-xs font-bold text-slate-500 shrink-0">
+                            {formatTime12h(apt.appointment_time)}
+                          </span>
+                        </div>
+                      )) : (
+                        <p className="text-center text-xs text-slate-400 py-8 italic">No patients in queue for today</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -459,16 +481,37 @@ const AdminDashboard = () => {
                     <CalendarCheck className="text-blue-600" size={20} />
                     <h3 className="text-lg font-bold text-slate-900">Today's Schedule</h3>
                   </div>
-                  <div className="flex gap-4 text-slate-500">
-                    <button><Search size={18} className="hover:text-slate-800 transition-colors" /></button>
-                    <button><Filter size={18} className="hover:text-slate-800 transition-colors" /></button>
-                  </div>
+                  <span className="text-xs font-bold text-blue-500 bg-blue-50 px-3 py-1 rounded-full">
+                    {todaysAppointments.length} appointment{todaysAppointments.length !== 1 ? 's' : ''}
+                  </span>
                 </div>
                 {/* List */}
                 <div className="p-0">
-                  <div className="flex flex-col">
-                    <p className="text-center text-xs text-slate-400 py-12 italic">No appointments scheduled for today.</p>
-                  </div>
+                  {todaysAppointments.length > 0 ? (
+                    <div className="flex flex-col divide-y divide-slate-50">
+                      {todaysAppointments.map(apt => (
+                        <div key={apt.id} className="flex items-center justify-between px-6 py-4 hover:bg-slate-50/50 transition-colors">
+                          <div className="flex items-center gap-4">
+                            <div className="w-9 h-9 rounded-full bg-[#ecf2fa] text-slate-600 flex items-center justify-center text-xs font-bold ring-1 ring-slate-200 shrink-0">
+                              {getInitials(apt.client_name)}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-slate-800">{apt.client_name}</p>
+                              <p className="text-xs font-medium text-slate-400">{apt.service_name} &bull; Dr. {apt.dentist_name}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="text-sm font-bold text-slate-600">{formatTime12h(apt.appointment_time)}</span>
+                            <StatusBadge status={apt.status} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col">
+                      <p className="text-center text-xs text-slate-400 py-12 italic">No appointments scheduled for today.</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </>
@@ -483,9 +526,6 @@ const AdminDashboard = () => {
                   <h1 className="text-2xl font-bold text-slate-900 mb-1">Appointments</h1>
                   <p className="text-slate-500 text-sm">Manage patient bookings and schedules.</p>
                 </div>
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center gap-2">
-                  <Filter size={16} /> Filter View
-                </button>
               </div>
 
               {/* Search & Filter Bar */}
@@ -621,9 +661,6 @@ const AdminDashboard = () => {
                   <h1 className="text-2xl font-bold text-slate-900 mb-1">Patients</h1>
                   <p className="text-slate-500 text-sm">Manage patient records and history.</p>
                 </div>
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center gap-2">
-                  <Plus size={16} strokeWidth={2.5} /> Add New Patient
-                </button>
               </div>
 
               {/* Search Bar */}
@@ -916,9 +953,6 @@ const AdminDashboard = () => {
                     </button>
                     <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors">
                       <Lock size={18} className="text-slate-400 group-hover:text-slate-500" /> Security
-                    </button>
-                    <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors">
-                      <Moon size={18} className="text-slate-400 group-hover:text-slate-500" /> Appearance
                     </button>
                     <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors">
                       <Globe size={18} className="text-slate-400 group-hover:text-slate-500" /> Language

@@ -84,6 +84,35 @@ const DoctorDashboard = () => {
     }
   };
 
+  // Format time to 12-hour PHT display
+  const formatTime12h = (time24) => {
+    if (!time24) return '';
+    const [hours, minutes] = time24.split(':');
+    const h = parseInt(hours);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${minutes} ${ampm} PHT`;
+  };
+
+  // Returns true if the appointment date+time has already passed (PHT = UTC+8)
+  const isAppointmentPast = (dateStr, timeStr) => {
+    if (!dateStr || !timeStr) return false;
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    // appointment_date from DB is already UTC midnight; get local date parts
+    const apptDate = new Date(dateStr);
+    // Build a Date using the date components and appointment time in PHT (UTC+8)
+    const apptDateTime = new Date(
+      apptDate.getUTCFullYear(),
+      apptDate.getUTCMonth(),
+      apptDate.getUTCDate(),
+      hours,
+      minutes
+    );
+    // Compare against current PHT time
+    const nowPHT = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+    return apptDateTime < nowPHT;
+  };
+
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Top Bar */}
@@ -216,7 +245,7 @@ const DoctorDashboard = () => {
                             <p className="text-sm font-bold text-slate-900">
                               {new Date(appt.appointment_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                             </p>
-                            <p className="text-xs font-medium text-[#1089d3]">{appt.appointment_time}</p>
+                            <p className="text-xs font-medium text-[#1089d3]">{formatTime12h(appt.appointment_time)}</p>
                           </div>
                         </td>
                         <td className="px-8 py-6">
@@ -236,13 +265,23 @@ const DoctorDashboard = () => {
                               </button>
                             )}
                             {appt.status === 'confirmed' && (
-                              <button 
-                                onClick={() => handleStatusUpdate(appt.id, 'completed')}
-                                className="p-2 text-blue-600 transition-all duration-200 rounded-lg bg-blue-50 hover:bg-blue-600 hover:text-white"
-                                title="Mark as Completed"
-                              >
-                                <FiActivity />
-                              </button>
+                              isAppointmentPast(appt.appointment_date, appt.appointment_time) ? (
+                                <button 
+                                  onClick={() => handleStatusUpdate(appt.id, 'completed')}
+                                  className="p-2 text-blue-600 transition-all duration-200 rounded-lg bg-blue-50 hover:bg-blue-600 hover:text-white"
+                                  title="Mark as Completed"
+                                >
+                                  <FiActivity />
+                                </button>
+                              ) : (
+                                <button 
+                                  disabled
+                                  className="p-2 text-slate-300 rounded-lg bg-slate-50 cursor-not-allowed"
+                                  title="Appointment has not occurred yet"
+                                >
+                                  <FiActivity />
+                                </button>
+                              )
                             )}
                             {(appt.status === 'pending' || appt.status === 'confirmed') && (
                               <button 

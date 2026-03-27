@@ -40,6 +40,18 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Validate time is within 9:00 AM – 6:00 PM
+    if (formData.appointment_time) {
+      const [hours, minutes] = formData.appointment_time.split(':').map(Number);
+      const totalMinutes = hours * 60 + minutes;
+      if (totalMinutes < 9 * 60 || totalMinutes > 18 * 60) {
+        setError('Appointments can only be booked between 9:00 AM and 6:00 PM.');
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       if (appointment) {
         await appointmentService.updateAppointment(appointment.id, formData);
@@ -128,12 +140,14 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
               />
             </div>
             <div className="space-y-2">
-              <label className="block text-sm font-black text-slate-700 ml-1 uppercase tracking-widest">Preferred Time</label>
+              <label className="block text-sm font-black text-slate-700 ml-1 uppercase tracking-widest">Preferred Time <span className="text-xs font-medium text-slate-400 normal-case tracking-normal">(9:00 AM – 6:00 PM)</span></label>
               <input
                 type="time"
                 name="appointment_time"
                 value={formData.appointment_time}
                 onChange={handleChange}
+                min="09:00"
+                max="18:00"
                 className="w-full bg-slate-50 border-none rounded-2xl p-4 text-slate-900 font-bold focus:ring-2 focus:ring-[#a1c4fd] transition-all"
                 required
               />

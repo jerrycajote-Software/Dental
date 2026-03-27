@@ -81,13 +81,13 @@ const Dashboard = () => {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'confirmed':
-        return <span className="px-3 py-1 bg-blue-100/50 text-blue-600 text-xs font-bold rounded-full">Confirmed</span>;
+        return <span className="px-3 py-1 text-xs font-bold text-blue-600 rounded-full bg-blue-100/50">Confirmed</span>;
       case 'completed':
-        return <span className="px-3 py-1 bg-green-100/50 text-emerald-600 text-xs font-bold rounded-full">Completed</span>;
+        return <span className="px-3 py-1 text-xs font-bold rounded-full bg-green-100/50 text-emerald-600">Completed</span>;
       case 'cancelled':
-        return <span className="px-3 py-1 bg-red-100/50 text-red-600 text-xs font-bold rounded-full">Cancelled</span>;
+        return <span className="px-3 py-1 text-xs font-bold text-red-600 rounded-full bg-red-100/50">Cancelled</span>;
       default:
-        return <span className="px-3 py-1 bg-amber-100/50 text-amber-600 text-xs font-bold rounded-full capitalize">{status}</span>;
+        return <span className="px-3 py-1 text-xs font-bold capitalize rounded-full bg-amber-100/50 text-amber-600">{status}</span>;
     }
   };
 
@@ -115,11 +115,10 @@ const Dashboard = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${
-                activeTab === tab 
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+              className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${activeTab === tab
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
                   : 'text-slate-500 hover:bg-white hover:text-slate-800'
-              }`}
+                }`}
             >
               {tab}
             </button>
@@ -129,12 +128,12 @@ const Dashboard = () => {
         {activeTab === 'Overview' ? (
           <>
             {/* HEADER SECTION */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-2">
+            <div className="flex flex-col items-start justify-between gap-6 mb-2 md:flex-row md:items-center">
               <div>
-                <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                <h2 className="text-3xl font-black tracking-tight text-slate-900">
                   Welcome back, {user?.name ? user.name.split(' ')[0] : 'John'}!
                 </h2>
-                <p className="text-slate-500 font-medium mt-2 text-md">
+                <p className="mt-2 font-medium text-slate-500 text-md">
                   Here is your dental health overview.
                 </p>
               </div>
@@ -155,21 +154,21 @@ const Dashboard = () => {
         ) : (
           /* SETTINGS TAB CONTENT */
           <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-blue-900/5 overflow-hidden border border-blue-50 p-10">
-            <h3 className="text-2xl font-black text-slate-900 mb-8">Account Settings</h3>
-            
+            <h3 className="mb-8 text-2xl font-black text-slate-900">Account Settings</h3>
+
             <div className="space-y-10">
-              <div className="p-8 rounded-3xl bg-red-50 border border-red-100">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="p-8 border border-red-100 rounded-3xl bg-red-50">
+                <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
                   <div className="space-y-2">
                     <h4 className="text-lg font-black text-red-600">Delete Account</h4>
-                    <p className="text-sm font-medium text-red-400 max-w-md">
+                    <p className="max-w-md text-sm font-medium text-red-400">
                       Permanently remove your account and all associated data. You won't be able to re-register with this email address for 24 hours.
                     </p>
                   </div>
-                  <button 
+                  <button
                     onClick={handleDeleteAccount}
                     disabled={deleting}
-                    className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-red-600/20 disabled:opacity-50"
+                    className="px-8 py-4 font-black text-white transition-all bg-red-600 shadow-lg hover:bg-red-700 rounded-2xl shadow-red-600/20 disabled:opacity-50"
                   >
                     {deleting ? 'Deleting...' : 'Delete My Account'}
                   </button>
@@ -190,14 +189,14 @@ const Dashboard = () => {
           />
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
           {/* MAIN COLUMN (Upcoming Appointment + Quick Actions ) */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6 lg:col-span-2">
 
             {/* UPCOMING APPOINTMENT WIDGET */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-              <div className="px-6 py-5 border-b border-slate-50 flex items-center justify-between bg-white/50">
+            <div className="overflow-hidden bg-white border shadow-sm rounded-2xl border-slate-100">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-slate-50 bg-white/50">
                 <div className="flex items-center gap-3">
                   <Calendar className="text-blue-600" size={20} />
                   <h3 className="text-[17px] font-bold text-slate-800">Upcoming Appointment</h3>
@@ -207,12 +206,12 @@ const Dashboard = () => {
 
               <div className="p-6">
                 {loading ? (
-                  <div className="animate-pulse flex flex-col items-center py-8 text-slate-400">
+                  <div className="flex flex-col items-center py-8 animate-pulse text-slate-400">
                     Loading...
                   </div>
                 ) : nextAppointment ? (
-                  <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-                    <div className="flex flex-col items-center justify-center w-20 h-20 rounded-full bg-blue-100/50 text-blue-600 shrink-0">
+                  <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
+                    <div className="flex flex-col items-center justify-center w-20 h-20 text-blue-600 rounded-full bg-blue-100/50 shrink-0">
                       <span className="text-2xl font-black leading-none">
                         {new Date(nextAppointment.appointment_date).getDate()}
                       </span>
@@ -220,20 +219,20 @@ const Dashboard = () => {
 
                     <div className="flex-1">
                       <h4 className="text-lg font-bold text-slate-900">Dr. {nextAppointment.dentist_name}</h4>
-                      <p className="text-sm font-medium text-slate-500 mt-1">
+                      <p className="mt-1 text-sm font-medium text-slate-500">
                         Dentist • {nextAppointment.service_name}
                       </p>
 
                       <div className="flex items-center gap-4 mt-6">
-                        <button 
+                        <button
                           onClick={() => handleReschedule(nextAppointment)}
-                          className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                          className="text-sm font-bold text-blue-600 transition-colors hover:text-blue-700"
                         >
                           Reschedule
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleCancel(nextAppointment.id)}
-                          className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors"
+                          className="text-sm font-bold text-red-500 transition-colors hover:text-red-700"
                         >
                           Cancel
                         </button>
@@ -248,15 +247,15 @@ const Dashboard = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-6">
-                    <p className="text-slate-500 font-medium">No upcoming appointments scheduled.</p>
+                  <div className="py-6 text-center">
+                    <p className="font-medium text-slate-500">No upcoming appointments scheduled.</p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* APPOINTMENT HISTORY WIDGET */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="overflow-hidden bg-white border shadow-sm rounded-2xl border-slate-100">
               <div className="px-6 py-6 border-b border-slate-50 bg-white/50">
                 <h3 className="text-[17px] font-bold text-slate-800">Appointment History</h3>
               </div>
@@ -274,7 +273,7 @@ const Dashboard = () => {
                   <tbody className="divide-y divide-slate-50">
                     {/* Past appointments will be rendered below dynamically from the database */}
                     {pastAppointments.slice(0, 3).map(apt => (
-                      <tr key={apt.id} className="hover:bg-slate-50/50 transition-colors">
+                      <tr key={apt.id} className="transition-colors hover:bg-slate-50/50">
                         <td className="px-6 py-5 text-sm font-medium text-slate-800">
                           {new Date(apt.appointment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </td>
@@ -290,32 +289,6 @@ const Dashboard = () => {
 
           </div>
 
-          {/* SIDE COLUMN (Quick Actions) */}
-          <div className="space-y-6">
-
-            {/* QUICK ACTIONS WIDGET */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-              <h3 className="text-[17px] font-bold text-slate-800 mb-6">Quick Actions</h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                <button className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl bg-[#f0fdf4]/70 hover:bg-[#f0fdf4] transition-colors group cursor-pointer border border-transparent hover:border-green-100">
-                  <FileText size={28} className="text-emerald-600 group-hover:scale-110 transition-transform duration-300" />
-                  <span className="text-sm font-bold text-emerald-600">Records</span>
-                </button>
-
-                <button className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl bg-[#faf5ff]/70 hover:bg-[#faf5ff] transition-colors group cursor-pointer border border-transparent hover:border-purple-100">
-                  <Activity size={28} className="text-purple-600 group-hover:scale-110 transition-transform duration-300" />
-                  <span className="text-sm font-bold text-purple-600">Treatments</span>
-                </button>
-
-                <button className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl bg-[#fff7ed]/70 hover:bg-[#fff7ed] transition-colors group cursor-pointer border border-transparent hover:border-orange-100">
-                  <UserIcon size={28} className="text-orange-600 group-hover:scale-110 transition-transform duration-300" />
-                  <span className="text-sm font-bold text-orange-600">Profile</span>
-                </button>
-              </div>
-            </div>
-
-          </div>
         </div>
 
         {/* ORIGINAL WIDGET RESTORED */}
@@ -325,8 +298,8 @@ const Dashboard = () => {
           </div>
 
           {loading ? (
-            <div className="p-20 text-center text-slate-400 font-bold italic">
-              <div className="animate-pulse flex flex-col items-center">
+            <div className="p-20 italic font-bold text-center text-slate-400">
+              <div className="flex flex-col items-center animate-pulse">
                 <Calendar size={48} className="mb-4 opacity-20" />
                 Loading your appointments...
               </div>
@@ -342,11 +315,11 @@ const Dashboard = () => {
                     <div>
                       <h4 className="text-xl font-black text-slate-900">{apt.service_name}</h4>
                       <div className="mt-2 space-y-1">
-                        <p className="text-slate-500 font-bold text-sm flex items-center gap-2">
+                        <p className="flex items-center gap-2 text-sm font-bold text-slate-500">
                           <Clock size={16} className="text-[#a1c4fd]" />
                           {new Date(apt.appointment_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at {formatTime12h(apt.appointment_time)}
                         </p>
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Dentist: {apt.dentist_name}</p>
+                        <p className="text-xs font-bold tracking-wider uppercase text-slate-400">Dentist: {apt.dentist_name}</p>
                       </div>
                     </div>
                   </div>
@@ -355,9 +328,9 @@ const Dashboard = () => {
                       {apt.status}
                     </span>
                     {apt.status === 'pending' && (
-                      <button 
+                      <button
                         onClick={() => handleCancel(apt.id)}
-                        className="text-red-500 hover:text-red-700 text-sm font-black hover:underline transition-all underline-offset-4"
+                        className="text-sm font-black text-red-500 transition-all hover:text-red-700 hover:underline underline-offset-4"
                       >
                         Cancel Request
                       </button>
@@ -371,7 +344,7 @@ const Dashboard = () => {
               <div className="bg-[#f0f7ff] w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 text-[#a1c4fd] shadow-inner">
                 <AlertCircle size={40} />
               </div>
-              <p className="text-slate-500 font-bold text-lg">You don't have any appointments yet.</p>
+              <p className="text-lg font-bold text-slate-500">You don't have any appointments yet.</p>
               <button
                 onClick={() => setShowForm(true)}
                 className="mt-6 text-[#1a237e] font-black hover:underline underline-offset-4"
