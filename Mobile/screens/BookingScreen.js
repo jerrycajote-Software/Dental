@@ -9,9 +9,10 @@ import {
   TextInput,
   ActivityIndicator,
   Modal,
-  FlatList
+  FlatList,
+  Alert
 } from 'react-native';
-import { X, Calendar as CalendarIcon, Clock } from 'lucide-react-native';
+import { X, Calendar as CalendarIcon, Clock, ChevronDown } from 'lucide-react-native';
 import api from '../services/api';
 
 const BookingScreen = ({ navigation }) => {
@@ -19,49 +20,118 @@ const BookingScreen = ({ navigation }) => {
     service_id: '',
     dentist_id: '',
     appointment_date: '',
-    appointment_time: '',
+    appointment_time: '09:00', // Default time
     notes: '',
   });
 
   const [services, setServices] = useState([]);
   const [dentists, setDentists] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fetchingData, setFetchingData] = useState(true);
 
   // Custom dropdown states
   const [serviceOpen, setServiceOpen] = useState(false);
   const [dentistOpen, setDentistOpen] = useState(false);
-  const selectedService = services.find(s => s.id === formData.service_id);
-  const selectedDentist = dentists.find(d => d.id === formData.dentist_id);
+  const selectedService = services.find(s => String(s.id) === String(formData.service_id));
+  const selectedDentist = dentists.find(d => String(d.id) === String(formData.dentist_id));
 
   useEffect(() => {
-    // Mock data based on the screenshot, normally this would be an API call
-    setServices([
-      { id: '1', name: 'Cleaning' },
-      { id: '2', name: 'Checkup' },
-      { id: '3', name: 'Extraction' },
-    ]);
-
-    setDentists([
-      { id: '1', name: 'Dr. Smith' },
-      { id: '2', name: 'Dr. alvin' },
-    ]);
+    fetchInitialData();
+    
+    // Pre-fill if rescheduling
+    const rescheduleApt = navigation.getState().routes.find(r => r.name === 'Booking')?.params?.rescheduleApt;
+    if (rescheduleApt) {
+      // Format date from YYYY-MM-DD to DD/MM/YYYY
+      const [year, month, day] = rescheduleApt.appointment_date.split('-');
+      setFormData({
+        service_id: rescheduleApt.service_id,
+        dentist_id: rescheduleApt.dentist_id,
+        appointment_date: `${day}/${month}/${year}`,
+        appointment_time: rescheduleApt.appointment_time.substring(0, 5),
+        notes: rescheduleApt.notes || '',
+      });
+    }
   }, []);
 
-  const handleBooking = () => {
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      navigation.goBack();
-    }, 1000);
+  const fetchInitialData = async () => {
+    setFetchingData(true);
+    try {
+      const [servicesRes, dentistsRes] = await Promise.all([
+        api.get('/services'),
+        api.get('/auth/doctors')
+      ]);
+      setServices(servicesRes.data);
+      setDentists(dentistsRes.data);
+    } catch (err) {
+      console.error('Failed to fetch booking data:', err.message);
+      Alert.alert('Error', 'Failed to load services or dentists. Please try again.');
+    } finally {
+      setFetchingData(false);
+    }
   };
+
+  const handleBooking = async () => {
+    if (!formData.service_id || !formData.dentist_id || !formData.appointment_date) {
+      Alert.alert('Error', 'Please fill in all required fields.');
+      return;
+    }
+
+    // Basic date format validation (dd/mm/yyyy)
+    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+    if (!dateRegex.test(formData.appointment_date)) {
+      Alert.alert('Error', 'Please enter date in DD/MM/YYYY format.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Convert DD/MM/YYYY to YYYY-MM-DD for backend
+      const [day, month, year] = formData.appointment_date.split('/');
+      const formattedDate = `${year}-${month}-${day}`;
+      
+      const rescheduleApt = navigation.getState().routes.find(r => r.name === 'Booking')?.params?.rescheduleApt;
+
+      if (rescheduleApt) {
+        // Update existing
+        await api.put(`/appointments/${rescheduleApt.id}`, {
+          ...formData,
+          appointment_date: formattedDate,
+        });
+        Alert.alert('Success', 'Appointment rescheduled successfully!', [
+          { text: 'OK', onPress: () => navigation.navigate('Dashboard') }
+        ]);
+      } else {
+        // Create new
+        await api.post('/appointments', {
+          ...formData,
+          appointment_date: formattedDate,
+        });
+        Alert.alert('Success', 'Appointment booked successfully!', [
+          { text: 'OK', onPress: () => navigation.navigate('Dashboard') }
+        ]);
+      }
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to process appointment.';
+      Alert.alert('Error', message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (fetchingData) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#1e40af" />
+        <Text style={styles.loadingText}>Loading booking options...</Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.modalOverlay}>
         <View style={styles.container}>
 
-          {/* HEADER (Gradient-like representation) */}
           <View style={styles.header}>
             <View>
               <Text style={styles.headerTitle}>Book Appointment</Text>
@@ -78,22 +148,29 @@ const BookingScreen = ({ navigation }) => {
               <View style={styles.halfWidth}>
                 <Text style={styles.label}>SELECT SERVICE</Text>
                 <TouchableOpacity
-                  style={styles.dropdownButton}
-                  onPress={() => setServiceOpen(!serviceOpen)}
+                  style={[styles.dropdownButton, serviceOpen && styles.dropdownButtonActive]}
+                  onPress={() => {
+                    setServiceOpen(!serviceOpen);
+                    setDentistOpen(false);
+                  }}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.dropdownText, !selectedService && styles.dropdownPlaceholder]}>
-                    {selectedService ? selectedService.name : 'Choose a service...'}
+                  <Text style={[styles.dropdownText, !selectedService && styles.dropdownPlaceholder]} numberOfLines={1}>
+                    {selectedService ? selectedService.name : 'Choose...'}
                   </Text>
+                  <ChevronDown size={16} color="#475569" />
                 </TouchableOpacity>
-                {/* Simulated service dropdown */}
                 {serviceOpen && (
                   <View style={styles.dropdownMenu}>
-                    <TouchableOpacity style={styles.dropdownMenuItem} onPress={() => { setFormData({ ...formData, service_id: '' }); setServiceOpen(false); }}>
-                      <Text style={styles.dropdownMenuItemTextActive}>Choose a service...</Text>
-                    </TouchableOpacity>
                     {services.map(s => (
-                      <TouchableOpacity key={s.id} style={styles.dropdownMenuItem} onPress={() => { setFormData({ ...formData, service_id: s.id }); setServiceOpen(false); }}>
+                      <TouchableOpacity 
+                        key={s.id} 
+                        style={styles.dropdownMenuItem} 
+                        onPress={() => { 
+                          setFormData({ ...formData, service_id: s.id }); 
+                          setServiceOpen(false); 
+                        }}
+                      >
                         <Text style={styles.dropdownMenuItemText}>{s.name}</Text>
                       </TouchableOpacity>
                     ))}
@@ -105,21 +182,28 @@ const BookingScreen = ({ navigation }) => {
                 <Text style={styles.label}>SELECT DENTIST</Text>
                 <TouchableOpacity
                   style={[styles.dropdownButton, dentistOpen && styles.dropdownButtonActive]}
-                  onPress={() => setDentistOpen(!dentistOpen)}
+                  onPress={() => {
+                    setDentistOpen(!dentistOpen);
+                    setServiceOpen(false);
+                  }}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.dropdownText, !selectedDentist && styles.dropdownPlaceholder]}>
-                    {selectedDentist ? selectedDentist.name : 'Choose a dentist...'}
+                  <Text style={[styles.dropdownText, !selectedDentist && styles.dropdownPlaceholder]} numberOfLines={1}>
+                    {selectedDentist ? selectedDentist.name : 'Choose...'}
                   </Text>
+                  <ChevronDown size={16} color="#475569" />
                 </TouchableOpacity>
-                {/* Simulated dentist dropdown matching the mockup */}
                 {dentistOpen && (
                   <View style={styles.dropdownMenu}>
-                    <TouchableOpacity style={[styles.dropdownMenuItem, styles.dropdownMenuItemActive]} onPress={() => { setFormData({ ...formData, dentist_id: '' }); setDentistOpen(false); }}>
-                      <Text style={styles.dropdownMenuItemTextActive}>Choose a dentist...</Text>
-                    </TouchableOpacity>
                     {dentists.map(d => (
-                      <TouchableOpacity key={d.id} style={styles.dropdownMenuItem} onPress={() => { setFormData({ ...formData, dentist_id: d.id }); setDentistOpen(false); }}>
+                      <TouchableOpacity 
+                        key={d.id} 
+                        style={styles.dropdownMenuItem} 
+                        onPress={() => { 
+                          setFormData({ ...formData, dentist_id: d.id }); 
+                          setDentistOpen(false); 
+                        }}
+                      >
                         <Text style={styles.dropdownMenuItemText}>{d.name}</Text>
                       </TouchableOpacity>
                     ))}
@@ -134,7 +218,7 @@ const BookingScreen = ({ navigation }) => {
                 <View style={styles.inputIconWrapper}>
                   <TextInput
                     style={styles.inputWithIcon}
-                    placeholder="dd/mm/yyyy"
+                    placeholder="DD/MM/YYYY"
                     placeholderTextColor="#64748b"
                     value={formData.appointment_date}
                     onChangeText={(val) => setFormData({ ...formData, appointment_date: val })}
@@ -142,7 +226,20 @@ const BookingScreen = ({ navigation }) => {
                   <CalendarIcon size={18} color="#0f172a" style={styles.rightIcon} />
                 </View>
               </View>
-              {/* Optional: Add time if required, mockup cuts off here */}
+              
+              <View style={styles.halfWidth}>
+                <Text style={styles.label}>PREFERRED TIME</Text>
+                <View style={styles.inputIconWrapper}>
+                  <TextInput
+                    style={styles.inputWithIcon}
+                    placeholder="HH:MM"
+                    placeholderTextColor="#64748b"
+                    value={formData.appointment_time}
+                    onChangeText={(val) => setFormData({ ...formData, appointment_time: val })}
+                  />
+                  <Clock size={18} color="#0f172a" style={styles.rightIcon} />
+                </View>
+              </View>
             </View>
 
             <View style={styles.fullWidth}>
@@ -181,11 +278,21 @@ const BookingScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#9ca3af', // Match modal overlay background color
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#1e40af',
+    fontWeight: 'bold',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)', // Dimmed background
     justifyContent: 'center',
     padding: 16,
   },
@@ -197,7 +304,7 @@ const styles = StyleSheet.create({
     maxHeight: 650,
   },
   header: {
-    backgroundColor: '#1e40af', // Base blue representation. RN doesn't do smooth arbitrary gradients without expo-linear-gradient, so we use a solid that looks close
+    backgroundColor: '#1e40af',
     padding: 24,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -249,20 +356,25 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: '#e2e8f0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   dropdownButtonActive: {
-    borderColor: '#000000',
+    borderColor: '#1e40af',
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
   },
   dropdownText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: '#0f172a',
+    flex: 1,
   },
   dropdownPlaceholder: {
-    color: '#0f172a',
+    color: '#94a3b8',
+    fontWeight: '500',
   },
   dropdownMenu: {
     position: 'absolute',
@@ -281,21 +393,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 5,
+    maxHeight: 200,
   },
   dropdownMenuItem: {
     padding: 12,
     paddingHorizontal: 16,
-  },
-  dropdownMenuItemActive: {
-    backgroundColor: '#2563eb', // Blue selection color
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
   },
   dropdownMenuItemText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#334155',
-  },
-  dropdownMenuItemTextActive: {
-    fontSize: 14,
-    color: '#ffffff',
+    fontWeight: '600',
   },
   input: {
     backgroundColor: '#f8fafc',
@@ -312,6 +421,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingRight: 16,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   inputWithIcon: {
     flex: 1,
@@ -327,7 +438,9 @@ const styles = StyleSheet.create({
     height: 120,
     textAlignVertical: 'top',
     fontWeight: '600',
-    color: '#64748b',
+    color: '#0f172a',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   submitButton: {
     backgroundColor: '#1e3a8a',
@@ -335,6 +448,11 @@ const styles = StyleSheet.create({
     padding: 18,
     alignItems: 'center',
     marginTop: 10,
+    shadowColor: '#1e3a8a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   submitButtonDisabled: {
     opacity: 0.7,

@@ -7,7 +7,8 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Modal
+  Modal,
+  Alert
 } from 'react-native';
 import {
   Calendar, Clock, CheckCircle, XCircle, AlertCircle,
@@ -35,6 +36,29 @@ const DashboardScreen = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancel = async (id) => {
+    Alert.alert(
+      'Cancel Appointment',
+      'Are you sure you want to cancel this appointment?',
+      [
+        { text: 'No', style: 'cancel' },
+        { 
+          text: 'Yes, Cancel', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.put(`/appointments/${id}/status`, { status: 'cancelled' });
+              Alert.alert('Success', 'Appointment cancelled.');
+              fetchAppointments();
+            } catch (err) {
+              Alert.alert('Error', 'Failed to cancel appointment.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const upcomingAppointments = appointments.filter(a => a.status === 'confirmed' || a.status === 'pending');
@@ -138,10 +162,10 @@ const DashboardScreen = ({ navigation }) => {
                 </View>
 
                 <View style={styles.actionButtonsRow}>
-                  <TouchableOpacity>
+                  <TouchableOpacity onPress={() => navigation.navigate('Booking', { rescheduleApt: nextAppointment })}>
                     <Text style={styles.rescheduleText}>Reschedule</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleCancel(nextAppointment.id)}>
                     <Text style={styles.cancelText}>Cancel</Text>
                   </TouchableOpacity>
                 </View>

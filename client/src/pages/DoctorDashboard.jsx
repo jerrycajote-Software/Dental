@@ -4,12 +4,12 @@ import { useAuth } from '../context/AuthContext';
 import appointmentService from '../services/appointmentService';
 import api from '../services/api';
 import styled from 'styled-components';
-import { 
-  FiCalendar, 
-  FiUsers, 
-  FiCheckCircle, 
-  FiClock, 
-  FiXCircle, 
+import {
+  FiCalendar,
+  FiUsers,
+  FiCheckCircle,
+  FiClock,
+  FiXCircle,
   FiLoader,
   FiActivity,
   FiToggleLeft,
@@ -241,7 +241,7 @@ const DoctorDashboard = () => {
           </div>
 
           {/* ── AVAILABILITY SECTION ─────────────────────────────────── */}
-          <div className="mb-10 bg-white border rounded-3xl border-slate-200 shadow-sm overflow-hidden">
+          <div className="mb-10 overflow-hidden bg-white border shadow-sm rounded-3xl border-slate-200">
             <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
               <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900">
                 <FiActivity className="text-[#1089d3]" />
@@ -250,23 +250,22 @@ const DoctorDashboard = () => {
               <p className="mt-1 text-sm text-slate-500">Manage when you're available for patient bookings.</p>
             </div>
 
-            <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 gap-8 p-8 md:grid-cols-2">
               {/* Toggle */}
-              <div className="flex items-center justify-between p-6 rounded-2xl border border-slate-100 bg-slate-50">
+              <div className="flex items-center justify-between p-6 border rounded-2xl border-slate-100 bg-slate-50">
                 <div>
                   <p className="font-bold text-slate-800">Availability Status</p>
-                  <p className="text-sm text-slate-500 mt-1">
+                  <p className="mt-1 text-sm text-slate-500">
                     {isAvailable ? 'You are visible to patients for booking.' : 'You are hidden from the booking system.'}
                   </p>
                 </div>
                 <button
                   onClick={handleToggleAvailability}
                   disabled={availabilityLoading}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 ${
-                    isAvailable
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 ${isAvailable
                       ? 'bg-emerald-500 text-white hover:bg-emerald-600'
                       : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
-                  } disabled:opacity-60`}
+                    } disabled:opacity-60`}
                 >
                   {isAvailable ? <FiToggleRight size={20} /> : <FiToggleLeft size={20} />}
                   {availabilityLoading ? 'Saving...' : isAvailable ? 'Available' : 'Unavailable'}
@@ -274,8 +273,8 @@ const DoctorDashboard = () => {
               </div>
 
               {/* Unavailable Dates */}
-              <div className="p-6 rounded-2xl border border-slate-100 bg-slate-50">
-                <p className="font-bold text-slate-800 mb-4">Mark Unavailable Dates</p>
+              <div className="p-6 border rounded-2xl border-slate-100 bg-slate-50">
+                <p className="mb-4 font-bold text-slate-800">Mark Unavailable Dates</p>
                 <div className="flex gap-2 mb-4">
                   <input
                     type="date"
@@ -293,20 +292,20 @@ const DoctorDashboard = () => {
                     {unavailLoading ? 'Adding...' : 'Add'}
                   </button>
                 </div>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
+                <div className="space-y-2 overflow-y-auto max-h-40">
                   {unavailableDates.length > 0 ? unavailableDates.map(d => (
                     <div key={d.id} className="flex items-center justify-between bg-white border border-slate-100 rounded-xl px-4 py-2.5">
                       <span className="text-sm font-semibold text-slate-700">{formatDisplayDate(d.unavailable_date)}</span>
                       <button
                         onClick={() => handleRemoveUnavailableDate(d.id)}
-                        className="text-rose-400 hover:text-rose-600 transition-colors p-1 rounded-lg hover:bg-rose-50"
+                        className="p-1 transition-colors rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50"
                         title="Remove"
                       >
                         <FiTrash2 size={15} />
                       </button>
                     </div>
                   )) : (
-                    <p className="text-xs text-slate-400 italic text-center py-4">No unavailable dates set.</p>
+                    <p className="py-4 text-xs italic text-center text-slate-400">No unavailable dates set.</p>
                   )}
                 </div>
               </div>
@@ -320,7 +319,7 @@ const DoctorDashboard = () => {
                 <FiUsers className="text-[#1089d3]" />
                 Appointment Schedule
               </h3>
-              <button 
+              <button
                 onClick={fetchAppointments}
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-400 hover:text-[#1089d3]"
               >
@@ -342,7 +341,7 @@ const DoctorDashboard = () => {
               </div>
             ) : appointments.length === 0 ? (
               <div className="p-20 text-center">
-               <div className="inline-block p-4 mb-4 border bg-slate-50 text-slate-400 rounded-2xl border-slate-100">
+                <div className="inline-block p-4 mb-4 border bg-slate-50 text-slate-400 rounded-2xl border-slate-100">
                   <FiCalendar size={32} />
                 </div>
                 <p className="text-lg font-bold text-slate-700">No appointments found</p>
@@ -395,7 +394,7 @@ const DoctorDashboard = () => {
                           <td className="px-8 py-6 text-right">
                             <div className="flex items-center justify-end gap-2 transition-opacity opacity-0 group-hover:opacity-100">
                               {appt.status === 'pending' && (
-                                <button 
+                                <button
                                   onClick={() => handleStatusUpdate(appt.id, 'confirmed')}
                                   className="p-2 transition-all duration-200 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white"
                                   title="Confirm Appointment"
@@ -405,7 +404,7 @@ const DoctorDashboard = () => {
                               )}
                               {appt.status === 'confirmed' && (
                                 isPast ? (
-                                  <button 
+                                  <button
                                     onClick={() => handleStatusUpdate(appt.id, 'completed')}
                                     className="p-2 text-blue-600 transition-all duration-200 rounded-lg bg-blue-50 hover:bg-blue-600 hover:text-white"
                                     title="Mark as Completed"
@@ -413,9 +412,9 @@ const DoctorDashboard = () => {
                                     <FiActivity />
                                   </button>
                                 ) : (
-                                  <button 
+                                  <button
                                     disabled
-                                    className="p-2 text-slate-300 rounded-lg bg-slate-50 cursor-not-allowed"
+                                    className="p-2 rounded-lg cursor-not-allowed text-slate-300 bg-slate-50"
                                     title="Appointment has not occurred yet"
                                   >
                                     <FiActivity />
@@ -423,7 +422,7 @@ const DoctorDashboard = () => {
                                 )
                               )}
                               {(appt.status === 'pending' || appt.status === 'confirmed') && (
-                                <button 
+                                <button
                                   onClick={() => handleStatusUpdate(appt.id, 'cancelled')}
                                   className="p-2 transition-all duration-200 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white"
                                   title="Cancel Appointment"
