@@ -11,7 +11,7 @@ const ChatBot = () => {
     if (input.trim()) {
       setMessages([...messages, { id: Date.now(), text: input, sender: 'user' }]);
       setInput('');
-      // AI logic would go here
+      // AI 
     }
   };
 

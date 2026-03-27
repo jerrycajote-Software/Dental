@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,13 +8,15 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Modal,
-  Alert
+  Alert,
+  Image
 } from 'react-native';
 import {
   Calendar, Clock, CheckCircle, XCircle, AlertCircle,
-  MapPin, Plus, FileText, Activity, User as UserIcon, MessageCircle, X
+  Plus, MessageCircle, X
 } from 'lucide-react-native';
-import api from '../services/api';
+import { useFocusEffect } from '@react-navigation/native';
+import api, { getUserInfo } from '../services/api';
 import ChatBot from '../components/ChatBot';
 
 const DashboardScreen = ({ navigation }) => {
@@ -22,9 +24,11 @@ const DashboardScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [isChatBotVisible, setIsChatBotVisible] = useState(false);
 
-  useEffect(() => {
-    fetchAppointments();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchAppointments();
+    }, [])
+  );
 
   const fetchAppointments = async () => {
     setLoading(true);
@@ -44,8 +48,8 @@ const DashboardScreen = ({ navigation }) => {
       'Are you sure you want to cancel this appointment?',
       [
         { text: 'No', style: 'cancel' },
-        { 
-          text: 'Yes, Cancel', 
+        {
+          text: 'Yes, Cancel',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -61,10 +65,7 @@ const DashboardScreen = ({ navigation }) => {
     );
   };
 
-  const upcomingAppointments = appointments.filter(a => a.status === 'confirmed' || a.status === 'pending');
-  const pastAppointments = appointments.filter(a => a.status === 'completed' || a.status === 'cancelled');
-
-  const nextAppointment = upcomingAppointments.length > 0 ? upcomingAppointments[0] : null;
+  const activeAppointments = appointments.filter(a => a.status === 'confirmed' || a.status === 'pending');
 
   const formatTime12h = (time24) => {
     if (!time24) return '';
@@ -78,7 +79,7 @@ const DashboardScreen = ({ navigation }) => {
   const getBadgeStyle = (status) => {
     switch (status) {
       case 'confirmed': return { bg: '#d1fae5', text: '#059669', label: 'Confirmed' }; // emerald
-      case 'completed': return { bg: '#d1fae5', text: '#059669', label: 'Completed' }; // emerald
+      case 'completed': return { bg: '#d1fae5', text: '#059669', label: 'Completed' };
       case 'cancelled': return { bg: '#fee2e2', text: '#dc2626', label: 'Cancelled' }; // red
       case 'pending': return { bg: '#fef08a', text: '#ca8a04', label: 'Pending' }; // yellow
       default: return { bg: '#ffedd5', text: '#ea580c', label: status }; // orange
@@ -94,11 +95,6 @@ const DashboardScreen = ({ navigation }) => {
     );
   };
 
-  // Helper to format history date
-  const formatShortDate = (dateString) => {
-    const d = new Date(dateString);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -107,7 +103,7 @@ const DashboardScreen = ({ navigation }) => {
         {/* HEADER SECTION */}
         <View style={styles.header}>
           <Text style={styles.welcomeText}>
-            Welcome back!
+            Welcome back, {getUserInfo()?.name || 'User'}!
           </Text>
           <Text style={styles.subtitleText}>
             Here is your dental health overview.
@@ -119,114 +115,61 @@ const DashboardScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* UPCOMING APPOINTMENT WIDGET */}
+        {/* CURRENT APPOINTMENT SCHEDULE WIDGET */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.cardHeaderLeft}>
               <Calendar size={20} color="#2563eb" />
-              <Text style={styles.cardTitle}>Upcoming Appointment</Text>
+              <Text style={styles.cardTitle}>Current Appointment Schedule</Text>
             </View>
-            {nextAppointment ? renderBadge(nextAppointment.status) : null}
+            <View style={styles.countBadge}>
+              <Text style={styles.countBadgeText}>{activeAppointments.length}</Text>
+            </View>
           </View>
 
           <View style={styles.cardBody}>
             {loading ? (
               <ActivityIndicator size="large" color="#2563eb" style={{ marginVertical: 20 }} />
-            ) : nextAppointment ? (
-              <View style={styles.upcomingContent}>
-                <View style={styles.upcomingRow1}>
-                  <View style={styles.dateCircle}>
-                    <Text style={styles.dateCircleText}>
-                      {new Date(nextAppointment.appointment_date).getDate()}
-                    </Text>
+            ) : activeAppointments.length > 0 ? (
+              activeAppointments.map((apt, index) => (
+                <View key={apt.id} style={[styles.scheduleItem, index !== activeAppointments.length - 1 && styles.scheduleItemBorder]}>
+                  <View style={styles.scheduleTimeContainer}>
+                    <Text style={styles.scheduleTime}>{formatTime12h(apt.appointment_time)}</Text>
+                    <Text style={styles.scheduleDate}>{new Date(apt.appointment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</Text>
                   </View>
-                  <View style={styles.upcomingDetails}>
-                    <Text style={styles.doctorName}>Dr. {nextAppointment.dentist_name}</Text>
-                    <Text style={styles.serviceText}>Dentist • {nextAppointment.service_name}</Text>
-                  </View>
-                </View>
 
-                <View style={styles.upcomingRow2}>
-                  <View style={styles.timeLocationContainer}>
-                    <View style={styles.infoRow}>
-                      <Clock size={16} color="#94a3b8" />
-                      <Text style={styles.infoText}>
-                        {formatTime12h(nextAppointment.appointment_time)}
-                      </Text>
+                  <View style={styles.scheduleDetails}>
+                    <View style={styles.doctorInfoRow}>
+                      <Text style={styles.scheduleDoctor}>Dr. {apt.dentist_name}</Text>
+                      {renderBadge(apt.status)}
                     </View>
-                    <View style={styles.infoRow}>
-                      <MapPin size={16} color="#94a3b8" />
-                      <Text style={styles.infoText}>Room 302</Text>
+                    <Text style={styles.scheduleService}>{apt.service_name}</Text>
+
+                    <View style={styles.scheduleActions}>
+                      <TouchableOpacity
+                        style={styles.actionIconButton}
+                        onPress={() => navigation.navigate('Booking', { rescheduleApt: apt })}
+                      >
+                        <Text style={styles.rescheduleText}>Reschedule</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.actionIconButton}
+                        onPress={() => handleCancel(apt.id)}
+                      >
+                        <Text style={styles.cancelText}>Cancel</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 </View>
-
-                <View style={styles.actionButtonsRow}>
-                  <TouchableOpacity onPress={() => navigation.navigate('Booking', { rescheduleApt: nextAppointment })}>
-                    <Text style={styles.rescheduleText}>Reschedule</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => handleCancel(nextAppointment.id)}>
-                    <Text style={styles.cancelText}>Cancel</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+              ))
             ) : (
-              <Text style={styles.noDataText}>No upcoming appointments scheduled.</Text>
-            )}
-          </View>
-        </View>
-
-        {/* QUICK ACTIONS WIDGET */}
-        <View style={styles.card}>
-          <View style={styles.cardBodyPadding}>
-            <Text style={styles.cardTitleMargin}>Quick Actions</Text>
-            <View style={styles.quickActionsContainer}>
-              <TouchableOpacity style={[styles.quickActionCard, { backgroundColor: '#f0fdf4' }]} activeOpacity={0.7}>
-                <FileText size={28} color="#059669" />
-                <Text style={[styles.quickActionText, { color: '#059669' }]}>Records</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={[styles.quickActionCard, { backgroundColor: '#faf5ff' }]} activeOpacity={0.7}>
-                <Activity size={28} color="#9333ea" />
-                <Text style={[styles.quickActionText, { color: '#9333ea' }]}>Treatments</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={[styles.quickActionCard, { backgroundColor: '#fff7ed' }]} activeOpacity={0.7}>
-                <UserIcon size={28} color="#ea580c" />
-                <Text style={[styles.quickActionText, { color: '#ea580c' }]}>Profile</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        {/* APPOINTMENT HISTORY WIDGET */}
-        <View style={[styles.card, { marginBottom: 30 }]}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitleNoIcon}>Appointment History</Text>
-          </View>
-
-          <View style={styles.tableBody}>
-            {/* Table Header */}
-            <View style={styles.tableRowHeader}>
-              <Text style={[styles.tableColHeader, { flex: 1.2 }]}>DATE</Text>
-              <Text style={[styles.tableColHeader, { flex: 1.5 }]}>DOCTOR</Text>
-              <Text style={[styles.tableColHeader, { flex: 1.1 }]}>TYPE</Text>
-              <Text style={[styles.tableColHeader, { flex: 1.2 }]}>STATUS</Text>
-            </View>
-
-            {/* Table Rows */}
-            {pastAppointments.slice(0, 3).map((apt, index) => (
-              <View key={index} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { flex: 1.2, fontWeight: '600' }]}>{formatShortDate(apt.appointment_date)}</Text>
-                <Text style={[styles.tableCell, { flex: 1.5, fontWeight: '500' }]}>Dr. {apt.dentist_name}</Text>
-                <Text style={[styles.tableCell, { flex: 1.1, color: '#64748b' }]}>{apt.service_name}</Text>
-                <View style={{ flex: 1.2, alignItems: 'flex-start' }}>
-                  {renderBadge(apt.status)}
-                </View>
+              <View style={styles.emptyState}>
+                <AlertCircle size={40} color="#cbd5e1" />
+                <Text style={styles.noDataText}>No active appointments found.</Text>
+                <TouchableOpacity style={styles.smallBookButton} onPress={() => navigation.navigate('Booking')}>
+                  <Text style={styles.smallBookButtonText}>Book Now</Text>
+                </TouchableOpacity>
               </View>
-            ))}
-            {pastAppointments.length === 0 && (
-              <Text style={[styles.noDataText, { padding: 20 }]}>No past appointments.</Text>
             )}
           </View>
         </View>
@@ -239,7 +182,11 @@ const DashboardScreen = ({ navigation }) => {
         activeOpacity={0.8}
         onPress={() => setIsChatBotVisible(true)}
       >
-        <MessageCircle size={30} color="#ffffff" strokeWidth={2.5} />
+        <Image 
+          source={require('../assets/ai.png')} 
+          style={styles.chatbotIcon}
+          resizeMode="contain"
+        />
       </TouchableOpacity>
 
       {/* CHATBOT MODAL OVERLAY */}
@@ -346,153 +293,90 @@ const styles = StyleSheet.create({
     color: '#1e293b',
     marginLeft: 10,
   },
-  cardTitleNoIcon: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1e293b',
-  },
-  cardTitleMargin: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 16,
-  },
   cardBody: {
     padding: 20,
   },
-  cardBodyPadding: {
-    padding: 24,
+  countBadge: {
+    backgroundColor: '#ebf5ff',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  badgeContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  badgeText: {
+  countBadgeText: {
     fontSize: 12,
-    fontWeight: 'bold',
-    textTransform: 'capitalize',
-  },
-  upcomingContent: {
-    flexDirection: 'column',
-  },
-  upcomingRow1: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  dateCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#ebf5ff', // blue-50 equivalent close to design
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  dateCircleText: {
-    fontSize: 22,
     fontWeight: '900',
     color: '#2563eb',
   },
-  upcomingDetails: {
-    flex: 1,
-  },
-  doctorName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#0f172a',
-    marginBottom: 4,
-  },
-  serviceText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#64748b',
-  },
-  upcomingRow2: {
-    marginBottom: 16,
-  },
-  timeLocationContainer: {
-    flexDirection: 'column',
-    gap: 8,
-  },
-  infoRow: {
+  scheduleItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  infoText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#475569',
-  },
-  actionButtonsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    marginTop: 8,
-  },
-  rescheduleText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#2563eb', // blue-600
-  },
-  cancelText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#ef4444', // red-500
-  },
-  noDataText: {
-    textAlign: 'center',
-    color: '#64748b',
-    fontSize: 15,
-    fontWeight: '500',
-    paddingVertical: 10,
-  },
-  quickActionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  quickActionCard: {
-    flex: 1,
-    borderRadius: 16,
     paddingVertical: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
   },
-  quickActionText: {
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  tableBody: {
-    flexDirection: 'column',
-  },
-  tableRowHeader: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+  scheduleItemBorder: {
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
   },
-  tableColHeader: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#94a3b8',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f8fafc',
+  scheduleTimeContainer: {
+    width: 80,
+    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#fafbfc',
+    borderRadius: 12,
+    padding: 8,
+    marginRight: 16,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
   },
-  tableCell: {
-    fontSize: 13,
+  scheduleTime: {
+    fontSize: 14,
+    fontWeight: 'bold',
     color: '#1e293b',
-    paddingRight: 4, // Prevents text overflow cutting closely
+  },
+  scheduleDate: {
+    fontSize: 11,
+    color: '#64748b',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  scheduleDetails: {
+    flex: 1,
+  },
+  doctorInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  scheduleDoctor: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0f172a',
+  },
+  scheduleService: {
+    fontSize: 13,
+    color: '#64748b',
+    fontWeight: '500',
+    marginBottom: 12,
+  },
+  scheduleActions: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  smallBookButton: {
+    marginTop: 16,
+    backgroundColor: '#2563eb',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  smallBookButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   chatbotBtn: {
     position: 'absolute',
@@ -509,6 +393,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
+    overflow: 'hidden',
+  },
+  chatbotIcon: {
+    width: '100%',
+    height: '100%',
   },
   modalOverlay: {
     flex: 1,

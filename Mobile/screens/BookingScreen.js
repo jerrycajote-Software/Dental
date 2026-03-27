@@ -12,10 +12,19 @@ import {
   FlatList,
   Alert
 } from 'react-native';
-import { X, Calendar as CalendarIcon, Clock, ChevronDown } from 'lucide-react-native';
+import { X, Calendar as CalendarIcon, Clock, ChevronDown, AlertCircle } from 'lucide-react-native';
 import api from '../services/api';
 
 const BookingScreen = ({ navigation }) => {
+  const formatTime12h = (time24) => {
+    if (!time24) return '';
+    const [hours, minutes] = time24.split(':');
+    const h = parseInt(hours);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${minutes} ${ampm}`;
+  };
+
   const [formData, setFormData] = useState({
     service_id: '',
     dentist_id: '',
@@ -28,6 +37,8 @@ const BookingScreen = ({ navigation }) => {
   const [dentists, setDentists] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true);
+  const [fetchingSlots, setFetchingSlots] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState([]);
 
   // Custom dropdown states
   const [serviceOpen, setServiceOpen] = useState(false);
@@ -53,12 +64,21 @@ const BookingScreen = ({ navigation }) => {
     }
   }, []);
 
+  // Watch for date/dentist changes to fetch slots
+  useEffect(() => {
+    if (formData.dentist_id && formData.appointment_date.length === 10) {
+      fetchAvailableSlots();
+    } else {
+      setAvailableSlots([]);
+    }
+  }, [formData.dentist_id, formData.appointment_date]);
+
   const fetchInitialData = async () => {
     setFetchingData(true);
     try {
       const [servicesRes, dentistsRes] = await Promise.all([
         api.get('/services'),
-        api.get('/auth/doctors')
+        api.get('/services/dentists')
       ]);
       setServices(servicesRes.data);
       setDentists(dentistsRes.data);
@@ -69,6 +89,76 @@ const BookingScreen = ({ navigation }) => {
       setFetchingData(false);
     }
   };
+
+  const fetchAvailableSlots = async () => {
+    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+    if (!dateRegex.test(formData.appointment_date)) return;
+
+    setFetchingSlots(true);
+    try {
+      const [day, month, year] = formData.appointment_date.split('/');
+      const formattedDate = `${year}-${month}-${day}`;
+
+      const response = await api.get('/appointments/booked-slots', {
+        params: { dentist_id: formData.dentist_id, date: formattedDate }
+      });
+
+      const { schedule, booked } = response.data;
+      
+      // If no schedule found, fallback to default 9AM-5PM
+      const finalSchedule = schedule || { start: '09:00', end: '17:00' };
+      
+      console.log('Fetching slots for:', formattedDate, 'Schedule:', finalSchedule);
+      generateTimeSlots(finalSchedule, booked || []);
+    } catch (err) {
+      console.error('Failed to fetch slots:', err.message);
+      setAvailableSlots([]);
+    } finally {
+      setFetchingSlots(false);
+    }
+  };
+
+  const generateTimeSlots = (schedule, booked) => {
+    try {
+      const slots = [];
+      // Ensure time string is clean (HH:mm)
+      const cleanStart = schedule.start.slice(0, 5);
+      const cleanEnd = schedule.end.slice(0, 5);
+      
+      let current = new Date(`2000-01-01T${cleanStart}:00`);
+      const end = new Date(`2000-01-01T${cleanEnd}:00`);
+
+      if (isNaN(current.getTime()) || isNaN(end.getTime())) {
+        console.error('Invalid schedule times:', schedule);
+        setAvailableSlots([]);
+        return;
+      }
+
+      while (current < end) {
+        const timeStr = current.toTimeString().slice(0, 5);
+        
+        // Check if slot is booked
+        const isBooked = booked.some(b => {
+          const bStart = b.time.slice(0, 5);
+          const bEnd = new Date(new Date(`2000-01-01T${bStart}:00`).getTime() + b.duration * 60000)
+                       .toTimeString().slice(0, 5);
+          return timeStr >= bStart && timeStr < bEnd;
+        });
+
+        if (!isBooked) {
+          slots.push(timeStr);
+        }
+        
+        // Advance by 30 mins
+        current = new Date(current.getTime() + 30 * 60000);
+      }
+      setAvailableSlots(slots);
+    } catch (error) {
+      console.error('Error in generateTimeSlots:', error.message);
+      setAvailableSlots([]);
+    }
+  };
+
 
   const handleBooking = async () => {
     if (!formData.service_id || !formData.dentist_id || !formData.appointment_date) {
@@ -212,34 +302,57 @@ const BookingScreen = ({ navigation }) => {
               </View>
             </View>
 
-            <View style={styles.row}>
-              <View style={styles.halfWidth}>
-                <Text style={styles.label}>PREFERRED DATE</Text>
-                <View style={styles.inputIconWrapper}>
-                  <TextInput
-                    style={styles.inputWithIcon}
-                    placeholder="DD/MM/YYYY"
-                    placeholderTextColor="#64748b"
-                    value={formData.appointment_date}
-                    onChangeText={(val) => setFormData({ ...formData, appointment_date: val })}
-                  />
-                  <CalendarIcon size={18} color="#0f172a" style={styles.rightIcon} />
-                </View>
+            <View style={styles.fullWidth}>
+              <Text style={styles.label}>PREFERRED DATE</Text>
+              <View style={styles.inputIconWrapper}>
+                <TextInput
+                  style={styles.inputWithIcon}
+                  placeholder="DD/MM/YYYY (e.g., 15/04/2026)"
+                  placeholderTextColor="#64748b"
+                  value={formData.appointment_date}
+                  onChangeText={(val) => setFormData({ ...formData, appointment_date: val })}
+                />
+                <CalendarIcon size={18} color="#0f172a" style={styles.rightIcon} />
               </View>
-              
-              <View style={styles.halfWidth}>
-                <Text style={styles.label}>PREFERRED TIME</Text>
-                <View style={styles.inputIconWrapper}>
-                  <TextInput
-                    style={styles.inputWithIcon}
-                    placeholder="HH:MM"
-                    placeholderTextColor="#64748b"
-                    value={formData.appointment_time}
-                    onChangeText={(val) => setFormData({ ...formData, appointment_time: val })}
-                  />
-                  <Clock size={18} color="#0f172a" style={styles.rightIcon} />
+            </View>
+
+            <View style={styles.fullWidth}>
+              <Text style={styles.label}>SELECT AVAILABLE TIME</Text>
+              {fetchingSlots ? (
+                <View style={styles.slotsLoading}>
+                  <ActivityIndicator color="#1e40af" />
+                  <Text style={styles.slotsLoadingText}>Checking availability...</Text>
                 </View>
-              </View>
+              ) : availableSlots.length > 0 ? (
+                <View style={styles.slotsGrid}>
+                  {availableSlots.map(time => (
+                    <TouchableOpacity
+                      key={time}
+                      style={[
+                        styles.slotItem,
+                        formData.appointment_time === time && styles.slotItemActive
+                      ]}
+                      onPress={() => setFormData({ ...formData, appointment_time: time })}
+                    >
+                      <Text style={[
+                        styles.slotText,
+                        formData.appointment_time === time && styles.slotTextActive
+                      ]}>
+                        {formatTime12h(time)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.noSlotsContainer}>
+                  <AlertCircle size={20} color="#94a3b8" />
+                  <Text style={styles.noSlotsText}>
+                    {!formData.dentist_id || !formData.appointment_date 
+                      ? 'Select date and dentist to see available times' 
+                      : 'No available slots for this day.'}
+                  </Text>
+                </View>
+              )}
             </View>
 
             <View style={styles.fullWidth}>
@@ -430,6 +543,62 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#0f172a',
+  },
+  noSlotsText: {
+    textAlign: 'center',
+    color: '#64748b',
+    fontSize: 15,
+    fontWeight: '500',
+    paddingVertical: 10,
+  },
+  slotsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 5,
+  },
+  slotItem: {
+    width: '31%',
+    backgroundColor: '#f8fafc',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  slotItemActive: {
+    backgroundColor: '#1e40af',
+    borderColor: '#1e40af',
+  },
+  slotText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  slotTextActive: {
+    color: '#ffffff',
+  },
+  slotsLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+  },
+  slotsLoadingText: {
+    color: '#64748b',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  noSlotsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#f8fafc',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderStyle: 'dashed',
   },
   rightIcon: {
     marginLeft: 8,

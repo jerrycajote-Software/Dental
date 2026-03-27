@@ -12,10 +12,17 @@ const api = axios.create({
 
 // Simple in-memory token storage for now as AsyncStorage is not installed
 let authToken = null;
+let userData = null;
 
 export const setAuthToken = (token) => {
   authToken = token;
 };
+
+export const setUserInfo = (user) => {
+  userData = user;
+};
+
+export const getUserInfo = () => userData;
 
 api.interceptors.request.use(
   (config) => {

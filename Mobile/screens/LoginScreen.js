@@ -13,7 +13,7 @@ import {
   ScrollView
 } from 'react-native';
 import { Lock, Mail, Eye, EyeOff } from 'lucide-react-native';
-import api, { setAuthToken } from '../services/api';
+import api, { setAuthToken, setUserInfo } from '../services/api';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -46,9 +46,10 @@ const LoginScreen = ({ navigation }) => {
         return;
       }
 
-      // Save token and navigate
+      // Save token and info, then replace stack with Dashboard
       setAuthToken(token);
-      navigation.navigate('Dashboard');
+      setUserInfo(user);
+      navigation.replace('Dashboard');
     } catch (error) {
       const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
       Alert.alert('Login Failed', message);

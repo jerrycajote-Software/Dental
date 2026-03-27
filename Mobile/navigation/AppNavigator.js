@@ -12,15 +12,13 @@ const AppNavigator = () => {
     <Stack.Navigator 
       initialRouteName="Login"
       screenOptions={{
-        headerStyle: { backgroundColor: '#fff' },
-        headerTitleStyle: { fontWeight: 'bold' },
-        headerTintColor: '#3b82f6',
+        headerShown: false,
       }}
     >
-      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'My Dashboard' }} />
-      <Stack.Screen name="Booking" component={BookingScreen} options={{ title: 'New Appointment' }} />
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen name="Dashboard" component={DashboardScreen} />
+      <Stack.Screen name="Booking" component={BookingScreen} />
     </Stack.Navigator>
   );
 };
