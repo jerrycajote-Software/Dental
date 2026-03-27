@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Menu, X } from 'lucide-react';
-import animatelogo from '../assets/animatelogo.gif';
+//import animatelogo from '../assets/animatelogo.gif';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -20,23 +20,23 @@ const Navbar = () => {
 
   return (
     <nav className="sticky top-0 z-50 bg-[#a1c4fd] border-b border-[#a1c4fd]/30 shadow-sm">
-      <div className="container mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
+      <div className="container flex items-center justify-between px-4 py-3 mx-auto lg:py-4">
         <Link to="/" onClick={closeMenu} className="flex items-center gap-3 group">
           
-          <span className="text-xl font-extrabold tracking-tight text-slate-900 group-hover:text-white transition-colors duration-300">
+          <span className="text-xl font-extrabold tracking-tight transition-colors duration-300 text-slate-900 group-hover:text-white">
             Dental Care<span className="text-[#0D9488]">Plus</span>
           </span>
         </Link>
 
         {/* Desktop Navigation */}
         <div className="flex items-center gap-8">
-          <div className="hidden md:flex items-center gap-8 text-sm font-bold">
+          <div className="items-center hidden gap-8 text-sm font-bold md:flex">
             {user?.role === 'admin' && (
-              <Link to="/admin" className="text-slate-800 hover:text-white transition-colors">Admin</Link>
+              <Link to="/admin" className="transition-colors text-slate-800 hover:text-white">Admin</Link>
             )}
           </div>
 
-          <div className="hidden md:flex items-center gap-6">
+          <div className="items-center hidden gap-6 md:flex">
             {user ? (
               <div className="flex items-center gap-4">
                 <div className="flex flex-col items-end">
@@ -45,14 +45,14 @@ const Navbar = () => {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="rounded-xl border-2 border-slate-900 bg-transparent px-5 py-2 text-xs font-black text-slate-900 hover:bg-slate-900 hover:text-white transition-all duration-300"
+                  className="px-5 py-2 text-xs font-black transition-all duration-300 bg-transparent border-2 rounded-xl border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white"
                 >
                   Logout
                 </button>
               </div>
             ) : (
               <div className="flex items-center gap-6">
-                <Link to="/login" className="text-sm font-black text-slate-900 hover:text-white transition-colors">
+                <Link to="/login" className="text-sm font-black transition-colors text-slate-900 hover:text-white">
                   Sign In
                 </Link>
                 <Link
@@ -68,7 +68,7 @@ const Navbar = () => {
           {/* Mobile Menu Toggle */}
           <button
             onClick={toggleMenu}
-            className="md:hidden p-2 rounded-xl bg-white/20 border border-white/30 text-slate-900 hover:bg-white/40 transition-colors"
+            className="p-2 transition-colors border md:hidden rounded-xl bg-white/20 border-white/30 text-slate-900 hover:bg-white/40"
             aria-label="Toggle menu"
           >
             {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
@@ -85,16 +85,16 @@ const Navbar = () => {
             )}
           </div>
 
-          <div className="pt-8 border-t border-white/20 flex flex-col gap-5">
+          <div className="flex flex-col gap-5 pt-8 border-t border-white/20">
             {user ? (
               <>
-                <div className="bg-white/20 rounded-2xl p-4 border border-white/30">
+                <div className="p-4 border bg-white/20 rounded-2xl border-white/30">
                   <span className="text-[10px] uppercase tracking-wider text-slate-700 font-bold block mb-1">Signed in as</span>
                   <span className="text-lg font-black text-slate-900">{user.name}</span>
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="w-full rounded-2xl border-2 border-slate-900 py-4 text-base font-black text-slate-900 hover:bg-slate-900 hover:text-white transition-all"
+                  className="w-full py-4 text-base font-black transition-all border-2 rounded-2xl border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white"
                 >
                   Logout
                 </button>
@@ -104,14 +104,14 @@ const Navbar = () => {
                 <Link
                   to="/login"
                   onClick={closeMenu}
-                  className="w-full text-center py-4 text-base font-black text-slate-800 hover:text-white transition-colors"
+                  className="w-full py-4 text-base font-black text-center transition-colors text-slate-800 hover:text-white"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/register"
                   onClick={closeMenu}
-                  className="w-full text-center rounded-2xl bg-slate-900 py-4 text-base font-black text-white shadow-xl hover:bg-slate-800 transition-all"
+                  className="w-full py-4 text-base font-black text-center text-white transition-all shadow-xl rounded-2xl bg-slate-900 hover:bg-slate-800"
                 >
                   Get Started
                 </Link>

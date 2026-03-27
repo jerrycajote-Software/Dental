@@ -103,7 +103,20 @@ const Dashboard = () => {
   const upcomingAppointments = appointments.filter(a => a.status === 'confirmed' || a.status === 'pending');
   const pastAppointments = appointments.filter(a => a.status === 'completed' || a.status === 'cancelled');
 
-  const nextAppointment = upcomingAppointments.length > 0 ? upcomingAppointments[0] : null;
+  // Prioritize soonest appointment today; fall back to next future appointment
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayUpcoming = upcomingAppointments
+    .filter(a => new Date(a.appointment_date).toISOString().split('T')[0] === todayStr)
+    .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
+
+  const nextAppointment = todayUpcoming.length > 0
+    ? todayUpcoming[0]
+    : upcomingAppointments
+        .filter(a => new Date(a.appointment_date).toISOString().split('T')[0] > todayStr)
+        .sort((a, b) => {
+          const dateCompare = new Date(a.appointment_date) - new Date(b.appointment_date);
+          return dateCompare !== 0 ? dateCompare : a.appointment_time.localeCompare(b.appointment_time);
+        })[0] || null;
 
   return (
     <div className="min-h-screen bg-[#e7f0fa] py-12 px-4 sm:px-6 lg:px-8 font-sans">
@@ -194,65 +207,77 @@ const Dashboard = () => {
           {/* MAIN COLUMN (Upcoming Appointment + Quick Actions ) */}
           <div className="space-y-6 lg:col-span-2">
 
-            {/* UPCOMING APPOINTMENT WIDGET */}
+            {/* UPCOMING APPOINTMENTS LIST */}
             <div className="overflow-hidden bg-white border shadow-sm rounded-2xl border-slate-100">
               <div className="flex items-center justify-between px-6 py-5 border-b border-slate-50 bg-white/50">
                 <div className="flex items-center gap-3">
                   <Calendar className="text-blue-600" size={20} />
-                  <h3 className="text-[17px] font-bold text-slate-800">Upcoming Appointment</h3>
+                  <h3 className="text-[17px] font-bold text-slate-800">Upcoming Appointments</h3>
                 </div>
-                {nextAppointment ? getStatusBadge(nextAppointment.status) : null}
+                <span className="text-xs font-bold text-blue-500 bg-blue-50 px-3 py-1 rounded-full">
+                  {upcomingAppointments.length} scheduled
+                </span>
               </div>
 
-              <div className="p-6">
+              <div>
                 {loading ? (
-                  <div className="flex flex-col items-center py-8 animate-pulse text-slate-400">
+                  <div className="flex flex-col items-center py-8 animate-pulse text-slate-400 text-sm">
                     Loading...
                   </div>
-                ) : nextAppointment ? (
-                  <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
-                    <div className="flex flex-col items-center justify-center w-20 h-20 text-blue-600 rounded-full bg-blue-100/50 shrink-0">
-                      <span className="text-2xl font-black leading-none">
-                        {new Date(nextAppointment.appointment_date).getDate()}
-                      </span>
-                    </div>
-
-                    <div className="flex-1">
-                      <h4 className="text-lg font-bold text-slate-900">Dr. {nextAppointment.dentist_name}</h4>
-                      <p className="mt-1 text-sm font-medium text-slate-500">
-                        Dentist • {nextAppointment.service_name}
-                      </p>
-
-                      <div className="flex items-center gap-4 mt-6">
-                        <button
-                          onClick={() => handleReschedule(nextAppointment)}
-                          className="text-sm font-bold text-blue-600 transition-colors hover:text-blue-700"
-                        >
-                          Reschedule
-                        </button>
-                        <button
-                          onClick={() => handleCancel(nextAppointment.id)}
-                          className="text-sm font-bold text-red-500 transition-colors hover:text-red-700"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-3 text-sm font-medium text-slate-600 sm:items-end">
-                      <div className="flex items-center gap-2">
-                        <Clock size={16} className="text-slate-400" />
-                        <span>{formatTime12h(nextAppointment.appointment_time)}</span>
-                      </div>
-                    </div>
+                ) : upcomingAppointments.length > 0 ? (
+                  <div className="divide-y divide-slate-50 max-h-[420px] overflow-y-auto">
+                    {upcomingAppointments
+                      .slice()
+                      .sort((a, b) => {
+                        const dateCompare = new Date(a.appointment_date) - new Date(b.appointment_date);
+                        return dateCompare !== 0 ? dateCompare : a.appointment_time.localeCompare(b.appointment_time);
+                      })
+                      .map(apt => (
+                        <div key={apt.id} className="p-5 hover:bg-slate-50/60 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="flex items-center gap-4">
+                            <div className="flex flex-col items-center justify-center w-14 h-14 text-blue-600 rounded-2xl bg-blue-50 shrink-0 font-black leading-none">
+                              <span className="text-xl">
+                                {new Date(apt.appointment_date).getUTCDate()}
+                              </span>
+                              <span className="text-[10px] font-bold text-blue-400 uppercase">
+                                {new Date(apt.appointment_date).toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' })}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="font-bold text-slate-900">{apt.service_name}</p>
+                              <p className="text-sm text-slate-500 font-medium">Dr. {apt.dentist_name}</p>
+                              <div className="flex items-center gap-1 mt-1">
+                                <Clock size={12} className="text-slate-400" />
+                                <span className="text-xs font-semibold text-slate-500">{formatTime12h(apt.appointment_time)}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 shrink-0">
+                            {getStatusBadge(apt.status)}
+                            <button
+                              onClick={() => handleReschedule(apt)}
+                              className="text-xs font-bold text-blue-500 hover:text-blue-700 transition-colors"
+                            >
+                              Reschedule
+                            </button>
+                            <button
+                              onClick={() => handleCancel(apt.id)}
+                              className="text-xs font-bold text-red-400 hover:text-red-600 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 ) : (
-                  <div className="py-6 text-center">
+                  <div className="py-10 text-center">
                     <p className="font-medium text-slate-500">No upcoming appointments scheduled.</p>
                   </div>
                 )}
               </div>
             </div>
+
 
             {/* APPOINTMENT HISTORY WIDGET */}
             <div className="overflow-hidden bg-white border shadow-sm rounded-2xl border-slate-100">

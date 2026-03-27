@@ -2,16 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import appointmentService from '../services/appointmentService';
+import api from '../services/api';
 import styled from 'styled-components';
 import { 
   FiCalendar, 
   FiUsers, 
   FiCheckCircle, 
   FiClock, 
-  FiMoreVertical, 
   FiXCircle, 
   FiLoader,
-  FiActivity
+  FiActivity,
+  FiToggleLeft,
+  FiToggleRight,
+  FiCalendar as FiCalIcon,
+  FiTrash2,
+  FiPlus,
 } from 'react-icons/fi';
 
 const DoctorDashboard = () => {
@@ -27,8 +32,17 @@ const DoctorDashboard = () => {
     completed: 0
   });
 
+  // ── Availability state ──────────────────────────────────────
+  const [isAvailable, setIsAvailable] = useState(true);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [unavailableDates, setUnavailableDates] = useState([]);
+  const [newUnavailableDate, setNewUnavailableDate] = useState('');
+  const [unavailLoading, setUnavailLoading] = useState(false);
+
   useEffect(() => {
     fetchAppointments();
+    fetchAvailability();
+    fetchUnavailableDates();
   }, []);
 
   const fetchAppointments = async () => {
@@ -36,8 +50,6 @@ const DoctorDashboard = () => {
       setLoading(true);
       const data = await appointmentService.getAppointments();
       setAppointments(data);
-      
-      // Calculate stats
       const newStats = data.reduce((acc, appt) => {
         acc.total++;
         if (appt.status === 'pending') acc.pending++;
@@ -46,7 +58,6 @@ const DoctorDashboard = () => {
         return acc;
       }, { total: 0, pending: 0, confirmed: 0, completed: 0 });
       setStats(newStats);
-      
       setLoading(false);
     } catch (err) {
       setError('Failed to fetch appointments. Please try again.');
@@ -54,16 +65,65 @@ const DoctorDashboard = () => {
     }
   };
 
+  const fetchAvailability = async () => {
+    try {
+      const res = await api.get('/auth/me');
+      setIsAvailable(res.data.is_available ?? true);
+    } catch {
+      // Silently fail — defaults to true
+    }
+  };
+
+  const fetchUnavailableDates = async () => {
+    try {
+      const res = await api.get('/auth/unavailable-dates');
+      setUnavailableDates(res.data);
+    } catch (err) {
+      console.error('Failed to fetch unavailable dates', err);
+    }
+  };
+
+  const handleToggleAvailability = async () => {
+    setAvailabilityLoading(true);
+    try {
+      const newVal = !isAvailable;
+      await api.patch('/auth/availability', { is_available: newVal });
+      setIsAvailable(newVal);
+    } catch (err) {
+      alert('Failed to update availability.');
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  };
+
+  const handleAddUnavailableDate = async () => {
+    if (!newUnavailableDate) return;
+    setUnavailLoading(true);
+    try {
+      await api.post('/auth/unavailable-dates', { date: newUnavailableDate });
+      setNewUnavailableDate('');
+      fetchUnavailableDates();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to add unavailable date.');
+    } finally {
+      setUnavailLoading(false);
+    }
+  };
+
+  const handleRemoveUnavailableDate = async (id) => {
+    try {
+      await api.delete(`/auth/unavailable-dates/${id}`);
+      setUnavailableDates(prev => prev.filter(d => d.id !== id));
+    } catch (err) {
+      alert('Failed to remove date.');
+    }
+  };
+
+  // ── Appointments ────────────────────────────────────────────
   const handleStatusUpdate = async (id, newStatus) => {
     try {
       await appointmentService.updateStatus(id, newStatus);
-      // Update local state instead of re-fetching everything
-      setAppointments(prev => prev.map(appt => 
-        appt.id === id ? { ...appt, status: newStatus } : appt
-      ));
-      
-      // Update stats based on the change
-      fetchAppointments(); 
+      fetchAppointments();
     } catch (err) {
       alert('Failed to update status.');
     }
@@ -98,19 +158,23 @@ const DoctorDashboard = () => {
   const isAppointmentPast = (dateStr, timeStr) => {
     if (!dateStr || !timeStr) return false;
     const [hours, minutes] = timeStr.split(':').map(Number);
-    // appointment_date from DB is already UTC midnight; get local date parts
     const apptDate = new Date(dateStr);
-    // Build a Date using the date components and appointment time in PHT (UTC+8)
-    const apptDateTime = new Date(
+    // Combine: appointment date (UTC midnight from DB) + appointment time interpreted as PHT
+    // PHT is UTC+8; we use toLocaleString for reliable PHT "now" comparison
+    const apptDateTime = new Date(Date.UTC(
       apptDate.getUTCFullYear(),
       apptDate.getUTCMonth(),
       apptDate.getUTCDate(),
-      hours,
+      hours - 8, // convert PHT hours to UTC (PHT = UTC+8)
       minutes
-    );
-    // Compare against current PHT time
-    const nowPHT = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
-    return apptDateTime < nowPHT;
+    ));
+    return apptDateTime < new Date();
+  };
+
+  // Format date for display
+  const formatDisplayDate = (dateStr) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   };
 
   return (
@@ -176,6 +240,79 @@ const DoctorDashboard = () => {
             ))}
           </div>
 
+          {/* ── AVAILABILITY SECTION ─────────────────────────────────── */}
+          <div className="mb-10 bg-white border rounded-3xl border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
+              <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+                <FiActivity className="text-[#1089d3]" />
+                Availability Settings
+              </h3>
+              <p className="mt-1 text-sm text-slate-500">Manage when you're available for patient bookings.</p>
+            </div>
+
+            <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Toggle */}
+              <div className="flex items-center justify-between p-6 rounded-2xl border border-slate-100 bg-slate-50">
+                <div>
+                  <p className="font-bold text-slate-800">Availability Status</p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {isAvailable ? 'You are visible to patients for booking.' : 'You are hidden from the booking system.'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleToggleAvailability}
+                  disabled={availabilityLoading}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 ${
+                    isAvailable
+                      ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+                      : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                  } disabled:opacity-60`}
+                >
+                  {isAvailable ? <FiToggleRight size={20} /> : <FiToggleLeft size={20} />}
+                  {availabilityLoading ? 'Saving...' : isAvailable ? 'Available' : 'Unavailable'}
+                </button>
+              </div>
+
+              {/* Unavailable Dates */}
+              <div className="p-6 rounded-2xl border border-slate-100 bg-slate-50">
+                <p className="font-bold text-slate-800 mb-4">Mark Unavailable Dates</p>
+                <div className="flex gap-2 mb-4">
+                  <input
+                    type="date"
+                    value={newUnavailableDate}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={e => setNewUnavailableDate(e.target.value)}
+                    className="flex-1 text-sm font-medium border border-slate-200 rounded-xl px-3 py-2 text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#1089d3]/30"
+                  />
+                  <button
+                    onClick={handleAddUnavailableDate}
+                    disabled={!newUnavailableDate || unavailLoading}
+                    className="flex items-center gap-1 px-4 py-2 bg-[#1089d3] text-white rounded-xl text-sm font-bold hover:bg-[#0d73b0] transition-colors disabled:opacity-50"
+                  >
+                    <FiPlus size={16} />
+                    {unavailLoading ? 'Adding...' : 'Add'}
+                  </button>
+                </div>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {unavailableDates.length > 0 ? unavailableDates.map(d => (
+                    <div key={d.id} className="flex items-center justify-between bg-white border border-slate-100 rounded-xl px-4 py-2.5">
+                      <span className="text-sm font-semibold text-slate-700">{formatDisplayDate(d.unavailable_date)}</span>
+                      <button
+                        onClick={() => handleRemoveUnavailableDate(d.id)}
+                        className="text-rose-400 hover:text-rose-600 transition-colors p-1 rounded-lg hover:bg-rose-50"
+                        title="Remove"
+                      >
+                        <FiTrash2 size={15} />
+                      </button>
+                    </div>
+                  )) : (
+                    <p className="text-xs text-slate-400 italic text-center py-4">No unavailable dates set.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Appointments Table Section */}
           <div className="overflow-hidden bg-white border shadow-xl rounded-3xl border-slate-200 shadow-slate-200/50">
             <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100">
@@ -224,81 +361,81 @@ const DoctorDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {appointments.map((appt) => (
-                      <tr key={appt.id} className="transition-colors hover:bg-slate-50/50 group">
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-10 h-10 font-bold border-2 border-white rounded-full shadow-sm bg-slate-100 text-slate-500">
-                              {appt.client_name?.charAt(0)}
+                    {appointments.map((appt) => {
+                      const isPast = isAppointmentPast(appt.appointment_date, appt.appointment_time);
+                      return (
+                        <tr key={appt.id} className="transition-colors hover:bg-slate-50/50 group">
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center justify-center w-10 h-10 font-bold border-2 border-white rounded-full shadow-sm bg-slate-100 text-slate-500">
+                                {appt.client_name?.charAt(0)}
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-slate-900">{appt.client_name}</p>
+                                <p className="text-[10px] font-medium text-slate-400">ID: #{appt.id.toString().slice(0, 5)}</p>
+                              </div>
                             </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            <span className="text-sm font-medium text-slate-700">{appt.service_name}</span>
+                          </td>
+                          <td className="px-8 py-6">
                             <div>
-                              <p className="text-sm font-bold text-slate-900">{appt.client_name}</p>
-                              <p className="text-[10px] font-medium text-slate-400">ID: #{appt.id.toString().slice(0, 5)}</p>
+                              <p className="text-sm font-bold text-slate-900">
+                                {new Date(appt.appointment_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </p>
+                              <p className="text-xs font-medium text-[#1089d3]">{formatTime12h(appt.appointment_time)}</p>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <span className="text-sm font-medium text-slate-700">{appt.service_name}</span>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div>
-                            <p className="text-sm font-bold text-slate-900">
-                              {new Date(appt.appointment_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                            </p>
-                            <p className="text-xs font-medium text-[#1089d3]">{formatTime12h(appt.appointment_time)}</p>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusColor(appt.status)}`}>
-                            {appt.status}
-                          </span>
-                        </td>
-                        <td className="px-8 py-6 text-right">
-                          <div className="flex items-center justify-end gap-2 transition-opacity opacity-0 group-hover:opacity-100">
-                            {appt.status === 'pending' && (
-                              <button 
-                                onClick={() => handleStatusUpdate(appt.id, 'confirmed')}
-                                className="p-2 transition-all duration-200 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white"
-                                title="Confirm Appointment"
-                              >
-                                <FiCheckCircle />
-                              </button>
-                            )}
-                            {appt.status === 'confirmed' && (
-                              isAppointmentPast(appt.appointment_date, appt.appointment_time) ? (
+                          </td>
+                          <td className="px-8 py-6">
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusColor(appt.status)}`}>
+                              {appt.status}
+                            </span>
+                          </td>
+                          <td className="px-8 py-6 text-right">
+                            <div className="flex items-center justify-end gap-2 transition-opacity opacity-0 group-hover:opacity-100">
+                              {appt.status === 'pending' && (
                                 <button 
-                                  onClick={() => handleStatusUpdate(appt.id, 'completed')}
-                                  className="p-2 text-blue-600 transition-all duration-200 rounded-lg bg-blue-50 hover:bg-blue-600 hover:text-white"
-                                  title="Mark as Completed"
+                                  onClick={() => handleStatusUpdate(appt.id, 'confirmed')}
+                                  className="p-2 transition-all duration-200 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white"
+                                  title="Confirm Appointment"
                                 >
-                                  <FiActivity />
+                                  <FiCheckCircle />
                                 </button>
-                              ) : (
+                              )}
+                              {appt.status === 'confirmed' && (
+                                isPast ? (
+                                  <button 
+                                    onClick={() => handleStatusUpdate(appt.id, 'completed')}
+                                    className="p-2 text-blue-600 transition-all duration-200 rounded-lg bg-blue-50 hover:bg-blue-600 hover:text-white"
+                                    title="Mark as Completed"
+                                  >
+                                    <FiActivity />
+                                  </button>
+                                ) : (
+                                  <button 
+                                    disabled
+                                    className="p-2 text-slate-300 rounded-lg bg-slate-50 cursor-not-allowed"
+                                    title="Appointment has not occurred yet"
+                                  >
+                                    <FiActivity />
+                                  </button>
+                                )
+                              )}
+                              {(appt.status === 'pending' || appt.status === 'confirmed') && (
                                 <button 
-                                  disabled
-                                  className="p-2 text-slate-300 rounded-lg bg-slate-50 cursor-not-allowed"
-                                  title="Appointment has not occurred yet"
+                                  onClick={() => handleStatusUpdate(appt.id, 'cancelled')}
+                                  className="p-2 transition-all duration-200 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white"
+                                  title="Cancel Appointment"
                                 >
-                                  <FiActivity />
+                                  <FiXCircle />
                                 </button>
-                              )
-                            )}
-                            {(appt.status === 'pending' || appt.status === 'confirmed') && (
-                              <button 
-                                onClick={() => handleStatusUpdate(appt.id, 'cancelled')}
-                                className="p-2 transition-all duration-200 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white"
-                                title="Cancel Appointment"
-                              >
-                                <FiXCircle />
-                              </button>
-                            )}
-                            <button className="p-2 transition-all duration-200 rounded-lg bg-slate-50 text-slate-400 hover:bg-slate-200">
-                              <FiMoreVertical />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

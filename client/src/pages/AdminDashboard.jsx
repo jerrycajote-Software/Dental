@@ -22,7 +22,6 @@ import {
   ChevronRight,
   Stethoscope,
   MapPin,
-  CalendarCheck,
   Phone,
   Plus,
   Mail,
@@ -42,6 +41,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
+import profilePic from '../assets/profile.png';
 
 // No dummy data for the chart - we will use real data or empty state
 const chartData = [];
@@ -185,13 +185,13 @@ const AdminDashboard = () => {
   const StatusBadge = ({ status }) => {
     switch (status) {
       case 'confirmed':
-        return <span className="px-3 py-1 rounded-full text-xs font-bold leading-none bg-emerald-100 text-emerald-600">Confirmed</span>;
+        return <span className="px-3 py-1 text-xs font-bold leading-none rounded-full bg-emerald-100 text-emerald-600">Confirmed</span>;
       case 'completed':
-        return <span className="px-3 py-1 rounded-full text-xs font-bold leading-none bg-blue-100 text-blue-600">Completed</span>;
+        return <span className="px-3 py-1 text-xs font-bold leading-none text-blue-600 bg-blue-100 rounded-full">Completed</span>;
       case 'cancelled':
-        return <span className="px-3 py-1 rounded-full text-xs font-bold leading-none bg-red-100 text-red-500">Cancelled</span>;
+        return <span className="px-3 py-1 text-xs font-bold leading-none text-red-500 bg-red-100 rounded-full">Cancelled</span>;
       default:
-        return <span className="px-3 py-1 rounded-full text-xs font-bold leading-none bg-amber-100 text-amber-600">Pending</span>;
+        return <span className="px-3 py-1 text-xs font-bold leading-none rounded-full bg-amber-100 text-amber-600">Pending</span>;
     }
   };
 
@@ -203,29 +203,6 @@ const AdminDashboard = () => {
     return matchesSearch && matchesStatus;
   });
 
-  // Helpers for today's data
-  const formatTime12h = (time24) => {
-    if (!time24) return '';
-    const [hours, minutes] = time24.split(':');
-    const h = parseInt(hours);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
-    return `${h12}:${minutes} ${ampm}`;
-  };
-
-  const todayStr = new Date().toISOString().split('T')[0];
-
-  const todaysAppointments = appointments
-    .filter(apt => {
-      const aptDate = new Date(apt.appointment_date).toISOString().split('T')[0];
-      return aptDate === todayStr;
-    })
-    .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
-
-  const patientQueue = todaysAppointments
-    .filter(apt => apt.status === 'confirmed' || apt.status === 'pending')
-    .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
-
   return (
     <div className="flex h-screen bg-[#c2e9fb] overflow-hidden text-slate-800 font-sans">
 
@@ -233,14 +210,14 @@ const AdminDashboard = () => {
       <aside className="w-64 bg-[#f8fbff] border-r border-slate-200 flex flex-col justify-between shrink-0 h-full">
         <div>
           {/* Logo */}
-          <div className="h-16 flex items-center px-6 border-b border-slate-200">
+          <div className="flex items-center h-16 px-6 border-b border-slate-200">
             <h1 className="text-xl font-bold tracking-tight">
               Dental <span className="text-blue-500">CarePlus</span>
             </h1>
           </div>
 
           {/* Nav Links */}
-          <nav className="p-4 space-y-2 mt-4">
+          <nav className="p-4 mt-4 space-y-2">
             {navItems.map((item) => (
               <button
                 key={item.name}
@@ -262,18 +239,18 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img
-                src="https://randomuser.me/api/portraits/women/44.jpg"
-                alt="Doctor Profile"
-                className="w-10 h-10 rounded-full border border-slate-200 object-cover"
+                src={profilePic}
+                alt="Admin Profile"
+                className="object-cover w-10 h-10 border rounded-full border-slate-200"
               />
               <div>
-                <p className="text-sm font-semibold text-slate-800">{user?.name || 'Dr. Sarah Smith'}</p>
-                <p className="text-xs text-slate-500">View Profile</p>
+                {/* <p className="text-sm font-semibold text-slate-800">{user?.name || 'Admin'}</p> */}
+                <p className="text-xs text-slate-500">Admin</p>
               </div>
             </div>
             <button
               onClick={logout}
-              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-2 transition-colors rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
               title="Logout"
             >
               <LogOut size={18} />
@@ -283,7 +260,7 @@ const AdminDashboard = () => {
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex flex-col flex-1 h-screen overflow-hidden">
 
         {/* HEADER */}
         <header className="h-16 bg-[#f8fbff] flex items-center justify-between px-8 border-b border-slate-200 shrink-0">
@@ -291,91 +268,103 @@ const AdminDashboard = () => {
 
           <div className="flex items-center gap-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <Search className="absolute -translate-y-1/2 left-3 top-1/2 text-slate-400" size={16} />
               <input
                 type="text"
                 placeholder="Search patients, appointments..."
-                className="w-72 bg-white border border-slate-200 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-all placeholder:text-slate-400"
+                className="py-2 pl-10 pr-4 text-sm transition-all bg-white border rounded-full w-72 border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 placeholder:text-slate-400"
               />
             </div>
 
-            <button className="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+            <button className="relative p-2 mr-2 transition-colors rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100">
               <Bell size={20} />
               <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
             </button>
+
+            {/* <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
+              <img
+                src={profilePic}
+                alt="Admin Profile"
+                className="object-cover w-8 h-8 border rounded-full border-slate-200"
+              />
+              <div className="hidden lg:block">
+                <p className="text-xs font-bold leading-none text-slate-800">{user?.name || 'Admin'}</p>
+                <p className="text-[10px] font-medium text-slate-400 mt-0.5">Administrator</p>
+              </div>
+            </div> */}
           </div>
         </header>
 
         {/* SCROLLABLE DASHBOARD CONTENT */}
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 p-8 overflow-y-auto">
 
           {/* ---- OVERVIEW TAB ---- */}
           {activeTab === 'Overview' && (
             <>
               {/* Welcome Message */}
               <div className="mb-8">
-                <h1 className="text-2xl font-bold text-slate-900 mb-1">Dashboard Overview</h1>
-                <p className="text-slate-500 text-sm">Welcome back, {user?.name || 'Dr. Sarah Smith'}.</p>
+                <h1 className="mb-1 text-2xl font-bold text-slate-900">Dashboard Overview</h1>
+                {/* <p className="text-sm text-slate-500">Welcome back, {user?.name || 'Admin'}.</p> */}
               </div>
 
               {/* STATS GRID */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-3">
                 <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
-                  <div className="flex justify-between items-start mb-4">
-                    <p className="text-xs font-semibold text-slate-500 my-auto">Total Appointments</p>
-                    <div className="w-10 h-10 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-sm">
+                  <div className="flex items-start justify-between mb-4">
+                    <p className="my-auto text-xs font-semibold text-slate-500">Total Appointments</p>
+                    <div className="flex items-center justify-center w-10 h-10 text-white bg-blue-500 shadow-sm rounded-xl">
                       <Calendar size={20} />
                     </div>
                   </div>
-                  <h3 className="text-3xl font-bold text-slate-800 mb-2">{appointments.length}</h3>
-                  <p className="text-xs font-medium text-slate-400 flex items-center gap-1">
+                  <h3 className="mb-2 text-3xl font-bold text-slate-800">{appointments.length}</h3>
+                  <p className="flex items-center gap-1 text-xs font-medium text-slate-400">
                     Total in database
                   </p>
                 </div>
 
                 <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
-                  <div className="flex justify-between items-start mb-4">
-                    <p className="text-xs font-semibold text-slate-500 my-auto">New Patients</p>
-                    <div className="w-10 h-10 rounded-xl bg-purple-500 text-white flex items-center justify-center shadow-sm">
+                  <div className="flex items-start justify-between mb-4">
+                    <p className="my-auto text-xs font-semibold text-slate-500">New Patients</p>
+                    <div className="flex items-center justify-center w-10 h-10 text-white bg-purple-500 shadow-sm rounded-xl">
                       <Users size={20} />
                     </div>
                   </div>
-                  <h3 className="text-3xl font-bold text-slate-800 mb-2">{[...new Set(appointments.map(a => a.client_id))].length}</h3>
-                  <p className="text-xs font-medium text-slate-400 flex items-center gap-1">
+                  <h3 className="mb-2 text-3xl font-bold text-slate-800">{[...new Set(appointments.map(a => a.client_id))].length}</h3>
+                  <p className="flex items-center gap-1 text-xs font-medium text-slate-400">
                     Unique patients
                   </p>
                 </div>
 
 
                 <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
-                  <div className="flex justify-between items-start mb-4">
-                    <p className="text-xs font-semibold text-slate-500 my-auto">Cancelled</p>
-                    <div className="w-10 h-10 rounded-xl bg-red-500 text-white flex items-center justify-center shadow-sm">
+                  <div className="flex items-start justify-between mb-4">
+                    <p className="my-auto text-xs font-semibold text-slate-500">Cancelled</p>
+                    <div className="flex items-center justify-center w-10 h-10 text-white bg-red-500 shadow-sm rounded-xl">
                       <Activity size={20} />
                     </div>
                   </div>
-                  <h3 className="text-3xl font-bold text-slate-800 mb-2">{appointments.filter(a => a.status === 'cancelled').length}</h3>
-                  <p className="text-xs font-medium text-slate-400 flex items-center gap-1">
+                  <h3 className="mb-2 text-3xl font-bold text-slate-800">{appointments.filter(a => a.status === 'cancelled').length}</h3>
+                  <p className="flex items-center gap-1 text-xs font-medium text-slate-400">
                     Total cancelled
                   </p>
                 </div>
               </div>
 
               {/* LOWER SECTION: CHART & ACTIVITY */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
               {/* Appointments Overview Chart (Takes full width) */}
                 <div className="lg:col-span-3 bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
-                  <div className="flex justify-between items-center mb-6">
+                  <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-bold text-slate-800">Appointments Overview</h3>
-                    <select className="text-xs font-semibold text-slate-500 bg-transparent border-none outline-none cursor-pointer hover:text-slate-700">
+                    <select className="text-xs font-semibold bg-transparent border-none outline-none cursor-pointer text-slate-500 hover:text-slate-700">
                       <option>This Week</option>
                       <option>Last Week</option>
                       <option>This Month</option>
                     </select>
                   </div>
 
-                  <div className="h-64 w-full">
+                  <div className="w-full h-64">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                         <defs>
@@ -416,104 +405,6 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               </div>
-
-              {/* NEW WIDGETS SECTION */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-                {/* PATIENT QUEUE */}
-                <div className="bg-white rounded-[1.25rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col">
-                  {/* Header */}
-                  <div className="bg-[#fcf5ff] p-6 border-b border-pink-50/50">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Users className="text-[#a855f7]" size={20} />
-                      <h3 className="text-lg font-bold text-slate-900">Patient Queue</h3>
-                    </div>
-                    <p className="text-xs text-slate-500 font-medium">
-                      {patientQueue.length} patient{patientQueue.length !== 1 ? 's' : ''} waiting today
-                    </p>
-                  </div>
-                  {/* List */}
-                  <div className="p-6 flex-1 max-h-[350px] overflow-y-auto">
-                    <div className="space-y-4">
-                      {patientQueue.length > 0 ? patientQueue.map((apt, i) => (
-                        <div key={apt.id} className="flex items-center gap-3">
-                          <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-600 text-[10px] font-black flex items-center justify-center shrink-0">{i + 1}</span>
-                          <div className="w-8 h-8 rounded-full bg-[#ecf2fa] text-slate-600 flex items-center justify-center text-xs font-bold ring-1 ring-slate-200 shrink-0">
-                            {getInitials(apt.client_name)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-slate-800 truncate">{apt.client_name}</p>
-                            <p className="text-[11px] font-medium text-slate-400">{apt.service_name}</p>
-                          </div>
-                          <span className="text-xs font-bold text-slate-500 shrink-0">
-                            {formatTime12h(apt.appointment_time)}
-                          </span>
-                        </div>
-                      )) : (
-                        <p className="text-center text-xs text-slate-400 py-8 italic">No patients in queue for today</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* RECENT PATIENTS */}
-                <div className="bg-white rounded-[1.25rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col">
-                  {/* Header */}
-                  <div className="bg-[#f0fdf4] p-6 border-b border-green-50/50">
-                    <div className="flex items-center gap-2">
-                      <FileText className="text-green-600" size={20} />
-                      <h3 className="text-lg font-bold text-slate-900">Recent Patients</h3>
-                    </div>
-                  </div>
-                  {/* List */}
-                  <div className="p-6 flex-1 max-h-[350px] overflow-y-auto">
-                    <div className="space-y-4">
-                      <p className="text-center text-xs text-slate-400 py-8 italic">No recent patients found</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* TODAY'S SCHEDULE FULL WIDTH */}
-              <div className="mt-8 bg-white rounded-[1.25rem] shadow-sm border border-slate-100 overflow-hidden">
-                {/* Header */}
-                <div className="bg-[#f0f9ff] p-6 border-b border-blue-50/50 flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <CalendarCheck className="text-blue-600" size={20} />
-                    <h3 className="text-lg font-bold text-slate-900">Today's Schedule</h3>
-                  </div>
-                  <span className="text-xs font-bold text-blue-500 bg-blue-50 px-3 py-1 rounded-full">
-                    {todaysAppointments.length} appointment{todaysAppointments.length !== 1 ? 's' : ''}
-                  </span>
-                </div>
-                {/* List */}
-                <div className="p-0">
-                  {todaysAppointments.length > 0 ? (
-                    <div className="flex flex-col divide-y divide-slate-50">
-                      {todaysAppointments.map(apt => (
-                        <div key={apt.id} className="flex items-center justify-between px-6 py-4 hover:bg-slate-50/50 transition-colors">
-                          <div className="flex items-center gap-4">
-                            <div className="w-9 h-9 rounded-full bg-[#ecf2fa] text-slate-600 flex items-center justify-center text-xs font-bold ring-1 ring-slate-200 shrink-0">
-                              {getInitials(apt.client_name)}
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold text-slate-800">{apt.client_name}</p>
-                              <p className="text-xs font-medium text-slate-400">{apt.service_name} &bull; Dr. {apt.dentist_name}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <span className="text-sm font-bold text-slate-600">{formatTime12h(apt.appointment_time)}</span>
-                            <StatusBadge status={apt.status} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col">
-                      <p className="text-center text-xs text-slate-400 py-12 italic">No appointments scheduled for today.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
             </>
           )}
 
@@ -521,28 +412,28 @@ const AdminDashboard = () => {
           {activeTab === 'Appointments' && (
             <>
               {/* Header */}
-              <div className="flex justify-between items-end mb-8">
+              <div className="flex items-end justify-between mb-8">
                 <div>
-                  <h1 className="text-2xl font-bold text-slate-900 mb-1">Appointments</h1>
-                  <p className="text-slate-500 text-sm">Manage patient bookings and schedules.</p>
+                  <h1 className="mb-1 text-2xl font-bold text-slate-900">Appointments</h1>
+                  <p className="text-sm text-slate-500">Manage patient bookings and schedules.</p>
                 </div>
               </div>
 
               {/* Search & Filter Bar */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-2 mb-6 flex justify-between items-center">
-                <div className="flex-1 flex items-center pl-3">
-                  <Search size={18} className="text-slate-400 mr-2" />
+              <div className="flex items-center justify-between p-2 mb-6 bg-white border shadow-sm rounded-xl border-slate-100">
+                <div className="flex items-center flex-1 pl-3">
+                  <Search size={18} className="mr-2 text-slate-400" />
                   <input
                     type="text"
                     placeholder="Search by patient or doctor..."
-                    className="w-full text-sm outline-none placeholder:text-slate-400 text-slate-700 font-medium"
+                    className="w-full text-sm font-medium outline-none placeholder:text-slate-400 text-slate-700"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
                 <div className="pl-4 pr-2 border-l border-slate-100">
                   <select
-                    className="text-sm font-semibold text-slate-600 outline-none cursor-pointer bg-transparent"
+                    className="text-sm font-semibold bg-transparent outline-none cursor-pointer text-slate-600"
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
                   >
@@ -556,7 +447,7 @@ const AdminDashboard = () => {
               </div>
 
               {/* Appointments Table */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="overflow-hidden bg-white border shadow-sm rounded-xl border-slate-100">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-[#f8fbff] text-[10px] font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100">
@@ -573,7 +464,7 @@ const AdminDashboard = () => {
                       filteredAppointments.map((apt) => {
                         const date = new Date(apt.appointment_date);
                         return (
-                          <tr key={apt.id} className="hover:bg-slate-50 transition-colors">
+                          <tr key={apt.id} className="transition-colors hover:bg-slate-50">
                             {/* PATIENT */}
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
@@ -616,21 +507,21 @@ const AdminDashboard = () => {
                                 <button
                                   onClick={() => handleStatusChange(apt.id, 'confirmed')}
                                   title="Confirm"
-                                  className="hover:text-emerald-500 transition-colors"
+                                  className="transition-colors hover:text-emerald-500"
                                 >
                                   <CheckCircle2 size={18} />
                                 </button>
                                 <button
                                   onClick={() => handleStatusChange(apt.id, 'cancelled')}
                                   title="Reject"
-                                  className="hover:text-red-500 transition-colors"
+                                  className="transition-colors hover:text-red-500"
                                 >
                                   <XCircle size={18} />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(apt.id)}
                                   title="Delete"
-                                  className="hover:text-slate-600 transition-colors ml-1"
+                                  className="ml-1 transition-colors hover:text-slate-600"
                                 >
                                   <Trash2 size={18} strokeWidth={1.5} />
                                 </button>
@@ -641,7 +532,7 @@ const AdminDashboard = () => {
                       })
                     ) : (
                       <tr>
-                        <td colSpan="6" className="px-6 py-8 text-center text-sm font-medium text-slate-400">
+                        <td colSpan="6" className="px-6 py-8 text-sm font-medium text-center text-slate-400">
                           No appointments found.
                         </td>
                       </tr>
@@ -656,27 +547,27 @@ const AdminDashboard = () => {
           {activeTab === 'Patients' && (
             <>
               {/* Header */}
-              <div className="flex justify-between items-end mb-8">
+              <div className="flex items-end justify-between mb-8">
                 <div>
-                  <h1 className="text-2xl font-bold text-slate-900 mb-1">Patients</h1>
-                  <p className="text-slate-500 text-sm">Manage patient records and history.</p>
+                  <h1 className="mb-1 text-2xl font-bold text-slate-900">Patients</h1>
+                  <p className="text-sm text-slate-500">Manage patient records and history.</p>
                 </div>
               </div>
 
               {/* Search Bar */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-2 mb-6">
-                <div className="flex items-center pl-3 w-full">
-                  <Search size={18} className="text-slate-400 mr-2" />
+              <div className="p-2 mb-6 bg-white border shadow-sm rounded-xl border-slate-100">
+                <div className="flex items-center w-full pl-3">
+                  <Search size={18} className="mr-2 text-slate-400" />
                   <input
                     type="text"
                     placeholder="Search patients by name or email..."
-                    className="w-full text-sm outline-none placeholder:text-slate-400 text-slate-700 font-medium py-1"
+                    className="w-full py-1 text-sm font-medium outline-none placeholder:text-slate-400 text-slate-700"
                   />
                 </div>
               </div>
 
               {/* Patients Table */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden text-slate-800">
+              <div className="overflow-hidden bg-white border shadow-sm rounded-xl border-slate-100 text-slate-800">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-[#f8fbff] text-[10px] font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100">
@@ -697,7 +588,7 @@ const AdminDashboard = () => {
                                 <img
                                   src={`https://ui-avatars.com/api/?name=${encodeURIComponent(patient.name)}&background=${patient.is_deleted ? '94a3b8' : '3b82f6'}&color=fff`}
                                   alt="Avatar"
-                                  className="w-full h-full object-cover"
+                                  className="object-cover w-full h-full"
                                 />
                               </div>
                               <div>
@@ -732,7 +623,7 @@ const AdminDashboard = () => {
                               {!patient.is_deleted && (
                                 <button
                                   onClick={() => handleDeletePatient(patient.id, patient.name)}
-                                  className="text-slate-400 hover:text-red-500 transition-colors p-2 hover:bg-red-50 rounded-lg"
+                                  className="p-2 transition-colors rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50"
                                   title="Delete patient"
                                 >
                                   <Trash2 size={16} strokeWidth={2} />
@@ -744,7 +635,7 @@ const AdminDashboard = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="5" className="px-6 py-12 text-center text-slate-400 italic font-medium">
+                        <td colSpan="5" className="px-6 py-12 italic font-medium text-center text-slate-400">
                           No patient records found.
                         </td>
                       </tr>
@@ -759,14 +650,14 @@ const AdminDashboard = () => {
           {activeTab === 'Doctors' && (
             <>
               {/* Header */}
-              <div className="flex justify-between items-end mb-8">
+              <div className="flex items-end justify-between mb-8">
                 <div>
-                  <h1 className="text-2xl font-bold text-slate-900 mb-1">Manage Doctors</h1>
-                  <p className="text-slate-500 text-sm">Create and manage doctor accounts.</p>
+                  <h1 className="mb-1 text-2xl font-bold text-slate-900">Manage Doctors</h1>
+                  <p className="text-sm text-slate-500">Create and manage doctor accounts.</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
                 {/* CREATE DOCTOR FORM */}
                 <div className="lg:col-span-1 bg-white rounded-[1.25rem] shadow-sm border border-slate-100 overflow-hidden">
@@ -775,23 +666,23 @@ const AdminDashboard = () => {
                       <Stethoscope className="text-green-600" size={20} />
                       <h3 className="text-lg font-bold text-slate-900">Add New Doctor</h3>
                     </div>
-                    <p className="text-xs text-slate-500 font-medium mt-1">Create a doctor account with verified email</p>
+                    <p className="mt-1 text-xs font-medium text-slate-500">Create a doctor account with verified email</p>
                   </div>
 
                   <form onSubmit={handleCreateDoctor} className="p-6 space-y-4">
                     {doctorError && (
-                      <div className="bg-red-50 border border-red-200 text-red-600 text-xs font-bold px-4 py-3 rounded-xl">
+                      <div className="px-4 py-3 text-xs font-bold text-red-600 border border-red-200 bg-red-50 rounded-xl">
                         {doctorError}
                       </div>
                     )}
                     {doctorSuccess && (
-                      <div className="bg-green-50 border border-green-200 text-green-600 text-xs font-bold px-4 py-3 rounded-xl">
+                      <div className="px-4 py-3 text-xs font-bold text-green-600 border border-green-200 bg-green-50 rounded-xl">
                         {doctorSuccess}
                       </div>
                     )}
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-2">Full Name</label>
+                      <label className="block mb-2 text-xs font-semibold text-slate-600">Full Name</label>
                       <div className="relative">
                         <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
@@ -806,7 +697,7 @@ const AdminDashboard = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-2">Email Address</label>
+                      <label className="block mb-2 text-xs font-semibold text-slate-600">Email Address</label>
                       <div className="relative">
                         <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
@@ -821,7 +712,7 @@ const AdminDashboard = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-2">Password</label>
+                      <label className="block mb-2 text-xs font-semibold text-slate-600">Password</label>
                       <div className="relative">
                         <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
@@ -839,7 +730,7 @@ const AdminDashboard = () => {
                     <button
                       type="submit"
                       disabled={isCreatingDoctor}
-                      className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed text-white px-4 py-3 rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center justify-center gap-2 mt-2"
+                      className="flex items-center justify-center w-full gap-2 px-4 py-3 mt-2 text-sm font-bold text-white transition-colors bg-green-600 shadow-sm hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl"
                     >
                       <Plus size={16} strokeWidth={2.5} />
                       {isCreatingDoctor ? 'Creating...' : 'Create Doctor Account'}
@@ -854,7 +745,7 @@ const AdminDashboard = () => {
                       <Users className="text-blue-600" size={20} />
                       <h3 className="text-lg font-bold text-slate-900">Registered Doctors</h3>
                     </div>
-                    <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                    <span className="px-3 py-1 text-xs font-bold rounded-full text-slate-500 bg-slate-100">
                       {doctors.length} doctor{doctors.length !== 1 ? 's' : ''}
                     </span>
                   </div>
@@ -873,14 +764,14 @@ const AdminDashboard = () => {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {doctors.map((doc) => (
-                            <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
+                            <tr key={doc.id} className="transition-colors hover:bg-slate-50">
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
-                                  <div className="w-9 h-9 rounded-full bg-green-100 shrink-0 overflow-hidden">
+                                  <div className="overflow-hidden bg-green-100 rounded-full w-9 h-9 shrink-0">
                                     <img
                                       src={`https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=059669&color=fff`}
                                       alt="Avatar"
-                                      className="w-full h-full object-cover"
+                                      className="object-cover w-full h-full"
                                     />
                                   </div>
                                   <span className="text-sm font-bold text-slate-800">{doc.name}</span>
@@ -901,7 +792,7 @@ const AdminDashboard = () => {
                                 <div className="flex justify-end">
                                   <button
                                     onClick={() => handleDeleteDoctor(doc.id, doc.name)}
-                                    className="text-slate-400 hover:text-red-500 transition-colors"
+                                    className="transition-colors text-slate-400 hover:text-red-500"
                                     title="Delete doctor"
                                   >
                                     <Trash2 size={16} strokeWidth={1.5} />
@@ -914,9 +805,9 @@ const AdminDashboard = () => {
                       </table>
                     ) : (
                       <div className="p-12 text-center">
-                        <Stethoscope className="mx-auto text-slate-300 mb-3" size={40} />
+                        <Stethoscope className="mx-auto mb-3 text-slate-300" size={40} />
                         <p className="text-sm font-semibold text-slate-400">No doctors registered yet</p>
-                        <p className="text-xs text-slate-400 mt-1">Use the form to create a doctor account</p>
+                        <p className="mt-1 text-xs text-slate-400">Use the form to create a doctor account</p>
                       </div>
                     )}
                   </div>
@@ -931,14 +822,14 @@ const AdminDashboard = () => {
             <>
               {/* Header */}
               <div className="mb-8">
-                <h1 className="text-2xl font-bold text-slate-900 mb-1">Settings</h1>
-                <p className="text-slate-500 text-sm">Manage your account and application preferences.</p>
+                <h1 className="mb-1 text-2xl font-bold text-slate-900">Settings</h1>
+                <p className="text-sm text-slate-500">Manage your account and application preferences.</p>
               </div>
 
-              <div className="flex flex-col xl:flex-row gap-8">
+              <div className="flex flex-col gap-8 xl:flex-row">
                 {/* Settings Sidebar */}
                 <div className="w-full xl:w-64 shrink-0">
-                  <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-2 flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 p-2 bg-white border shadow-sm rounded-2xl border-slate-100">
                     <button
                       onClick={() => setActiveSettingsTab('General')}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeSettingsTab === 'General' ? 'bg-blue-50/50 text-blue-600 border border-blue-100/50 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'}`}
@@ -951,50 +842,50 @@ const AdminDashboard = () => {
                     >
                       <Bell size={18} className={activeSettingsTab === 'Notifications' ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-500'} /> Notifications
                     </button>
-                    <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors">
+                    <button className="flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-800">
                       <Lock size={18} className="text-slate-400 group-hover:text-slate-500" /> Security
                     </button>
-                    <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors">
+                    <button className="flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-800">
                       <Globe size={18} className="text-slate-400 group-hover:text-slate-500" /> Language
                     </button>
                   </div>
                 </div>
 
                 {/* Settings Content */}
-                <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+                <div className="flex-1 p-8 bg-white border shadow-sm rounded-2xl border-slate-100">
 
                   {/* General Settings */}
                   {activeSettingsTab === 'General' && (
                     <>
                       {/* Clinic Profile Section */}
                       <div className="mb-8">
-                        <h3 className="text-base font-bold text-slate-800 mb-6">Clinic Profile</h3>
+                        <h3 className="mb-6 text-base font-bold text-slate-800">Clinic Profile</h3>
 
                         <div className="space-y-6">
                           <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-2">Clinic Name</label>
+                            <label className="block mb-2 text-xs font-semibold text-slate-600">Clinic Name</label>
                             <input type="text" defaultValue="Dental CarePlus Clinic" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 font-medium focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
-                              <label className="block text-xs font-semibold text-slate-600 mb-2">Email Address</label>
+                              <label className="block mb-2 text-xs font-semibold text-slate-600">Email Address</label>
                               <input type="email" defaultValue="contact@dentalcareplus.com" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 font-medium focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
                             </div>
                             <div>
-                              <label className="block text-xs font-semibold text-slate-600 mb-2">Phone Number</label>
+                              <label className="block mb-2 text-xs font-semibold text-slate-600">Phone Number</label>
                               <input type="text" defaultValue="+1 (555) 123-4567" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 font-medium focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
                             </div>
                           </div>
 
                           <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-2">Address</label>
+                            <label className="block mb-2 text-xs font-semibold text-slate-600">Address</label>
                             <textarea rows="3" defaultValue="123 Medical Center Dr, Suite 200, San Francisco, CA 94105" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 font-medium focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors resize-none"></textarea>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
-                              <label className="block text-xs font-semibold text-slate-600 mb-2">Timezone</label>
+                              <label className="block mb-2 text-xs font-semibold text-slate-600">Timezone</label>
                               <select className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 font-medium focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors bg-white appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22currentColor%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M5.23%207.21a.75.75%200%20011.06.02L10%2011.168l3.71-3.938a.75.75%200%20111.08%201.04l-4.25%204.5a.75.75%200%2001-1.08%200l-4.25-4.5a.75.75%200%2001.02-1.06z%22%20clip-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_10px_center]">
                                 <option>Pacific Time (PT)</option>
                                 <option>Eastern Time (ET)</option>
@@ -1005,25 +896,25 @@ const AdminDashboard = () => {
                         </div>
                       </div>
 
-                      <hr className="border-slate-100 mb-8" />
+                      <hr className="mb-8 border-slate-100" />
 
                       {/* Business Hours Section */}
                       <div className="mb-10">
-                        <h3 className="text-base font-bold text-slate-800 mb-6">Business Hours</h3>
+                        <h3 className="mb-6 text-base font-bold text-slate-800">Business Hours</h3>
 
-                        <div className="space-y-4 max-w-md">
+                        <div className="max-w-md space-y-4">
                           {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(day => (
                             <div key={day} className="flex items-center justify-between">
-                              <span className="text-sm font-semibold text-slate-600 w-24">{day}</span>
+                              <span className="w-24 text-sm font-semibold text-slate-600">{day}</span>
                               <div className="flex items-center gap-3">
                                 <div className="relative">
-                                  <input type="text" defaultValue="09:00 am" className="w-28 pl-4 pr-8 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white" />
-                                  <Clock size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-800 pointer-events-none" />
+                                  <input type="text" defaultValue="09:00 am" className="py-2 pl-4 pr-8 text-xs font-semibold bg-white border w-28 rounded-xl border-slate-200 text-slate-800" />
+                                  <Clock size={14} className="absolute -translate-y-1/2 pointer-events-none right-3 top-1/2 text-slate-800" />
                                 </div>
                                 <span className="text-xs font-semibold text-slate-400">to</span>
                                 <div className="relative">
-                                  <input type="text" defaultValue="05:00 pm" className="w-28 pl-4 pr-8 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white" />
-                                  <Clock size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-800 pointer-events-none" />
+                                  <input type="text" defaultValue="05:00 pm" className="py-2 pl-4 pr-8 text-xs font-semibold bg-white border w-28 rounded-xl border-slate-200 text-slate-800" />
+                                  <Clock size={14} className="absolute -translate-y-1/2 pointer-events-none right-3 top-1/2 text-slate-800" />
                                 </div>
                               </div>
                             </div>
@@ -1037,19 +928,19 @@ const AdminDashboard = () => {
                   {activeSettingsTab === 'Notifications' && (
                     <>
                       <div className="mb-8">
-                        <h3 className="text-lg font-bold text-slate-900 mb-1">Notification Preferences</h3>
-                        <p className="text-slate-500 text-sm">Choose how you want to receive notifications and alerts.</p>
+                        <h3 className="mb-1 text-lg font-bold text-slate-900">Notification Preferences</h3>
+                        <p className="text-sm text-slate-500">Choose how you want to receive notifications and alerts.</p>
                       </div>
 
                       {/* Notification Channels */}
                       <div className="mb-8">
-                        <h4 className="text-sm font-bold text-slate-800 mb-6">Notification Channels</h4>
+                        <h4 className="mb-6 text-sm font-bold text-slate-800">Notification Channels</h4>
 
                         <div className="space-y-6">
                           {/* Channel 1 */}
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                              <div className="flex items-center justify-center w-10 h-10 text-blue-500 rounded-full bg-blue-50 shrink-0">
                                 <Mail size={18} />
                               </div>
                               <div>
@@ -1067,7 +958,7 @@ const AdminDashboard = () => {
                           {/* Channel 2 */}
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-full bg-green-50 text-green-500 flex items-center justify-center shrink-0">
+                              <div className="flex items-center justify-center w-10 h-10 text-green-500 rounded-full bg-green-50 shrink-0">
                                 <Smartphone size={18} />
                               </div>
                               <div>
@@ -1085,7 +976,7 @@ const AdminDashboard = () => {
                           {/* Channel 3 */}
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center shrink-0">
+                              <div className="flex items-center justify-center w-10 h-10 text-purple-500 rounded-full bg-purple-50 shrink-0">
                                 <Bell size={18} />
                               </div>
                               <div>
@@ -1102,11 +993,11 @@ const AdminDashboard = () => {
                         </div>
                       </div>
 
-                      <hr className="border-slate-100 mb-8" />
+                      <hr className="mb-8 border-slate-100" />
 
                       {/* Notification Types */}
                       <div className="mb-10">
-                        <h4 className="text-sm font-bold text-slate-800 mb-6">Notification Types</h4>
+                        <h4 className="mb-6 text-sm font-bold text-slate-800">Notification Types</h4>
 
                         <div className="space-y-6">
                           {/* Type 1 */}
@@ -1173,7 +1064,7 @@ const AdminDashboard = () => {
                     </>
                   )}
 
-                  <hr className="border-slate-100 mb-6" />
+                  <hr className="mb-6 border-slate-100" />
 
                   {/* Actions */}
                   <div className="flex items-center justify-end gap-3 mt-8">

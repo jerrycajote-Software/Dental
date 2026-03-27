@@ -369,14 +369,80 @@ const deletePatient = async (req, res) => {
 const deleteSelf = async (req, res) => {
   try {
     const userId = req.user.id;
-    
-    // Soft delete own account
     await db.query(
       'UPDATE users SET is_deleted = TRUE, deleted_at = NOW() WHERE id = $1',
       [userId]
     );
-
     res.json({ message: 'Your account has been deleted successfully. You will be logged out.' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Return own profile (used by doctor to persist is_available on reload)
+const getMe = async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT id, name, email, role, is_available FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: 'User not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ── Doctor Availability ──────────────────────────────────────────────────────
+
+const updateAvailability = async (req, res) => {
+  const { is_available } = req.body;
+  const doctorId = req.user.id;
+  try {
+    await db.query('UPDATE users SET is_available = $1 WHERE id = $2', [is_available, doctorId]);
+    res.json({ message: 'Availability updated', is_available });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const getUnavailableDates = async (req, res) => {
+  const doctorId = req.user.id;
+  try {
+    const result = await db.query(
+      'SELECT id, unavailable_date FROM doctor_unavailable_dates WHERE doctor_id = $1 ORDER BY unavailable_date ASC',
+      [doctorId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const addUnavailableDate = async (req, res) => {
+  const { date } = req.body;
+  const doctorId = req.user.id;
+  try {
+    const result = await db.query(
+      'INSERT INTO doctor_unavailable_dates (doctor_id, unavailable_date) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING *',
+      [doctorId, date]
+    );
+    res.status(201).json(result.rows[0] || { message: 'Date already marked unavailable' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const deleteUnavailableDate = async (req, res) => {
+  const { id } = req.params;
+  const doctorId = req.user.id;
+  try {
+    const result = await db.query(
+      'DELETE FROM doctor_unavailable_dates WHERE id = $1 AND doctor_id = $2 RETURNING *',
+      [id, doctorId]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ message: 'Not found' });
+    res.json({ message: 'Unavailable date removed' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -394,5 +460,11 @@ module.exports = {
   deletePatient,
   deleteSelf,
   forgotPassword, 
-  resetPassword 
+  resetPassword,
+  updateAvailability,
+  getUnavailableDates,
+  addUnavailableDate,
+  deleteUnavailableDate,
+  getMe,
 };
+

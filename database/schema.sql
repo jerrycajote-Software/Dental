@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
     email_verified BOOLEAN DEFAULT FALSE,
     verification_token VARCHAR(255),
     verification_token_expires TIMESTAMP,
+    is_available BOOLEAN DEFAULT TRUE, -- for doctors: shows in booking dropdown
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -41,3 +42,13 @@ CREATE TABLE IF NOT EXISTS schedules (
     start_time TIME NOT NULL,
     end_time TIME NOT NULL
 );
+
+-- Create Doctor Unavailable Dates table
+CREATE TABLE IF NOT EXISTS doctor_unavailable_dates (
+    id SERIAL PRIMARY KEY,
+    doctor_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    unavailable_date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(doctor_id, unavailable_date)
+);
+
