@@ -119,4 +119,68 @@ const sendVerificationEmail = async (to, name, token) => {
   }
 };
 
-module.exports = { sendVerificationEmail };
+const sendWalkinVerificationEmail = async (to, name, token, tempPassword) => {
+  const transport = await getTransporter();
+  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+  const verificationLink = `${clientUrl}/verify-email/${token}`;
+
+  const mailOptions = {
+    from: '"Dental CarePlus" <noreply@dentalcareplus.com>',
+    to,
+    subject: 'Welcome to Dental CarePlus - Verify Your Account',
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #f8f9fd; border-radius: 16px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #1a237e, #42a5f5); padding: 40px 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">Dental Care<span style="color: #0D9488;">Plus</span></h1>
+        </div>
+        
+        <div style="padding: 40px 30px;">
+          <h2 style="color: #1a237e; margin-top: 0;">Welcome, ${name}!</h2>
+          <p style="color: #555; font-size: 16px; line-height: 1.6;">
+            Your account has been successfully created by our clinic staff.
+          </p>
+          
+          <div style="background: #e3f2fd; padding: 20px; border-radius: 12px; margin: 20px 0;">
+            <p style="color: #1e88e5; font-size: 15px; margin: 0 0 10px 0; font-weight: bold;">Your Login Credentials:</p>
+            <p style="color: #333; font-size: 14px; margin: 5px 0;"><strong>Email:</strong> ${to}</p>
+            <p style="color: #333; font-size: 14px; margin: 5px 0;"><strong>Temporary Password:</strong> ${tempPassword}</p>
+          </div>
+
+          <p style="color: #555; font-size: 16px; line-height: 1.6;">
+            Before you can log in, please verify your email address by clicking the button below:
+          </p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationLink}" 
+               style="background: linear-gradient(45deg, #1089d3, #12b1d1); color: white; padding: 14px 40px; border-radius: 25px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block;">
+              Verify My Email
+            </a>
+          </div>
+
+          <p style="color: #888; font-size: 14px; line-height: 1.5; background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+            <strong>Important:</strong> We strongly recommend logging in and changing your password immediately after verifying your account.
+          </p>
+        </div>
+
+        <div style="background: #e8eaf6; padding: 20px 30px; text-align: center;">
+          <p style="color: #888; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} Dental CarePlus. All rights reserved.</p>
+        </div>
+
+      </div>
+    `,
+  };
+
+  try {
+    const info = await transport.sendMail(mailOptions);
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    if (previewUrl) {
+      console.log('🔗 Email Preview URL:', previewUrl);
+    }
+    return info;
+  } catch (error) {
+    console.error('❌ Error sending walkin verification email:');
+    throw error;
+  }
+};
+
+module.exports = { sendVerificationEmail, sendWalkinVerificationEmail };

@@ -62,7 +62,7 @@ const Home = () => {
     <div className="bg-[#f8fbff] text-slate-900 min-h-screen font-sans">
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-20 pb-32 bg-gradient-to-b from-[#1a237e] to-[#42a5f5]">
-        {/* Abstract Background Accents */}
+        {/* Abstract Background  */}
         <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-[600px] h-[600px] bg-white/10 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 translate-y-1/4 -translate-x-1/4 w-[500px] h-[500px] bg-white/10 rounded-full blur-[100px] pointer-events-none" />
 
@@ -159,7 +159,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Why Choose Us Section */}
+      
       <section className="py-32 relative overflow-hidden bg-[#f0f7ff]">
         <div className="container relative z-10 px-4 mx-auto">
           <div className="flex flex-col items-center gap-20 lg:flex-row">

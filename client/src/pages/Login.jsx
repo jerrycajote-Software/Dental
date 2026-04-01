@@ -158,9 +158,7 @@ const Login = () => {
               <input className="login-button" type="submit" value="Sign In" />
             </form>
             
-            <span className="agreement" style={{ marginTop: '20px' }}>
-              <Link to="/register">Don't have an account? Sign Up</Link>
-            </span>
+            {/* Registration removed per new walk-in workflow */}
           </div>
         </StyledWrapper>
       </div>

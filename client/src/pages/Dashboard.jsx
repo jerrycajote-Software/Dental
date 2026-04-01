@@ -5,17 +5,14 @@ import {
   Calendar, Clock, CheckCircle, XCircle, AlertCircle,
   MapPin, Plus, FileText, Activity, User as UserIcon
 } from 'lucide-react';
-import AppointmentForm from '../components/AppointmentForm';
 import authService from '../services/authService';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState('Overview');
   const [deleting, setDeleting] = useState(false);
-  const [reschedulingAppointment, setReschedulingAppointment] = useState(null);
 
   const formatTime12h = (time24) => {
     if (!time24) return '';
@@ -71,11 +68,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleReschedule = (appointment) => {
-    setReschedulingAppointment(appointment);
-    setShowForm(true);
-  };
-
   // ... (getStatusBadge, getStatusColor, etc. remain same)
 
   const getStatusBadge = (status) => {
@@ -103,7 +95,7 @@ const Dashboard = () => {
   const upcomingAppointments = appointments.filter(a => a.status === 'confirmed' || a.status === 'pending');
   const pastAppointments = appointments.filter(a => a.status === 'completed' || a.status === 'cancelled');
 
-  // Prioritize soonest appointment today; fall back to next future appointment
+  
   const todayStr = new Date().toISOString().split('T')[0];
   const todayUpcoming = upcomingAppointments
     .filter(a => new Date(a.appointment_date).toISOString().split('T')[0] === todayStr)
@@ -150,22 +142,12 @@ const Dashboard = () => {
                   Here is your dental health overview.
                 </p>
               </div>
-              <button
-                onClick={() => {
-                  setReschedulingAppointment(null);
-                  setShowForm(true);
-                }}
-                className="w-full md:w-auto bg-[#1d4ed8] text-white px-6 py-3.5 rounded-xl hover:bg-blue-800 transition-all duration-300 shadow-md shadow-blue-900/10 font-bold flex items-center justify-center gap-2 transform active:scale-95"
-              >
-                <Plus size={20} strokeWidth={2.5} />
-                <span>Book New Appointment</span>
-              </button>
             </div>
 
             {/* ... rest of the Overview content ... */}
           </>
         ) : (
-          /* SETTINGS TAB CONTENT */
+          /* SETTINGS TAB  */
           <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-blue-900/5 overflow-hidden border border-blue-50 p-10">
             <h3 className="mb-8 text-2xl font-black text-slate-900">Account Settings</h3>
 
@@ -191,20 +173,11 @@ const Dashboard = () => {
           </div>
         )}
 
-        {showForm && (
-          <AppointmentForm
-            appointment={reschedulingAppointment}
-            onClose={() => {
-              setShowForm(false);
-              setReschedulingAppointment(null);
-            }}
-            onSuccess={fetchAppointments}
-          />
-        )}
+        {/* Remove showForm */ }
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-          {/* MAIN COLUMN (Upcoming Appointment + Quick Actions ) */}
+          {/* MAIN COLUMN */}
           <div className="space-y-6 lg:col-span-2">
 
             {/* UPCOMING APPOINTMENTS LIST */}
@@ -234,6 +207,7 @@ const Dashboard = () => {
                       })
                       .map(apt => (
                         <div key={apt.id} className="flex flex-col justify-between gap-4 p-5 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
+                          
                           <div className="flex items-center gap-4">
                             <div className="flex flex-col items-center justify-center font-black leading-none text-blue-600 w-14 h-14 rounded-2xl bg-blue-50 shrink-0">
                               <span className="text-xl">
@@ -252,14 +226,9 @@ const Dashboard = () => {
                               </div>
                             </div>
                           </div>
+                          
                           <div className="flex items-center gap-4 shrink-0">
                             {getStatusBadge(apt.status)}
-                            <button
-                              onClick={() => handleReschedule(apt)}
-                              className="text-xs font-bold text-blue-500 transition-colors hover:text-blue-700"
-                            >
-                              Reschedule
-                            </button>
                             <button
                               onClick={() => handleCancel(apt.id)}
                               className="text-xs font-bold text-red-400 transition-colors hover:text-red-600"
@@ -267,6 +236,7 @@ const Dashboard = () => {
                               Cancel
                             </button>
                           </div>
+                          
                         </div>
                       ))}
                   </div>
@@ -279,7 +249,7 @@ const Dashboard = () => {
             </div>
 
 
-            {/* APPOINTMENT HISTORY WIDGET */}
+            {/* APPOINTMENT HISTORY */}
             <div className="overflow-hidden bg-white border shadow-sm rounded-2xl border-slate-100">
               <div className="px-6 py-6 border-b border-slate-50 bg-white/50">
                 <h3 className="text-[17px] font-bold text-slate-800">Appointment History</h3>
@@ -296,7 +266,7 @@ const Dashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {/* Past appointments will be rendered below dynamically from the database */}
+                    {/* Past appointments  */}
                     {pastAppointments.slice(0, 3).map(apt => (
                       <tr key={apt.id} className="transition-colors hover:bg-slate-50/50">
                         <td className="px-6 py-5 text-sm font-medium text-slate-800">
@@ -316,8 +286,8 @@ const Dashboard = () => {
 
         </div>
 
-        {/* ORIGINAL WIDGET RESTORED */}
-        <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-blue-900/5 overflow-hidden border border-blue-50 mt-12">
+       
+        {/* <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-blue-900/5 overflow-hidden border border-blue-50 mt-12">
           <div className="bg-[#a1c4fd]/10 px-8 py-6 border-b border-blue-50">
             <h3 className="text-xl font-black text-[#1a237e]">All Appointments</h3>
           </div>
@@ -325,7 +295,7 @@ const Dashboard = () => {
           {loading ? (
             <div className="p-20 italic font-bold text-center text-slate-400">
               <div className="flex flex-col items-center animate-pulse">
-                <Calendar size={48} className="mb-4 opacity-20" />
+                <Calendar size={48} className="mb-4 opacity-50" />
                 Loading your appointments...
               </div>
             </div>
@@ -378,7 +348,7 @@ const Dashboard = () => {
               </button>
             </div>
           )}
-        </div>
+        </div> */}
 
       </div>
     </div>

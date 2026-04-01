@@ -259,7 +259,7 @@ const AdminDashboard = () => {
         </div>
       </aside>
 
-      {/* MAIN CONTENT AREA */}
+      {/* MAIN AREA */}
       <div className="flex flex-col flex-1 h-screen overflow-hidden">
 
         {/* HEADER */}
@@ -353,7 +353,7 @@ const AdminDashboard = () => {
               {/* LOWER SECTION: CHART & ACTIVITY */}
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-              {/* Appointments Overview Chart (Takes full width) */}
+              {/* Appointments Overview Chart */}
                 <div className="lg:col-span-3 bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-bold text-slate-800">Appointments Overview</h3>
@@ -419,7 +419,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Search & Filter Bar */}
+              {/* Search */}
               <div className="flex items-center justify-between p-2 mb-6 bg-white border shadow-sm rounded-xl border-slate-100">
                 <div className="flex items-center flex-1 pl-3">
                   <Search size={18} className="mr-2 text-slate-400" />
@@ -446,7 +446,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Appointments Table */}
+              {/* Appointments */}
               <div className="overflow-hidden bg-white border shadow-sm rounded-xl border-slate-100">
                 <table className="w-full text-left border-collapse">
                   <thead>
@@ -601,14 +601,17 @@ const AdminDashboard = () => {
                               </div>
                             </div>
                           </td>
+                          
                           <td className="px-6 py-4">
                             <span className="text-sm font-medium text-slate-500">{patient.email}</span>
                           </td>
+                          
                           <td className="px-6 py-4">
                             <span className="text-xs font-medium text-slate-500">
                               {new Date(patient.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                             </span>
                           </td>
+                          
                           <td className="px-6 py-4 text-slate-800">
                             {patient.is_deleted ? (
                               <span className="px-2.5 py-1 bg-red-50 text-red-500 text-[10px] font-bold rounded-full border border-red-100 uppercase tracking-wider">Deleted</span>
@@ -817,7 +820,7 @@ const AdminDashboard = () => {
             </>
           )}
 
-          {/* ---- SETTINGS TAB ---- */}
+          {/* SETTINGS TAB */}
           {activeTab === 'Settings' && (
             <>
               {/* Header */}

@@ -1,4 +1,7 @@
 const db = require('../config/db');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const { sendWalkinVerificationEmail } = require('../utils/email');
 
 const getAppointments = async (req, res) => {
   try {
@@ -149,5 +152,84 @@ const deleteAppointment = async (req, res) => {
   }
 };
 
-module.exports = { getAppointments, getBookedSlots, createAppointment, updateAppointmentStatus, updateAppointment, deleteAppointment };
 
+const createWalkinAppointment = async (req, res) => {
+  const {
+    first_name, last_name, middle_name, age, date_of_birth,
+    contact_number, email, home_address, allergies, previous_dental_history,
+    service_id, dentist_id, appointment_date, appointment_time, notes
+  } = req.body;
+
+  try {
+    // Basic validation
+    if (!first_name || !last_name || !email || !service_id || !dentist_id || !appointment_date || !appointment_time) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    // Conflict check for appointment
+    const conflict = await db.query(
+      `SELECT id FROM appointments
+       WHERE dentist_id = $1 AND appointment_date = $2 AND appointment_time = $3
+         AND status IN ('pending', 'confirmed')`,
+      [dentist_id, appointment_date, appointment_time]
+    );
+    if (conflict.rows.length > 0) {
+      return res.status(409).json({ message: 'This time slot is already booked for this doctor.' });
+    }
+
+    let user_id;
+    const trimmedEmail = email.trim().toLowerCase();
+    const userResult = await db.query('SELECT * FROM users WHERE email = $1', [trimmedEmail]);
+
+    if (userResult.rows.length > 0) {
+      // User exists
+      user_id = userResult.rows[0].id;
+    } else {
+      // Create new user
+      const tempPassword = crypto.randomBytes(6).toString('hex'); // 12 characters
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      const fullName = `${first_name.trim()} ${last_name.trim()}`;
+
+      const newUser = await db.query(
+        `INSERT INTO users (
+          first_name, last_name, middle_name, name, email, password, role, 
+          age, date_of_birth, contact_number, home_address, allergies, previous_dental_history,
+          email_verified, verification_token, verification_token_expires
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'user', $7, $8, $9, $10, $11, $12, FALSE, $13, $14)
+        RETURNING id`,
+        [
+          first_name.trim(), last_name.trim(), middle_name?.trim() || null, fullName, trimmedEmail, hashedPassword,
+          age || null, date_of_birth || null, contact_number?.trim() || null, home_address?.trim() || null, 
+          allergies?.trim() || null, previous_dental_history?.trim() || null,
+          verificationToken, tokenExpires
+        ]
+      );
+      
+      user_id = newUser.rows[0].id;
+
+      // Send walk-in verification email with temporary password
+      try {
+        await sendWalkinVerificationEmail(trimmedEmail, fullName, verificationToken, tempPassword);
+      } catch (emailErr) {
+        console.error('Failed to send walkin verification email:', emailErr.message);
+      }
+    }
+
+    // Create appointment with status 'confirmed' since the doctor made it
+    const newAppointment = await db.query(
+      'INSERT INTO appointments (client_id, dentist_id, service_id, appointment_date, appointment_time, notes, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [user_id, dentist_id, service_id, appointment_date, appointment_time, notes, 'confirmed']
+    );
+
+    res.status(201).json({
+      message: 'Walk-in appointment created successfully.',
+      appointment: newAppointment.rows[0]
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports = { getAppointments, getBookedSlots, createAppointment, updateAppointmentStatus, updateAppointment, deleteAppointment, createWalkinAppointment };

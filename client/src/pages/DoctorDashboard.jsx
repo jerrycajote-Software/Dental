@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import appointmentService from '../services/appointmentService';
 import api from '../services/api';
+import WalkinAppointmentForm from '../components/WalkinAppointmentForm';
 import styled from 'styled-components';
 import {
   FiCalendar,
@@ -32,7 +33,7 @@ const DoctorDashboard = () => {
     completed: 0
   });
 
-  // ── Availability state ──────────────────────────────────────
+  const [showForm, setShowForm] = useState(false);
   const [isAvailable, setIsAvailable] = useState(true);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [unavailableDates, setUnavailableDates] = useState([]);
@@ -70,7 +71,7 @@ const DoctorDashboard = () => {
       const res = await api.get('/auth/me');
       setIsAvailable(res.data.is_available ?? true);
     } catch {
-      // Silently fail — defaults to true
+      // defaults to true
     }
   };
 
@@ -119,7 +120,7 @@ const DoctorDashboard = () => {
     }
   };
 
-  // ── Appointments ────────────────────────────────────────────
+  // Appointments 
   const handleStatusUpdate = async (id, newStatus) => {
     try {
       await appointmentService.updateStatus(id, newStatus);
@@ -144,7 +145,7 @@ const DoctorDashboard = () => {
     }
   };
 
-  // Format time to 12-hour PHT display
+  
   const formatTime12h = (time24) => {
     if (!time24) return '';
     const [hours, minutes] = time24.split(':');
@@ -154,24 +155,23 @@ const DoctorDashboard = () => {
     return `${h12}:${minutes} ${ampm} PHT`;
   };
 
-  // Returns true if the appointment date+time has already passed (PHT = UTC+8)
+
   const isAppointmentPast = (dateStr, timeStr) => {
     if (!dateStr || !timeStr) return false;
     const [hours, minutes] = timeStr.split(':').map(Number);
     const apptDate = new Date(dateStr);
-    // Combine: appointment date (UTC midnight from DB) + appointment time interpreted as PHT
-    // PHT is UTC+8; we use toLocaleString for reliable PHT "now" comparison
+
     const apptDateTime = new Date(Date.UTC(
       apptDate.getUTCFullYear(),
       apptDate.getUTCMonth(),
       apptDate.getUTCDate(),
-      hours - 8, // convert PHT hours to UTC (PHT = UTC+8)
+      hours - 8, 
       minutes
     ));
     return apptDateTime < new Date();
   };
 
-  // Format date for display
+
   const formatDisplayDate = (dateStr) => {
     if (!dateStr) return '';
     return new Date(dateStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
@@ -179,7 +179,7 @@ const DoctorDashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      {/* Top Bar */}
+
       <header className="sticky top-0 z-30 border-b bg-white/80 backdrop-blur-md border-slate-200">
         <div className="flex items-center justify-between px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
@@ -213,10 +213,27 @@ const DoctorDashboard = () => {
       <main className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <StyledWrapper>
           {/* Welcome Section */}
-          <div className="mb-10">
-            <h2 className="mb-2 text-3xl font-black text-slate-900">Hello, Dr. {user?.name?.split(' ')[0]} 👋</h2>
-            <p className="font-medium text-slate-500">Here's what's happening with your appointments today.</p>
+          <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="mb-2 text-3xl font-black text-slate-900">Hello, Dr. {user?.name?.split(' ')[0]} 👋</h2>
+              <p className="font-medium text-slate-500">Here's what's happening with your appointments today.</p>
+            </div>
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-[#1089d3] text-white px-6 py-3.5 rounded-xl hover:bg-[#0d73b0] transition-colors font-bold shadow-md shadow-blue-500/30 flex items-center justify-center gap-2"
+            >
+              <FiPlus size={20} />
+              Book Walk-in Patient
+            </button>
           </div>
+
+          {showForm && (
+            <WalkinAppointmentForm
+              currentDentistId={user?.id}
+              onClose={() => setShowForm(false)}
+              onSuccess={fetchAppointments}
+            />
+          )}
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 gap-6 mb-10 sm:grid-cols-2 lg:grid-cols-4">
@@ -240,7 +257,7 @@ const DoctorDashboard = () => {
             ))}
           </div>
 
-          {/* ── AVAILABILITY SECTION ─────────────────────────────────── */}
+          {/*  AVAILABILITY SECTION */}
           <div className="mb-10 overflow-hidden bg-white border shadow-sm rounded-3xl border-slate-200">
             <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
               <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900">

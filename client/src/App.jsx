@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
-import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
@@ -40,7 +39,7 @@ const PublicRoute = ({ children }) => {
 
 const AppContent = () => {
   const location = useLocation();
-  const isFullScreenPage = ['/login', '/register', '/admin', '/doctor', '/forgot-password'].includes(location.pathname) 
+  const isFullScreenPage = ['/login', '/admin', '/doctor', '/forgot-password'].includes(location.pathname) 
     || location.pathname.startsWith('/verify-email')
     || location.pathname.startsWith('/reset-password');
 
@@ -51,7 +50,6 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-          <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
