@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import appointmentService from '../services/appointmentService';
 import api from '../services/api';
-import WalkinAppointmentForm from '../components/WalkinAppointmentForm';
+import WalkinAppointmentForm from '../components/WalkinAppointmentForm'; //
 import styled from 'styled-components';
 import {
   FiCalendar,
@@ -33,7 +33,7 @@ const DoctorDashboard = () => {
     completed: 0
   });
 
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(false); //
   const [isAvailable, setIsAvailable] = useState(true);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [unavailableDates, setUnavailableDates] = useState([]);

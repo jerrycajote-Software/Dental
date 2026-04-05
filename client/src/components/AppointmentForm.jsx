@@ -29,6 +29,14 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
   const [dentists, setDentists] = useState([]);
   const [bookedSlots, setBookedSlots] = useState([]); // array of { time, duration } objects
   const [doctorSchedule, setDoctorSchedule] = useState(null); // { start, end } or null
+
+  // Compute today's local date string (YYYY-MM-DD) without UTC offset issues
+  const getTodayStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const todayStr = getTodayStr();
+
   const [formData, setFormData] = useState({
     service_id: appointment?.service_id || '',
     dentist_id: appointment?.dentist_id || '',
@@ -176,6 +184,16 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
       return;
     }
 
+    // Prevent booking in the past
+    if (formData.appointment_date && formData.appointment_time) {
+      const apptDateTime = new Date(`${formData.appointment_date}T${formData.appointment_time}`);
+      if (apptDateTime < new Date()) {
+        setError('Cannot book an appointment in the past. Please select a future date and time.');
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       if (appointment) {
         await appointmentService.updateAppointment(appointment.id, formData);
@@ -254,7 +272,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
               name="appointment_date"
               value={formData.appointment_date}
               onChange={handleChange}
-              min={new Date().toISOString().split('T')[0]}
+              min={todayStr}
               className="w-full bg-slate-50 border-none rounded-2xl p-4 text-slate-900 font-bold focus:ring-2 focus:ring-[#a1c4fd] transition-all"
               required
             />

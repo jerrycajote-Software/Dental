@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 
+
 let transporter = null;
 
 /**
@@ -118,6 +119,7 @@ const sendVerificationEmail = async (to, name, token) => {
     throw error;
   }
 };
+
 
 const sendWalkinVerificationEmail = async (to, name, token, tempPassword) => {
   const transport = await getTransporter();

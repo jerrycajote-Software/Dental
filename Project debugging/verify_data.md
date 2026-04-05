@@ -20,6 +20,7 @@ SET email_verified = TRUE,
     verification_token = NULL, 
     verification_token_expires = NULL 
 WHERE email_verified = FALSE;
+
 How to run these commands:
 Using psql (Terminal): If you have access to the terminal where Postgres is running, you can connect and run the query:
 

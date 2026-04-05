@@ -36,7 +36,7 @@ const LoginScreen = ({ navigation }) => {
 
       const { user, token } = response.data;
 
-      // Restriction: Only 'user' role permitted on mobile
+      
       if (user.role === 'admin' || user.role === 'doctor') {
         Alert.alert(
           'Access Restricted',
@@ -137,7 +137,7 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a237e', // Base dark blue from web gradient
+    backgroundColor: '#1a237e', 
   },
   scrollContent: {
     flexGrow: 1,
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '900',
     fontSize: 28,
-    color: '#1089d3', // rgb(16, 137, 211)
+    color: '#1089d3', 
     marginBottom: 30,
   },
   inputContainer: {

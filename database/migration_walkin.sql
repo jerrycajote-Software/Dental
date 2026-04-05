@@ -1,4 +1,3 @@
--- patient profile fields
 
 AlTER TABLE users ADD COLUMN IF NOT EXISTS first_name VARCHAR(255);
 alter table users add column if not exists last_name varchar(255);

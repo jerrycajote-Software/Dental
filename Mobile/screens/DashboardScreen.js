@@ -115,7 +115,7 @@ const DashboardScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* CURRENT APPOINTMENT SCHEDULE WIDGET */}
+        {/* CURRENT APPOINTMENT SCHEDULE */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.cardHeaderLeft}>
@@ -176,20 +176,20 @@ const DashboardScreen = ({ navigation }) => {
 
       </ScrollView>
 
-      {/* FLOATING CHATBOT ICON */}
+      {/* FLOATING CHATBOT */}
       <TouchableOpacity
         style={styles.chatbotBtn}
         activeOpacity={0.8}
         onPress={() => setIsChatBotVisible(true)}
       >
-        <Image 
-          source={require('../assets/ai.png')} 
+        <Image
+          source={require('../assets/ai.png')}
           style={styles.chatbotIcon}
           resizeMode="contain"
         />
       </TouchableOpacity>
 
-      {/* CHATBOT MODAL OVERLAY */}
+      {/* CHATBOT OVERLAY */}
       <Modal
         visible={isChatBotVisible}
         animationType="slide"
@@ -216,7 +216,7 @@ const DashboardScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#e7f0fa', // matched exactly from web
+    backgroundColor: '#e7f0fa', 
   },
   container: {
     flex: 1,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 28,
-    fontWeight: '900', // almost black
+    fontWeight: '900', 
     color: '#0f172a',
     marginBottom: 4,
   },
@@ -241,14 +241,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   bookButton: {
-    backgroundColor: '#1d4ed8', // blue-700
+    backgroundColor: '#1d4ed8', 
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 12,
-    shadowColor: '#1e3a8a', // blue-900
+    shadowColor: '#1e3a8a', 
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#f1f5f9', // slate-100
+    borderColor: '#f1f5f9', 
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -382,8 +382,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 24,
     right: 24,
-    backgroundColor: '#0ea5e9', // lighter blue distinct from the main action buttons
-    width: 65,
+    backgroundColor: '#0ea5e9', 
     height: 65,
     borderRadius: 33,
     justifyContent: 'center',
