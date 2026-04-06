@@ -131,6 +131,7 @@ const DoctorDashboard = () => {
   };
 
   const handleLogout = () => {
+    if (!window.confirm('Are you sure you want to log out?')) return;
     logout();
     navigate('/login');
   };
@@ -145,7 +146,27 @@ const DoctorDashboard = () => {
     }
   };
 
-  
+  /**
+   * Safely extract the intended calendar date (YYYY-MM-DD) from any format
+   * node-postgres may return:
+   *   - After db.js fix  →  "2026-04-08"  (plain string)
+   *   - Before db.js fix →  "2026-04-07T16:00:00.000Z"  (UTC-midnight of PHT date)
+   * In both cases we want "2026-04-08".
+   */
+  const parseDateStr = (val) => {
+    if (!val) return '';
+    const s = String(val);
+    // Plain YYYY-MM-DD — already correct
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    // ISO timestamp: node-postgres stored PHT midnight as UTC.
+    // Use local (browser) date which reverse-shifts back to the correct calendar day.
+    const d = new Date(s);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const formatTime12h = (time24) => {
     if (!time24) return '';
     const [hours, minutes] = time24.split(':');
@@ -156,25 +177,22 @@ const DoctorDashboard = () => {
   };
 
 
-  const isAppointmentPast = (dateStr, timeStr) => {
-    if (!dateStr || !timeStr) return false;
+  const isAppointmentPast = (dateVal, timeStr) => {
+    if (!dateVal || !timeStr) return false;
     const [hours, minutes] = timeStr.split(':').map(Number);
-    const apptDate = new Date(dateStr);
-
-    const apptDateTime = new Date(Date.UTC(
-      apptDate.getUTCFullYear(),
-      apptDate.getUTCMonth(),
-      apptDate.getUTCDate(),
-      hours - 8, 
-      minutes
-    ));
+    const [year, month, day] = parseDateStr(dateVal).split('-').map(Number);
+    // Build the appointment datetime in local time (PHT)
+    const apptDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
     return apptDateTime < new Date();
   };
 
 
-  const formatDisplayDate = (dateStr) => {
-    if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  const formatDisplayDate = (dateVal) => {
+    const s = parseDateStr(dateVal);
+    if (!s) return '';
+    const [year, month, day] = s.split('-').map(Number);
+    return new Date(year, month - 1, day)
+      .toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   };
 
   return (
@@ -398,7 +416,10 @@ const DoctorDashboard = () => {
                           <td className="px-8 py-6">
                             <div>
                               <p className="text-sm font-bold text-slate-900">
-                                {new Date(appt.appointment_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                {(() => {
+                                  const [y, m, d] = parseDateStr(appt.appointment_date).split('-').map(Number);
+                                  return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                                })()}
                               </p>
                               <p className="text-xs font-medium text-[#1089d3]">{formatTime12h(appt.appointment_time)}</p>
                             </div>

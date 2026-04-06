@@ -249,7 +249,11 @@ const AdminDashboard = () => {
               </div>
             </div>
             <button
-              onClick={logout}
+              onClick={() => {
+                if (window.confirm('Are you sure you want to log out?')) {
+                  logout();
+                }
+              }}
               className="p-2 transition-colors rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
               title="Logout"
             >
@@ -462,7 +466,7 @@ const AdminDashboard = () => {
                   <tbody className="divide-y divide-slate-100">
                     {filteredAppointments.length > 0 ? (
                       filteredAppointments.map((apt) => {
-                        const date = new Date(apt.appointment_date);
+                        const dateStr = (apt.appointment_date || '').slice(0, 10);
                         return (
                           <tr key={apt.id} className="transition-colors hover:bg-slate-50">
                             {/* PATIENT */}
@@ -479,7 +483,7 @@ const AdminDashboard = () => {
                             {/* DATE & TIME */}
                             <td className="px-6 py-4">
                               <div className="text-sm font-semibold text-slate-700">
-                                {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                {new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
                               </div>
                               <div className="text-xs font-medium text-slate-400 mt-0.5">
                                 {apt.appointment_time.substring(0, 5)} {parseInt(apt.appointment_time.substring(0, 2)) >= 12 ? 'PM' : 'AM'}
@@ -505,23 +509,9 @@ const AdminDashboard = () => {
                             <td className="px-6 py-4">
                               <div className="flex items-center justify-end gap-3 text-slate-400">
                                 <button
-                                  onClick={() => handleStatusChange(apt.id, 'confirmed')}
-                                  title="Confirm"
-                                  className="transition-colors hover:text-emerald-500"
-                                >
-                                  <CheckCircle2 size={18} />
-                                </button>
-                                <button
-                                  onClick={() => handleStatusChange(apt.id, 'cancelled')}
-                                  title="Reject"
-                                  className="transition-colors hover:text-red-500"
-                                >
-                                  <XCircle size={18} />
-                                </button>
-                                <button
                                   onClick={() => handleDelete(apt.id)}
-                                  title="Delete"
-                                  className="ml-1 transition-colors hover:text-slate-600"
+                                  title="Delete appointment"
+                                  className="transition-colors hover:text-red-500"
                                 >
                                   <Trash2 size={18} strokeWidth={1.5} />
                                 </button>

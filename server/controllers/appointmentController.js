@@ -185,8 +185,22 @@ const createWalkinAppointment = async (req, res) => {
 
   try {
     // ── Validation ──────────────────────────────────────────────────────────
-    if (!first_name || !last_name || !email || !dentist_id || !appointment_date || !appointment_time) {
-      return res.status(400).json({ message: 'Missing required fields' });
+    const missingFields = [];
+    if (!first_name) missingFields.push('First Name');
+    if (!last_name)  missingFields.push('Last Name');
+    if (!email)      missingFields.push('Email');
+    if (!dentist_id) missingFields.push('Dentist');
+    if (!appointment_date) missingFields.push('Appointment Date');
+    if (!appointment_time) missingFields.push('Appointment Time');
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({ message: `Missing required fields: ${missingFields.join(', ')}` });
+    }
+
+    // Normalize dentist_id to number
+    const dentistIdNum = Number(dentist_id);
+    if (!dentistIdNum) {
+      return res.status(400).json({ message: 'Invalid dentist selected.' });
     }
 
     const ids = Array.isArray(service_ids) ? service_ids : [];
@@ -208,7 +222,7 @@ const createWalkinAppointment = async (req, res) => {
       `SELECT id FROM appointments
        WHERE dentist_id = $1 AND appointment_date = $2 AND appointment_time = $3
          AND status IN ('pending', 'confirmed')`,
-      [dentist_id, appointment_date, appointment_time]
+      [dentistIdNum, appointment_date, appointment_time]
     );
     if (conflict.rows.length > 0) {
       return res.status(409).json({ message: 'This time slot is already booked for this doctor.' });
@@ -262,7 +276,7 @@ const createWalkinAppointment = async (req, res) => {
          (client_id, dentist_id, service_id, appointment_date, appointment_time, notes, status)
        VALUES ($1, $2, $3, $4, $5, $6, 'confirmed')
        RETURNING *`,
-      [user_id, dentist_id, primaryServiceId, appointment_date, appointment_time, notes]
+      [user_id, dentistIdNum, primaryServiceId, appointment_date, appointment_time, notes]
     );
 
     const appointmentId = newAppointment.rows[0].id;

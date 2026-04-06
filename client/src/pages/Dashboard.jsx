@@ -98,15 +98,15 @@ const Dashboard = () => {
   
   const todayStr = new Date().toISOString().split('T')[0];
   const todayUpcoming = upcomingAppointments
-    .filter(a => new Date(a.appointment_date).toISOString().split('T')[0] === todayStr)
+    .filter(a => (a.appointment_date || '').slice(0, 10) === todayStr)
     .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
 
   const nextAppointment = todayUpcoming.length > 0
     ? todayUpcoming[0]
     : upcomingAppointments
-        .filter(a => new Date(a.appointment_date).toISOString().split('T')[0] > todayStr)
+        .filter(a => (a.appointment_date || '').slice(0, 10) > todayStr)
         .sort((a, b) => {
-          const dateCompare = new Date(a.appointment_date) - new Date(b.appointment_date);
+          const dateCompare = (a.appointment_date || '').localeCompare(b.appointment_date || '');
           return dateCompare !== 0 ? dateCompare : a.appointment_time.localeCompare(b.appointment_time);
         })[0] || null;
 
@@ -211,7 +211,7 @@ const Dashboard = () => {
                           <div className="flex items-center gap-4">
                             <div className="flex flex-col items-center justify-center font-black leading-none text-blue-600 w-14 h-14 rounded-2xl bg-blue-50 shrink-0">
                               <span className="text-xl">
-                                {new Date(apt.appointment_date).getUTCDate()}
+                                {new Date(apt.appointment_date).toLocaleDateString('en-US', { day: 'numeric', timeZone: 'UTC' })}
                               </span>
                               <span className="text-[10px] font-bold text-blue-400 uppercase">
                                 {new Date(apt.appointment_date).toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' })}
@@ -270,7 +270,7 @@ const Dashboard = () => {
                     {pastAppointments.slice(0, 3).map(apt => (
                       <tr key={apt.id} className="transition-colors hover:bg-slate-50/50">
                         <td className="px-6 py-5 text-sm font-medium text-slate-800">
-                          {new Date(apt.appointment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          {new Date(apt.appointment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
                         </td>
                         <td className="px-6 py-5 text-sm font-medium text-slate-800">Dr. {apt.dentist_name}</td>
                         <td className="px-6 py-5 text-sm font-medium text-slate-500">{apt.service_name}</td>
