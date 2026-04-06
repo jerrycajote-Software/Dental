@@ -236,11 +236,22 @@ const createWalkinAppointment = async (req, res) => {
     if (userResult.rows.length > 0) {
       user_id = userResult.rows[0].id;
     } else {
-      const tempPassword = crypto.randomBytes(6).toString('hex');
+      // ── Generate deterministic temp password ──────────────────────────────
+      // Format: first 2 letters of first name + first 2 letters of last name + birth year
+      // e.g. "Cedric Torres" born 2003 → "CeTo2003"
+      const fn = first_name.trim();
+      const ln = last_name.trim();
+      const birthYear = date_of_birth ? String(date_of_birth).slice(0, 4) : '0000';
+      const tempPassword =
+        (fn.slice(0, 1).toUpperCase() + fn.slice(1, 2).toLowerCase()) +
+        (ln.slice(0, 1).toUpperCase() + ln.slice(1, 2).toLowerCase()) +
+        birthYear;
+
       const hashedPassword = await bcrypt.hash(tempPassword, 10);
       const verificationToken = crypto.randomBytes(32).toString('hex');
-      const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      const fullName = `${first_name.trim()} ${last_name.trim()}`;
+      const tokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      const fullName = `${fn} ${ln}`;
+
 
       const newUser = await db.query(
         `INSERT INTO users (
