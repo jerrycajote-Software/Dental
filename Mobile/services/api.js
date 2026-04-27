@@ -1,10 +1,7 @@
 import axios from 'axios';
 
-// Use your computer's local IP address for physical device testing
-// For Android Emulator: http://10.0.2.2:5000/api
-// For iOS Simulator: http://localhost:5000/api
-// Detected Local IP: 192.168.1.54
-const BASE_URL = 'http://192.168.1.54:5000/api';
+// Production backend deployed on Railway
+const BASE_URL = 'https://dentalcareplus.up.railway.app/api';
 
 const api = axios.create({
   baseURL: BASE_URL,

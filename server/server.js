@@ -20,6 +20,9 @@ const authRoutes = require('./routes/authRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const medicalRoutes = require('./routes/medicalRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 const bootstrapAdmin = require('./utils/bootstrap');
 
 // Use Routes
@@ -27,6 +30,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/services', serviceRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/medical', medicalRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 const PORT = process.env.PORT || 5000;
 
@@ -36,6 +42,8 @@ app.listen(PORT, async () => {
 
   // Auto-cancellation job: cancel pending appointments not approved within 1 hour
   const db = require('./config/db');
+  const { sendAppointmentReminder } = require('./controllers/notificationController');
+
   const runAutoCancellation = async () => {
     try {
       const result = await db.query(
@@ -52,8 +60,35 @@ app.listen(PORT, async () => {
     }
   };
 
+  // Appointment reminder job: send push notifications 1 hour before
+  const runReminderJob = async () => {
+    try {
+      const result = await db.query(
+        `SELECT id FROM appointments
+         WHERE status = 'confirmed'
+           AND appointment_date = CURRENT_DATE
+           AND appointment_time > NOW() + INTERVAL '45 minutes'
+           AND appointment_time < NOW() + INTERVAL '65 minutes'`
+      );
+
+      for (const row of result.rows) {
+        await sendAppointmentReminder(row.id);
+      }
+
+      if (result.rowCount > 0) {
+        console.log(`[Reminder] Checked ${result.rowCount} appointment(s) for reminders.`);
+      }
+    } catch (err) {
+      console.error('[Reminder] Error running reminder job:', err.message);
+    }
+  };
+
   // Run immediately on startup, then every 5 minutes
   runAutoCancellation();
   setInterval(runAutoCancellation, 5 * 60 * 1000);
+
+  // Run reminder check every 15 minutes
+  runReminderJob();
+  setInterval(runReminderJob, 15 * 60 * 1000);
 });
 
