@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import {
   Calendar, Clock, CheckCircle, XCircle, AlertCircle,
-  Plus, MessageCircle, X
+  Plus, MessageCircle, X, FileText
 } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import api, { getUserInfo } from '../services/api';
@@ -112,6 +112,15 @@ const DashboardScreen = ({ navigation }) => {
           <TouchableOpacity style={styles.bookButton} activeOpacity={0.8} onPress={() => navigation.navigate('Booking')}>
             <Plus size={20} color="#fff" strokeWidth={2.5} />
             <Text style={styles.bookButtonText}>Book New Appointment</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.medicalHistoryButton} 
+            activeOpacity={0.8} 
+            onPress={() => navigation.navigate('MedicalHistory')}
+          >
+            <FileText size={20} color="#1089d3" strokeWidth={2.5} />
+            <Text style={styles.medicalHistoryButtonText}>Medical History</Text>
           </TouchableOpacity>
         </View>
 
@@ -256,6 +265,24 @@ const styles = StyleSheet.create({
   },
   bookButtonText: {
     color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  medicalHistoryButton: {
+    backgroundColor: '#ffffff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#1089d3',
+    marginTop: 12,
+  },
+  medicalHistoryButtonText: {
+    color: '#1089d3',
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 8,

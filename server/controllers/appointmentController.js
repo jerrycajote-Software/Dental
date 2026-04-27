@@ -2,6 +2,7 @@ const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { sendWalkinVerificationEmail } = require('../utils/email');
+const { sendStatusUpdateNotification, sendAppointmentReminder } = require('./notificationController');
 
 const getAppointments = async (req, res) => {
   try {
@@ -123,6 +124,13 @@ const updateAppointmentStatus = async (req, res) => {
       'UPDATE appointments SET status = $1 WHERE id = $2 RETURNING *',
       [status, id]
     );
+
+    if (['confirmed', 'cancelled', 'completed'].includes(status)) {
+      sendStatusUpdateNotification(id, status).catch(err => 
+        console.error('[Notification] Error sending status update:', err.message)
+      );
+    }
+
     res.json(updated.rows[0]);
   } catch (err) {
     res.status(500).json({ message: err.message });

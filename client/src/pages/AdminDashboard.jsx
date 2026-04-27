@@ -70,11 +70,35 @@ const AdminDashboard = () => {
   // Patient management state
   const [patients, setPatients] = useState([]);
 
+  // Analytics state
+  const [analyticsPeriod, setAnalyticsPeriod] = useState('week');
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
   useEffect(() => {
     fetchAppointments();
     fetchDoctors();
     fetchPatients();
   }, []);
+
+  // Analytics fetch function
+  const fetchAnalytics = async (period = 'week') => {
+    setAnalyticsLoading(true);
+    try {
+      const response = await api.get(`/analytics/summary?period=${period}`);
+      setAnalyticsData(response.data);
+    } catch (err) {
+      console.error('Failed to fetch analytics:', err);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'Analytics') {
+      fetchAnalytics(analyticsPeriod);
+    }
+  }, [activeTab, analyticsPeriod]);
 
   // ... (fetchAppointments, handleStatusChange, handleDelete remain same)
 
@@ -175,6 +199,7 @@ const AdminDashboard = () => {
   // Sidebar navigation items
   const navItems = [
     { name: 'Overview', icon: LayoutDashboard },
+    { name: 'Analytics', icon: TrendingUp },
     { name: 'Appointments', icon: Calendar },
     { name: 'Patients', icon: Users },
     { name: 'Doctors', icon: Stethoscope },
@@ -409,6 +434,137 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               </div>
+            </>
+          )}
+
+          {/* ---- ANALYTICS TAB ---- */}
+          {activeTab === 'Analytics' && (
+            <>
+              <div className="mb-8">
+                <h1 className="mb-1 text-2xl font-bold text-slate-900">Analytics</h1>
+                <p className="text-sm text-slate-500">View detailed reports and trends.</p>
+              </div>
+
+              {/* Period Selector */}
+              <div className="flex gap-2 mb-6">
+                {['day', 'week', 'month', 'year'].map((period) => (
+                  <button
+                    key={period}
+                    onClick={() => setAnalyticsPeriod(period)}
+                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                      analyticsPeriod === period
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {period.charAt(0).toUpperCase() + period.slice(1)}
+                  </button>
+                ))}
+              </div>
+
+              {analyticsLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : analyticsData ? (
+                <>
+                  {/* Summary Stats */}
+                  <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-5">
+                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
+                      <p className="text-xs font-semibold text-slate-500">Total</p>
+                      <h3 className="text-3xl font-bold text-slate-800">{analyticsData.summary?.total || 0}</h3>
+                    </div>
+                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
+                      <p className="text-xs font-semibold text-emerald-600">Confirmed</p>
+                      <h3 className="text-3xl font-bold text-emerald-600">{analyticsData.summary?.confirmed || 0}</h3>
+                    </div>
+                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
+                      <p className="text-xs font-semibold text-blue-600">Completed</p>
+                      <h3 className="text-3xl font-bold text-blue-600">{analyticsData.summary?.completed || 0}</h3>
+                    </div>
+                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
+                      <p className="text-xs font-semibold text-amber-600">Pending</p>
+                      <h3 className="text-3xl font-bold text-amber-600">{analyticsData.summary?.pending || 0}</h3>
+                    </div>
+                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
+                      <p className="text-xs font-semibold text-red-600">Cancelled</p>
+                      <h3 className="text-3xl font-bold text-red-600">{analyticsData.summary?.cancelled || 0}</h3>
+                    </div>
+                  </div>
+
+                  {/* Chart */}
+                  <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100 mb-6">
+                    <h3 className="text-lg font-bold text-slate-800 mb-6">Appointment Trends</h3>
+                    <div className="w-full h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={analyticsData.chartData?.map(d => ({ ...d, name: d.date?.slice(0, 10) }))} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="colorAppointments" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} dy={10} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} tickCount={5} />
+                          <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                          <Area type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorAppointments)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Top Services & Doctors */}
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-6">
+                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
+                      <h3 className="text-lg font-bold text-slate-800 mb-4">Top Services</h3>
+                      <div className="space-y-3">
+                        {analyticsData.topServices?.map((svc, i) => (
+                          <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                            <span className="text-sm font-medium text-slate-700">{svc.name}</span>
+                            <span className="text-sm font-bold text-blue-600">{svc.count}</span>
+                          </div>
+                        )) || <p className="text-sm text-slate-400">No data</p>}
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
+                      <h3 className="text-lg font-bold text-slate-800 mb-4">Top Doctors</h3>
+                      <div className="space-y-3">
+                        {analyticsData.topDoctors?.map((doc, i) => (
+                          <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                            <span className="text-sm font-medium text-slate-700">{doc.name}</span>
+                            <span className="text-sm font-bold text-emerald-600">{doc.appointment_count}</span>
+                          </div>
+                        )) || <p className="text-sm text-slate-400">No data</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Peak Hours & Unique Patients */}
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
+                      <h3 className="text-lg font-bold text-slate-800 mb-4">Peak Hours</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {analyticsData.peakHours?.slice(0, 8).map((h, i) => (
+                          <div key={i} className="px-3 py-2 bg-blue-50 rounded-lg">
+                            <span className="text-xs font-semibold text-slate-600">{String(Math.floor(h.hour)).padStart(2, '0')}:00</span>
+                            <span className="ml-1 text-xs font-bold text-blue-600">({h.count})</span>
+                          </div>
+                        )) || <p className="text-sm text-slate-400">No data</p>}
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
+                      <h3 className="text-lg font-bold text-slate-800 mb-4">Unique Patients</h3>
+                      <h2 className="text-4xl font-bold text-blue-600">{analyticsData.uniquePatients || 0}</h2>
+                      <p className="text-xs text-slate-500 mt-1">In selected period</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="bg-white rounded-[1.25rem] p-12 text-center">
+                  <p className="text-slate-500">No analytics data available</p>
+                </div>
+              )}
             </>
           )}
 

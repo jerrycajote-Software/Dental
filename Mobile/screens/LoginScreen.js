@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Lock, Mail, Eye, EyeOff } from 'lucide-react-native';
 import api, { setAuthToken, setUserInfo } from '../services/api';
+import { registerForPushNotificationsAsync } from '../services/notifications';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -46,9 +47,13 @@ const LoginScreen = ({ navigation }) => {
         return;
       }
 
-      // Save token and info, then replace stack with Dashboard
+      // Save token and info, then register for push notifications
       setAuthToken(token);
       setUserInfo(user);
+      
+      // Register for push notifications
+      await registerForPushNotificationsAsync();
+      
       navigation.replace('Dashboard');
     } catch (error) {
       const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
