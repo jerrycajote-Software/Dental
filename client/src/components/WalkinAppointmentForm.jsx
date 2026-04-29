@@ -7,6 +7,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
   const [dentists, setDentists] = useState([]);
   const [bookedSlots, setBookedSlots] = useState([]);
   const [doctorSchedule, setDoctorSchedule] = useState(null);
+  const [fetchingServices, setFetchingServices] = useState(true);
 
   // Get today's date string in local time (YYYY-MM-DD)
   const getTodayStr = () => {
@@ -41,16 +42,29 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
 
   // Fetch services on mount
   useEffect(() => {
-    api.get('/services').then(res => setServices(res.data)).catch(console.error);
+    setFetchingServices(true);
+    api.get('/services')
+      .then(res => {
+        setServices(res.data);
+        setFetchingServices(false);
+      })
+      .catch(err => {
+        console.error('Failed to fetch services:', err);
+        setError('Failed to load services. Please check your connection.');
+        setFetchingServices(false);
+      });
   }, []);
 
   // Fetch dentists when date changes
   useEffect(() => {
     if (!formData.appointment_date) return;
     api
-      .get(`/services/dentists?date=${formData.appointment_date}`)
+      .get(`/services/dentists?date=${formData.appointment_date}&include_all=true`)
       .then(res => setDentists(res.data))
-      .catch(err => console.error('Failed to fetch dentists', err));
+      .catch(err => {
+        console.error('Failed to fetch dentists', err);
+        setError('Failed to load dentist list.');
+      });
   }, [formData.appointment_date]);
 
   // Fetch booked slots when dentist or date changes
@@ -330,7 +344,9 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
                 <span className="text-slate-400 normal-case font-normal text-xs">(select one or more)</span>
               </label>
               {services.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">Loading services...</p>
+                <p className="text-xs text-slate-400 italic">
+                  {fetchingServices ? 'Loading services...' : 'No services available.'}
+                </p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {services.map(s => {
