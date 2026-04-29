@@ -262,8 +262,8 @@ const DoctorDashboard = () => {
       <header className="sticky top-0 z-30 border-b bg-white/80 backdrop-blur-md border-slate-200">
         <div className="flex items-center justify-between px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1089d3] to-[#12b1d1] flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-200/50 transform hover:scale-105 transition-transform duration-300">
-              <FiActivity size={24} />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1089d3] to-[#12b1d1] flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-200/50 transform hover:scale-105 transition-transform duration-300 overflow-hidden">
+              <img src="/doctor.png" alt="Doctor Portal" className="w-8 h-8 object-contain" />
             </div>
             <div>
               <h1 className="text-xl font-bold leading-none tracking-tight text-slate-900">
@@ -414,10 +414,10 @@ const DoctorDashboard = () => {
           {/* Stats Grid */}
           <div className="grid grid-cols-1 gap-6 mb-10 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { label: 'Total Appointments', value: stats.total, icon: <FiCalendar />, color: 'blue' },
-              { label: 'Pending Approval', value: stats.pending, icon: <FiClock />, color: 'amber' },
-              { label: 'Confirmed Today', value: stats.confirmed, icon: <FiUsers />, color: 'emerald' },
-              { label: 'Completed', value: stats.completed, icon: <FiCheckCircle />, color: 'indigo' }
+              { label: 'Total Appointments', value: stats.total, img: '/appointment.png', color: 'blue' },
+              { label: 'Pending Approval', value: stats.pending, img: '/pending.png', color: 'amber' },
+              { label: 'Confirmed Today', value: stats.confirmed, img: '/confirm.png', color: 'emerald' },
+              { label: 'Completed', value: stats.completed, img: '/complete.png', color: 'indigo' }
             ].map((stat, i) => (
               <div key={i} className={`stat-card border-l-4 border-${stat.color}-500 group`}>
                 <div className="flex items-start justify-between">
@@ -425,8 +425,8 @@ const DoctorDashboard = () => {
                     <p className="mb-1 text-xs font-bold tracking-wider uppercase text-slate-500">{stat.label}</p>
                     <p className="text-3xl font-black text-slate-900">{stat.value}</p>
                   </div>
-                  <div className={`icon-box bg-${stat.color}-50 text-${stat.color}-600 group-hover:scale-110 transition-transform duration-300`}>
-                    {stat.icon}
+                  <div className={`icon-box bg-${stat.color}-50 text-${stat.color}-600 group-hover:scale-110 transition-transform duration-300 overflow-hidden`}>
+                    <img src={stat.img} alt={stat.label} className="w-6 h-6 object-contain" />
                   </div>
                 </div>
               </div>
@@ -437,7 +437,7 @@ const DoctorDashboard = () => {
           <div className="mb-10 overflow-hidden bg-white border shadow-sm rounded-3xl border-slate-200">
             <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
               <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900">
-                <FiActivity className="text-[#1089d3]" />
+                <img src="/available.png" alt="Availability" className="w-5 h-5 object-contain" />
                 Availability Settings
               </h3>
               <p className="mt-1 text-sm text-slate-500">Manage when you're available for patient bookings.</p>
@@ -509,7 +509,7 @@ const DoctorDashboard = () => {
           <div className="overflow-hidden bg-white border shadow-xl rounded-3xl border-slate-200 shadow-slate-200/50">
             <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100">
               <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900">
-                <FiUsers className="text-[#1089d3]" />
+                <img src="/pending.png" alt="Schedule" className="w-5 h-5 object-contain" />
                 Appointment Schedule
               </h3>
               <button

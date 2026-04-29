@@ -341,7 +341,7 @@ const AdminDashboard = () => {
             </div>
 
             <button className="relative p-2 mr-2 transition-colors rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100">
-              <img src="/bell.png" alt="Notifications" className="w-5 h-5 object-contain" />
+              <img src="/bell.png" alt="Notifications" className="object-contain w-5 h-5" />
               <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
             </button>
 
@@ -376,8 +376,8 @@ const AdminDashboard = () => {
                 <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
                   <div className="flex items-start justify-between mb-4">
                     <p className="my-auto text-xs font-semibold text-slate-500">Total Appointments</p>
-                    <div className="flex items-center justify-center w-10 h-10 text-white bg-blue-500 shadow-sm rounded-xl overflow-hidden">
-                      <img src="/appointment.svg" alt="Total Appointments" className="w-6 h-6 object-contain" />
+                    <div className="flex items-center justify-center w-10 h-10 overflow-hidden text-white bg-blue-500 shadow-sm rounded-xl">
+                      <img src="/appointment.svg" alt="Total Appointments" className="object-contain w-6 h-6" />
                     </div>
                   </div>
                   <h3 className="mb-2 text-3xl font-bold text-slate-800">{appointments.length}</h3>
@@ -389,8 +389,8 @@ const AdminDashboard = () => {
                 <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
                   <div className="flex items-start justify-between mb-4">
                     <p className="my-auto text-xs font-semibold text-slate-500">New Patients</p>
-                    <div className="flex items-center justify-center w-10 h-10 text-white bg-purple-500 shadow-sm rounded-xl overflow-hidden">
-                      <img src="/new patient.png" alt="New Patients" className="w-6 h-6 object-contain" />
+                    <div className="flex items-center justify-center w-10 h-10 overflow-hidden text-white bg-purple-500 shadow-sm rounded-xl">
+                      <img src="/new patient.png" alt="New Patients" className="object-contain w-6 h-6" />
                     </div>
                   </div>
                   <h3 className="mb-2 text-3xl font-bold text-slate-800">{[...new Set(appointments.map(a => a.client_id))].length}</h3>
@@ -403,8 +403,8 @@ const AdminDashboard = () => {
                 <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
                   <div className="flex items-start justify-between mb-4">
                     <p className="my-auto text-xs font-semibold text-slate-500">Cancelled</p>
-                    <div className="flex items-center justify-center w-10 h-10 text-white bg-red-500 shadow-sm rounded-xl overflow-hidden">
-                      <img src="/cancelled.png" alt="Cancelled" className="w-6 h-6 object-contain" />
+                    <div className="flex items-center justify-center w-10 h-10 overflow-hidden text-white bg-red-200 shadow-sm rounded-xl">
+                      <img src="/cancelled.png" alt="Cancelled" className="object-contain w-6 h-6" />
                     </div>
                   </div>
                   <h3 className="mb-2 text-3xl font-bold text-slate-800">{appointments.filter(a => a.status === 'cancelled').length}</h3>
@@ -499,7 +499,7 @@ const AdminDashboard = () => {
 
               {analyticsLoading ? (
                 <div className="flex items-center justify-center h-64">
-                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-8 h-8 border-2 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
                 </div>
               ) : analyticsData ? (
                 <>
@@ -529,7 +529,7 @@ const AdminDashboard = () => {
 
                   {/* Chart */}
                   <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100 mb-6">
-                    <h3 className="text-lg font-bold text-slate-800 mb-6">Appointment Trends</h3>
+                    <h3 className="mb-6 text-lg font-bold text-slate-800">Appointment Trends</h3>
                     <div className="w-full h-64">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={analyticsData.chartData?.map(d => ({ ...d, name: d.date?.slice(0, 10) }))} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
@@ -550,12 +550,12 @@ const AdminDashboard = () => {
                   </div>
 
                   {/* Top Services & Doctors */}
-                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-6">
+                  <div className="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-2">
                     <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
-                      <h3 className="text-lg font-bold text-slate-800 mb-4">Top Services</h3>
+                      <h3 className="mb-4 text-lg font-bold text-slate-800">Top Services</h3>
                       <div className="space-y-3">
                         {analyticsData.topServices?.map((svc, i) => (
-                          <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                          <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-slate-50">
                             <span className="text-sm font-medium text-slate-700">{svc.name}</span>
                             <span className="text-sm font-bold text-blue-600">{svc.count}</span>
                           </div>
@@ -563,10 +563,10 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
-                      <h3 className="text-lg font-bold text-slate-800 mb-4">Top Doctors</h3>
+                      <h3 className="mb-4 text-lg font-bold text-slate-800">Top Doctors</h3>
                       <div className="space-y-3">
                         {analyticsData.topDoctors?.map((doc, i) => (
-                          <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                          <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-slate-50">
                             <span className="text-sm font-medium text-slate-700">{doc.name}</span>
                             <span className="text-sm font-bold text-emerald-600">{doc.appointment_count}</span>
                           </div>
@@ -578,10 +578,10 @@ const AdminDashboard = () => {
                   {/* Peak Hours & Unique Patients */}
                   <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                     <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
-                      <h3 className="text-lg font-bold text-slate-800 mb-4">Peak Hours</h3>
+                      <h3 className="mb-4 text-lg font-bold text-slate-800">Peak Hours</h3>
                       <div className="flex flex-wrap gap-2">
                         {analyticsData.peakHours?.slice(0, 8).map((h, i) => (
-                          <div key={i} className="px-3 py-2 bg-blue-50 rounded-lg">
+                          <div key={i} className="px-3 py-2 rounded-lg bg-blue-50">
                             <span className="text-xs font-semibold text-slate-600">{String(Math.floor(h.hour)).padStart(2, '0')}:00</span>
                             <span className="ml-1 text-xs font-bold text-blue-600">({h.count})</span>
                           </div>
@@ -589,9 +589,9 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
-                      <h3 className="text-lg font-bold text-slate-800 mb-4">Unique Patients</h3>
+                      <h3 className="mb-4 text-lg font-bold text-slate-800">Unique Patients</h3>
                       <h2 className="text-4xl font-bold text-blue-600">{analyticsData.uniquePatients || 0}</h2>
-                      <p className="text-xs text-slate-500 mt-1">In selected period</p>
+                      <p className="mt-1 text-xs text-slate-500">In selected period</p>
                     </div>
                   </div>
                 </>
@@ -807,7 +807,7 @@ const AdminDashboard = () => {
                               {!patient.is_deleted && (
                                 <button
                                   onClick={() => handleResetPassword(patient.id, patient.name)}
-                                  className="p-2 transition-colors rounded-lg text-blue-500 hover:bg-blue-50"
+                                  className="p-2 text-blue-500 transition-colors rounded-lg hover:bg-blue-50"
                                   title="Reset to temp password"
                                 >
                                   <Lock size={16} strokeWidth={2} />
