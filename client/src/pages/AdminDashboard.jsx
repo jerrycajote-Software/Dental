@@ -225,12 +225,12 @@ const AdminDashboard = () => {
 
   // Sidebar navigation items
   const navItems = [
-    { name: 'Overview', icon: LayoutDashboard },
-    { name: 'Analytics', icon: TrendingUp },
-    { name: 'Appointments', icon: Calendar },
-    { name: 'Patients', icon: Users },
-    { name: 'Doctors', icon: Stethoscope },
-    { name: 'Settings', icon: Settings },
+    { name: 'Overview', img: '/overview.png' },
+    { name: 'Analytics', img: '/analytics.png' },
+    { name: 'Appointments', img: '/appointments.png' },
+    { name: 'Patients', img: '/patients.png' },
+    { name: 'Doctors', img: '/doctor.png' },
+    { name: 'Settings', img: '/settings.png' },
   ];
 
   // Render Status Badge
@@ -279,7 +279,15 @@ const AdminDashboard = () => {
                   : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
                   }`}
               >
-                <item.icon size={18} className={activeTab === item.name ? 'text-blue-500' : 'text-slate-400'} />
+                {item.img ? (
+                  <img 
+                    src={item.img} 
+                    alt={item.name} 
+                    className={`w-5 h-5 object-contain ${activeTab === item.name ? '' : 'opacity-60 grayscale'}`} 
+                  />
+                ) : (
+                  <item.icon size={18} className={activeTab === item.name ? 'text-blue-500' : 'text-slate-400'} />
+                )}
                 {item.name}
               </button>
             ))}
@@ -333,7 +341,7 @@ const AdminDashboard = () => {
             </div>
 
             <button className="relative p-2 mr-2 transition-colors rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100">
-              <Bell size={20} />
+              <img src="/bell.png" alt="Notifications" className="w-5 h-5 object-contain" />
               <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
             </button>
 
@@ -368,8 +376,8 @@ const AdminDashboard = () => {
                 <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
                   <div className="flex items-start justify-between mb-4">
                     <p className="my-auto text-xs font-semibold text-slate-500">Total Appointments</p>
-                    <div className="flex items-center justify-center w-10 h-10 text-white bg-blue-500 shadow-sm rounded-xl">
-                      <Calendar size={20} />
+                    <div className="flex items-center justify-center w-10 h-10 text-white bg-blue-500 shadow-sm rounded-xl overflow-hidden">
+                      <img src="/appointment.svg" alt="Total Appointments" className="w-6 h-6 object-contain" />
                     </div>
                   </div>
                   <h3 className="mb-2 text-3xl font-bold text-slate-800">{appointments.length}</h3>
@@ -381,8 +389,8 @@ const AdminDashboard = () => {
                 <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
                   <div className="flex items-start justify-between mb-4">
                     <p className="my-auto text-xs font-semibold text-slate-500">New Patients</p>
-                    <div className="flex items-center justify-center w-10 h-10 text-white bg-purple-500 shadow-sm rounded-xl">
-                      <Users size={20} />
+                    <div className="flex items-center justify-center w-10 h-10 text-white bg-purple-500 shadow-sm rounded-xl overflow-hidden">
+                      <img src="/new patient.png" alt="New Patients" className="w-6 h-6 object-contain" />
                     </div>
                   </div>
                   <h3 className="mb-2 text-3xl font-bold text-slate-800">{[...new Set(appointments.map(a => a.client_id))].length}</h3>
@@ -395,8 +403,8 @@ const AdminDashboard = () => {
                 <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
                   <div className="flex items-start justify-between mb-4">
                     <p className="my-auto text-xs font-semibold text-slate-500">Cancelled</p>
-                    <div className="flex items-center justify-center w-10 h-10 text-white bg-red-500 shadow-sm rounded-xl">
-                      <Activity size={20} />
+                    <div className="flex items-center justify-center w-10 h-10 text-white bg-red-500 shadow-sm rounded-xl overflow-hidden">
+                      <img src="/cancelled.png" alt="Cancelled" className="w-6 h-6 object-contain" />
                     </div>
                   </div>
                   <h3 className="mb-2 text-3xl font-bold text-slate-800">{appointments.filter(a => a.status === 'cancelled').length}</h3>
