@@ -303,6 +303,7 @@ const createWalkinAppointment = async (req, res) => {
     const trimmedEmail = email.trim().toLowerCase();
     const userResult = await db.query('SELECT * FROM users WHERE email = $1', [trimmedEmail]);
 
+    let tempPassword = null;
     if (userResult.rows.length > 0) {
       user_id = userResult.rows[0].id;
     } else {
@@ -312,7 +313,7 @@ const createWalkinAppointment = async (req, res) => {
       const fn = first_name.trim();
       const ln = last_name.trim();
       const birthYear = date_of_birth ? String(date_of_birth).slice(0, 4) : '0000';
-      const tempPassword =
+      tempPassword =
         (fn.slice(0, 1).toUpperCase() + fn.slice(1, 2).toLowerCase()) +
         (ln.slice(0, 1).toUpperCase() + ln.slice(1, 2).toLowerCase()) +
         birthYear;
@@ -373,6 +374,8 @@ const createWalkinAppointment = async (req, res) => {
     res.status(201).json({
       message: 'Walk-in appointment created successfully.',
       appointment: newAppointment.rows[0],
+      tempPassword: tempPassword, // Return the password so the staff can tell the patient
+      email: trimmedEmail
     });
 
     // Send email notification to doctor

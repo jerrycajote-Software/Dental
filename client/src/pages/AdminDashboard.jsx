@@ -210,6 +210,19 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleResetPassword = async (id, name) => {
+    if (window.confirm(`Are you sure you want to reset ${name}'s password to the temporary format?`)) {
+      try {
+        const res = await api.patch(`/auth/reset-temp-password/${id}`);
+        alert(`Password for ${name} reset to: ${res.data.tempPassword}`);
+        setDoctorSuccess(`Password for ${name} reset successfully.`);
+      } catch (err) {
+        console.error('Failed to reset password', err);
+        alert(err.response?.data?.message || 'Failed to reset password');
+      }
+    }
+  };
+
   // Sidebar navigation items
   const navItems = [
     { name: 'Overview', icon: LayoutDashboard },
@@ -783,6 +796,15 @@ const AdminDashboard = () => {
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex justify-end gap-2">
+                              {!patient.is_deleted && (
+                                <button
+                                  onClick={() => handleResetPassword(patient.id, patient.name)}
+                                  className="p-2 transition-colors rounded-lg text-blue-500 hover:bg-blue-50"
+                                  title="Reset to temp password"
+                                >
+                                  <Lock size={16} strokeWidth={2} />
+                                </button>
+                              )}
                               {!patient.is_deleted && !patient.email_verified && (
                                 <button
                                   onClick={() => handleVerifyUser(patient.id, patient.name)}
@@ -966,6 +988,13 @@ const AdminDashboard = () => {
                               </td>
                               <td className="px-6 py-4">
                                 <div className="flex justify-end gap-2">
+                                  <button
+                                    onClick={() => handleResetPassword(doc.id, doc.name)}
+                                    className="p-1.5 transition-colors rounded-lg text-blue-500 hover:bg-blue-50"
+                                    title="Reset to temp password"
+                                  >
+                                    <Lock size={16} strokeWidth={2} />
+                                  </button>
                                   {!doc.email_verified && (
                                     <button
                                       onClick={() => handleVerifyUser(doc.id, doc.name)}

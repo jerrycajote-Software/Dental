@@ -512,6 +512,40 @@ const updatePassword = async (req, res) => {
   }
 };
 
+const resetToTempPassword = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await db.query('SELECT first_name, last_name, date_of_birth FROM users WHERE id = $1', [id]);
+    if (user.rows.length === 0) return res.status(404).json({ message: 'User not found' });
+
+    const { first_name, last_name, date_of_birth } = user.rows[0];
+    
+    // Deterministic format: FiLaYYYY
+    const fn = (first_name || '').trim();
+    const ln = (last_name || '').trim();
+    const birthYear = date_of_birth ? String(date_of_birth).slice(0, 4) : '0000';
+    
+    if (!fn || !ln) {
+      return res.status(400).json({ message: 'User missing name data for deterministic password.' });
+    }
+
+    const tempPassword =
+      (fn.slice(0, 1).toUpperCase() + fn.slice(1, 2).toLowerCase()) +
+      (ln.slice(0, 1).toUpperCase() + ln.slice(1, 2).toLowerCase()) +
+      birthYear;
+
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+    await db.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, id]);
+
+    res.json({ 
+      message: 'Password reset to temporary format successfully.',
+      tempPassword 
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = { 
   register, 
   login, 
@@ -526,6 +560,7 @@ module.exports = {
   forgotPassword, 
   resetPassword,
   updatePassword,
+  resetToTempPassword,
   updateAvailability,
   getUnavailableDates,
   addUnavailableDate,

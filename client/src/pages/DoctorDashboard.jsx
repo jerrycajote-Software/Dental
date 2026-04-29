@@ -164,6 +164,18 @@ const DoctorDashboard = () => {
     }
   };
 
+  const handleResetPatientPassword = async (patientId, patientName) => {
+    if (window.confirm(`Reset password for ${patientName} to the temporary format?`)) {
+      try {
+        const res = await api.patch(`/auth/reset-temp-password/${patientId}`);
+        alert(`Password for ${patientName} reset to: ${res.data.tempPassword}`);
+      } catch (err) {
+        console.error('Failed to reset password', err);
+        alert(err.response?.data?.message || 'Failed to reset password. Note: Only Admin can reset Doctor passwords.');
+      }
+    }
+  };
+
   const handleLogout = () => {
     if (!window.confirm('Are you sure you want to log out?')) return;
     logout();
@@ -533,6 +545,13 @@ const DoctorDashboard = () => {
                           </td>
                           <td className="px-8 py-6 text-right">
                             <div className="flex items-center justify-end gap-2 transition-opacity opacity-0 group-hover:opacity-100">
+                              <button
+                                onClick={() => handleResetPatientPassword(appt.client_id, appt.client_name)}
+                                className="p-2 transition-all duration-200 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white"
+                                title="Reset patient password"
+                              >
+                                <FiActivity />
+                              </button>
                               {appt.status === 'pending' && (
                                 <button
                                   onClick={() => handleStatusUpdate(appt.id, 'confirmed')}

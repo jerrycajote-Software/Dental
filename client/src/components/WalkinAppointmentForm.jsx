@@ -39,6 +39,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successData, setSuccessData] = useState(null); // To store temp credentials on success
 
   // Fetch services on mount
   useEffect(() => {
@@ -166,12 +167,21 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
     }
 
     try {
-      await api.post('/appointments/walkin', formData);
-      onSuccess();
-      onClose();
+      const res = await api.post('/appointments/walkin', formData);
+      if (res.data.tempPassword) {
+        // Show credentials to the doctor
+        setSuccessData({
+          email: res.data.email,
+          password: res.data.tempPassword
+        });
+        setLoading(false);
+        onSuccess(); // Refresh appointments in background
+      } else {
+        onSuccess();
+        onClose();
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to book walk-in appointment');
-    } finally {
       setLoading(false);
     }
   };
@@ -200,7 +210,41 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-8">
+        {successData ? (
+          <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center justify-center text-center animate-in zoom-in-95 duration-500">
+            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6">
+              <CheckSquare size={40} />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 mb-2">Registration Successful!</h3>
+            <p className="text-slate-500 font-medium mb-8 max-w-md">
+              The patient's account has been created. Please provide them with these temporary login credentials:
+            </p>
+            
+            <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-8 w-full max-w-md space-y-6">
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Login Email</p>
+                <p className="text-lg font-bold text-[#1089d3] break-all">{successData.email}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Temporary Password</p>
+                <p className="text-2xl font-black text-slate-900 tracking-wider font-mono">{successData.password}</p>
+              </div>
+              <div className="pt-4 border-t border-slate-200">
+                <p className="text-xs text-slate-400 font-medium">
+                  The patient should change their password immediately after logging in.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="mt-10 bg-[#1089d3] text-white px-10 py-4 rounded-2xl font-black hover:bg-[#0d73b0] transition-all shadow-lg shadow-blue-500/25 active:scale-95"
+            >
+              Done, Close Form
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-8">
           {error && (
             <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-bold border border-red-100 flex items-center gap-2">
               <AlertTriangle size={18} />
