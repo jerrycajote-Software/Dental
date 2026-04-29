@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import appointmentService from '../services/appointmentService';
@@ -18,6 +18,8 @@ import {
   FiCalendar as FiCalIcon,
   FiTrash2,
   FiPlus,
+  FiSettings,
+  FiLock,
 } from 'react-icons/fi';
 
 const DoctorDashboard = () => {
@@ -40,6 +42,10 @@ const DoctorDashboard = () => {
   const [newUnavailableDate, setNewUnavailableDate] = useState('');
   const [unavailLoading, setUnavailLoading] = useState(false);
 
+  // Settings dropdown state
+  const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
+  const settingsDropdownRef = useRef(null);
+
   // Password change state
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -50,6 +56,15 @@ const DoctorDashboard = () => {
     fetchAppointments();
     fetchAvailability();
     fetchUnavailableDates();
+
+    // Click outside listener for settings dropdown
+    const handleClickOutside = (event) => {
+      if (settingsDropdownRef.current && !settingsDropdownRef.current.contains(event.target)) {
+        setShowSettingsDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handlePasswordChange = async (e) => {
@@ -262,6 +277,42 @@ const DoctorDashboard = () => {
               <p className="text-[10px] uppercase tracking-[0.1em] text-slate-400 font-bold">Welcome</p>
               <p className="text-sm font-bold text-slate-900">Dr. {user?.name || 'Doctor'}</p>
             </div>
+
+            {/* Settings Dropdown */}
+            <div className="relative" ref={settingsDropdownRef}>
+              <button
+                onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
+                className={`p-2.5 rounded-xl border-2 transition-all duration-300 shadow-sm flex items-center justify-center ${
+                  showSettingsDropdown 
+                    ? 'border-slate-900 bg-slate-900 text-white' 
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-900 hover:text-slate-900'
+                }`}
+                title="Settings"
+              >
+                <FiSettings size={20} />
+              </button>
+
+              {showSettingsDropdown && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-2 border-b border-slate-50 mb-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Account Settings</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowPasswordChange(true);
+                      setShowSettingsDropdown(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-[#1089d3] transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-[#1089d3]">
+                      <FiLock size={16} />
+                    </div>
+                    Change Password
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button
               onClick={handleLogout}
               className="group flex items-center gap-2 rounded-xl border-2 border-slate-900 bg-white px-5 py-2.5 text-xs font-bold text-slate-900 hover:bg-slate-900 hover:text-white transition-all duration-300 shadow-sm"
@@ -288,13 +339,6 @@ const DoctorDashboard = () => {
             >
               <FiPlus size={20} />
               Book Walk-in Patient
-            </button>
-            <button
-              onClick={() => setShowPasswordChange(true)}
-              className="bg-white text-slate-700 border border-slate-200 px-6 py-3.5 rounded-xl hover:bg-slate-50 transition-colors font-bold shadow-sm flex items-center justify-center gap-2"
-            >
-              <FiActivity size={20} className="text-[#1089d3]" />
-              Change Password
             </button>
           </div>
 
