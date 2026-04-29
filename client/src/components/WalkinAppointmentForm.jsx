@@ -567,9 +567,10 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
             </button>
           </div>
         </form>
-      </div>
+      )}
     </div>
-  );
+  </div>
+);
 };
 
 export default WalkinAppointmentForm;
