@@ -2,7 +2,7 @@ const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { sendVerificationEmail } = require('../utils/email');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('../utils/email');
 
 // Email format validation regex
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -143,11 +143,45 @@ const resendVerification = async (req, res) => {
       [verificationToken, tokenExpires, user.rows[0].id]
     );
 
-    await sendVerificationEmail(trimmedEmail, user.rows[0].name, verificationToken);
-
-    res.json({ message: 'Verification email has been resent. Please check your inbox.' });
+    // Send email without awaiting to prevent timeout if SMTP is slow
+    // But we still want to catch immediate errors
+    try {
+      sendVerificationEmail(trimmedEmail, user.rows[0].name, verificationToken)
+        .catch(err => console.error('Background email error:', err.message));
+      
+      res.json({ 
+        message: 'Verification request processed. Please check your email (including spam). If you still don\'t receive it, contact the administrator.' 
+      });
+    } catch (emailErr) {
+      console.error('Email sending error:', emailErr);
+      res.json({ 
+        message: 'Verification token generated, but email sending failed. Please contact the administrator for manual verification.' 
+      });
+    }
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+const manualVerifyUser = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await db.query(
+      'UPDATE users SET email_verified = TRUE, verification_token = NULL, verification_token_expires = NULL WHERE id = $1 RETURNING name, email, role',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ 
+      message: `User ${result.rows[0].name} (${result.rows[0].role}) has been manually verified successfully.`,
+      user: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Manual verification error:', err);
+    res.status(500).json({ message: 'Failed to manually verify user' });
   }
 };
 
@@ -298,7 +332,7 @@ const forgotPassword = async (req, res) => {
     );
 
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
-    await sendVerificationEmail(trimmedEmail, resetUrl, 'Reset Your Password', 'Please click the link below to reset your password. This link will expire in 1 hour.');
+    await sendPasswordResetEmail(trimmedEmail, resetUrl);
 
     res.json({ message: 'If an account exists with this email, a reset link has been sent.' });
   } catch (err) {
@@ -466,5 +500,6 @@ module.exports = {
   addUnavailableDate,
   deleteUnavailableDate,
   getMe,
+  manualVerifyUser,
 };
 

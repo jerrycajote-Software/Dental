@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, verifyEmail, resendVerification, createDoctor, getDoctors, deleteDoctor, getPatients, deletePatient, deleteSelf, forgotPassword, resetPassword, updateAvailability, getUnavailableDates, addUnavailableDate, deleteUnavailableDate, getMe } = require('../controllers/authController');
+const { register, login, verifyEmail, resendVerification, createDoctor, getDoctors, deleteDoctor, getPatients, deletePatient, deleteSelf, forgotPassword, resetPassword, updateAvailability, getUnavailableDates, addUnavailableDate, deleteUnavailableDate, getMe, manualVerifyUser } = require('../controllers/authController');
 const { authMiddleware, adminMiddleware } = require('../middleware/authMiddleware');
 
 router.post('/register', register);
@@ -12,6 +12,9 @@ router.post('/reset-password', resetPassword);
 
 // Own profile (any authenticated user)
 router.get('/me', authMiddleware, getMe);
+
+// Admin-only user verification/management
+router.patch('/verify-user/:id', authMiddleware, adminMiddleware, manualVerifyUser);
 
 // Admin-only doctor management routes
 router.post('/doctors', authMiddleware, adminMiddleware, createDoctor);

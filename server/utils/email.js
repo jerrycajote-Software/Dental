@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 
 
 let transporter = null;
+let isInitializing = false;
 
 /**
  * Initialize the email transporter.
@@ -10,35 +11,67 @@ let transporter = null;
  */
 const getTransporter = async () => {
   if (transporter) return transporter;
+  if (isInitializing) {
+    // Wait for existing initialization to complete
+    while (isInitializing) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      if (transporter) return transporter;
+    }
+  }
 
-  // Check if real SMTP credentials are configured
-  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-    console.log('✅ Email configured with custom SMTP');
-    console.log(`   User: ${process.env.SMTP_USER}`);
-  } else {
-    // Use Ethereal (free fake SMTP for testing)
-    console.log('⚠️  Real SMTP not configured. Using Ethereal test mode...');
-    const testAccount = await nodemailer.createTestAccount();
-    transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    });
-    console.log('📧 Ethereal test account created successfully');
-    console.log(`   Preview User: ${testAccount.user}`);
+  isInitializing = true;
+  try {
+    // Check if real SMTP credentials are configured
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT) || 587,
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+        connectionTimeout: 10000, // 10 seconds
+        greetingTimeout: 5000,    // 5 seconds
+      });
+      console.log('✅ Email configured with custom SMTP');
+    } else {
+      // Use Ethereal (free fake SMTP for testing)
+      console.log('⚠️  Real SMTP not configured. Attempting Ethereal test mode...');
+      
+      // Use a shorter timeout for Ethereal account creation
+      const testAccountPromise = nodemailer.createTestAccount();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Ethereal account creation timed out')), 10000)
+      );
+
+      const testAccount = await Promise.race([testAccountPromise, timeoutPromise]);
+      
+      transporter = nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass,
+        },
+        connectionTimeout: 10000,
+      });
+      console.log('📧 Ethereal test account created successfully');
+      console.log(`   Preview User: ${testAccount.user}`);
+    }
+  } catch (error) {
+    console.error('❌ Failed to initialize email transporter:', error.message);
+    // Create a dummy transporter that just logs to console as fallback
+    transporter = {
+      sendMail: async (options) => {
+        console.log('📭 [Email Fallback Log]:', options.subject);
+        console.log('   To:', options.to);
+        return { messageId: 'dummy-id', previewUrl: null };
+      }
+    };
+  } finally {
+    isInitializing = false;
   }
 
   return transporter;
@@ -231,5 +264,134 @@ const sendWalkinVerificationEmail = async (to, name, token, tempPassword) => {
   }
 };
 
+/**
+ * Send a password reset email.
+ */
+const sendPasswordResetEmail = async (to, resetLink) => {
+  const transport = await getTransporter();
 
-module.exports = { sendVerificationEmail, sendWalkinVerificationEmail };
+  const mailOptions = {
+    from: '"Dental CarePlus" <noreply@dentalcareplus.com>',
+    to,
+    subject: 'Reset Your Password - Dental CarePlus',
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #f8f9fd; border-radius: 16px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #1a237e, #42a5f5); padding: 40px 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">Dental Care<span style="color: #0D9488;">Plus</span></h1>
+        </div>
+        
+        <div style="padding: 40px 30px;">
+          <h2 style="color: #1a237e; margin-top: 0;">Password Reset Request</h2>
+          <p style="color: #555; font-size: 16px; line-height: 1.6;">
+            We received a request to reset your password. Please click the button below to set a new password:
+          </p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetLink}" 
+               style="background: linear-gradient(45deg, #1089d3, #12b1d1); color: white; padding: 14px 40px; border-radius: 25px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block;">
+              Reset My Password
+            </a>
+          </div>
+
+          <p style="color: #888; font-size: 13px; line-height: 1.5;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${resetLink}" style="color: #1089d3; word-break: break-all;">${resetLink}</a>
+          </p>
+          
+          <p style="color: #888; font-size: 13px;">
+            This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.
+          </p>
+        </div>
+
+        <div style="background: #e8eaf6; padding: 20px 30px; text-align: center;">
+          <p style="color: #888; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} Dental CarePlus. All rights reserved.</p>
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    await transport.sendMail(mailOptions);
+    console.log(`✉️  Password reset email sent to: ${to}`);
+  } catch (error) {
+    console.error('❌ Error sending password reset email:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Send an appointment notification to a doctor.
+ */
+const sendDoctorAppointmentNotification = async (doctorEmail, doctorName, appointmentDetails) => {
+  const transport = await getTransporter();
+  const { patientName, date, time, services, notes } = appointmentDetails;
+
+  const mailOptions = {
+    from: '"Dental CarePlus" <noreply@dentalcareplus.com>',
+    to: doctorEmail,
+    subject: `🦷 New Appointment Booked - ${patientName}`,
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #f0f7ff; border-radius: 16px; overflow: hidden; border: 1px solid #e1e8f0;">
+        <div style="background: linear-gradient(135deg, #0d4f80, #1089d3); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">New Appointment</h1>
+        </div>
+        
+        <div style="padding: 30px; background: white;">
+          <h2 style="color: #0d4f80; margin-top: 0;">Hello, Dr. ${doctorName}</h2>
+          <p style="color: #555; font-size: 16px; line-height: 1.6;">
+            A new appointment has been booked with you. Here are the details:
+          </p>
+
+          <div style="background: #f8fbff; border-radius: 12px; padding: 20px; margin: 20px 0; border: 1px solid #e1eefc;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px; width: 120px;">Patient:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 15px; font-weight: 600;">${patientName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Date:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 15px; font-weight: 600;">${date}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Time:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 15px; font-weight: 600;">${time}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Service(s):</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 15px; font-weight: 600;">${services}</td>
+              </tr>
+              ${notes ? `
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Notes:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-style: italic;">"${notes}"</td>
+              </tr>` : ''}
+            </table>
+          </div>
+
+          <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
+            Please log in to your dashboard to manage your appointments.
+          </p>
+        </div>
+
+        <div style="background: #f1f5f9; padding: 20px; text-align: center;">
+          <p style="color: #94a3b8; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} Dental CarePlus. All rights reserved.</p>
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    await transport.sendMail(mailOptions);
+    console.log(`✉️  Appointment notification sent to Dr. ${doctorName} (${doctorEmail})`);
+  } catch (error) {
+    console.error(`❌ Error sending doctor appointment notification: ${error.message}`);
+    // Don't throw here to prevent appointment booking from failing if email fails
+  }
+};
+
+module.exports = { 
+  sendVerificationEmail, 
+  sendWalkinVerificationEmail,
+  sendPasswordResetEmail,
+  sendDoctorAppointmentNotification
+};

@@ -196,6 +196,20 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleVerifyUser = async (id, name) => {
+    if (window.confirm(`Are you sure you want to manually verify ${name}'s email?`)) {
+      try {
+        await api.patch(`/auth/verify-user/${id}`);
+        fetchDoctors();
+        fetchPatients();
+        setDoctorSuccess(`Successfully verified ${name}`);
+      } catch (err) {
+        console.error('Failed to verify user', err);
+        setDoctorError('Failed to verify user. Please try again.');
+      }
+    }
+  };
+
   // Sidebar navigation items
   const navItems = [
     { name: 'Overview', icon: LayoutDashboard },
@@ -768,7 +782,16 @@ const AdminDashboard = () => {
                             )}
                           </td>
                           <td className="px-6 py-4">
-                            <div className="flex justify-end">
+                            <div className="flex justify-end gap-2">
+                              {!patient.is_deleted && !patient.email_verified && (
+                                <button
+                                  onClick={() => handleVerifyUser(patient.id, patient.name)}
+                                  className="p-2 transition-colors rounded-lg text-emerald-500 hover:bg-emerald-50"
+                                  title="Manually verify patient"
+                                >
+                                  <CheckCircle2 size={16} strokeWidth={2} />
+                                </button>
+                              )}
                               {!patient.is_deleted && (
                                 <button
                                   onClick={() => handleDeletePatient(patient.id, patient.name)}
@@ -935,13 +958,26 @@ const AdminDashboard = () => {
                                 </span>
                               </td>
                               <td className="px-6 py-4">
-                                <span className="px-2.5 py-1 bg-green-100 text-green-600 text-[10px] font-bold rounded-full">Verified</span>
+                                {doc.email_verified ? (
+                                  <span className="px-2.5 py-1 bg-green-100 text-green-600 text-[10px] font-bold rounded-full">Verified</span>
+                                ) : (
+                                  <span className="px-2.5 py-1 bg-amber-100 text-amber-600 text-[10px] font-bold rounded-full">Unverified</span>
+                                )}
                               </td>
                               <td className="px-6 py-4">
-                                <div className="flex justify-end">
+                                <div className="flex justify-end gap-2">
+                                  {!doc.email_verified && (
+                                    <button
+                                      onClick={() => handleVerifyUser(doc.id, doc.name)}
+                                      className="p-1.5 transition-colors rounded-lg text-emerald-500 hover:bg-emerald-50"
+                                      title="Manually verify doctor"
+                                    >
+                                      <CheckCircle2 size={16} strokeWidth={2} />
+                                    </button>
+                                  )}
                                   <button
                                     onClick={() => handleDeleteDoctor(doc.id, doc.name)}
-                                    className="transition-colors text-slate-400 hover:text-red-500"
+                                    className="p-1.5 transition-colors rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50"
                                     title="Delete doctor"
                                   >
                                     <Trash2 size={16} strokeWidth={1.5} />

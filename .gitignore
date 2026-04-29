@@ -29,3 +29,7 @@ db_users.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Mobile/Android build folder
+Mobile/android/
+Mobile/.expo/web/

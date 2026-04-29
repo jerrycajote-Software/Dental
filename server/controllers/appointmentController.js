@@ -1,7 +1,7 @@
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { sendWalkinVerificationEmail } = require('../utils/email');
+const { sendWalkinVerificationEmail, sendDoctorAppointmentNotification } = require('../utils/email');
 const { sendStatusUpdateNotification, sendAppointmentReminder } = require('./notificationController');
 
 const getAppointments = async (req, res) => {
@@ -109,6 +109,37 @@ const createAppointment = async (req, res) => {
       'INSERT INTO appointments (client_id, dentist_id, service_id, appointment_date, appointment_time, notes) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
       [client_id, dentist_id, service_id, appointment_date, appointment_time, notes]
     );
+
+    // Send email notification to doctor
+    try {
+      // Fetch doctor, patient, and service details for the email
+      const detailsQuery = `
+        SELECT 
+          d.name as doctor_name, d.email as doctor_email,
+          p.name as patient_name,
+          s.name as service_name
+        FROM users d
+        JOIN users p ON p.id = $2
+        JOIN services s ON s.id = $3
+        WHERE d.id = $1
+      `;
+      const details = await db.query(detailsQuery, [dentist_id, client_id, service_id]);
+      
+      if (details.rows.length > 0) {
+        const { doctor_name, doctor_email, patient_name, service_name } = details.rows[0];
+        
+        await sendDoctorAppointmentNotification(doctor_email, doctor_name, {
+          patientName: patient_name,
+          date: appointment_date,
+          time: appointment_time,
+          services: service_name,
+          notes: notes
+        });
+      }
+    } catch (emailErr) {
+      console.error('Failed to send doctor notification email:', emailErr.message);
+    }
+
     res.status(201).json(newAppointment.rows[0]);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -163,6 +194,37 @@ const updateAppointment = async (req, res) => {
       'UPDATE appointments SET dentist_id = $1, service_id = $2, appointment_date = $3, appointment_time = $4, notes = $5 WHERE id = $6 RETURNING *',
       [dentist_id, service_id, appointment_date, appointment_time, notes, id]
     );
+
+    // Send email notification to doctor for rescheduling
+    try {
+      const detailsQuery = `
+        SELECT 
+          d.name as doctor_name, d.email as doctor_email,
+          p.name as patient_name,
+          s.name as service_name
+        FROM users d
+        JOIN appointments a ON a.dentist_id = d.id
+        JOIN users p ON p.id = a.client_id
+        JOIN services s ON s.id = $2
+        WHERE a.id = $1
+      `;
+      const details = await db.query(detailsQuery, [id, service_id]);
+      
+      if (details.rows.length > 0) {
+        const { doctor_name, doctor_email, patient_name, service_name } = details.rows[0];
+        
+        await sendDoctorAppointmentNotification(doctor_email, doctor_name, {
+          patientName: patient_name,
+          date: appointment_date,
+          time: appointment_time,
+          services: service_name,
+          notes: notes + ' (RESCHEDULED)'
+        });
+      }
+    } catch (emailErr) {
+      console.error('Failed to send doctor notification email for update:', emailErr.message);
+    }
+
     res.json(updated.rows[0]);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -312,6 +374,37 @@ const createWalkinAppointment = async (req, res) => {
       message: 'Walk-in appointment created successfully.',
       appointment: newAppointment.rows[0],
     });
+
+    // Send email notification to doctor
+    try {
+      // Fetch doctor, patient, and services details for the email
+      const detailsQuery = `
+        SELECT 
+          d.name as doctor_name, d.email as doctor_email,
+          p.name as patient_name,
+          (SELECT STRING_AGG(s.name, ', ') 
+           FROM services s 
+           WHERE s.id = ANY($3::int[])) as service_names
+        FROM users d
+        JOIN users p ON p.id = $2
+        WHERE d.id = $1
+      `;
+      const details = await db.query(detailsQuery, [dentistIdNum, user_id, ids]);
+      
+      if (details.rows.length > 0) {
+        const { doctor_name, doctor_email, patient_name, service_names } = details.rows[0];
+        
+        await sendDoctorAppointmentNotification(doctor_email, doctor_name, {
+          patientName: patient_name,
+          date: appointment_date,
+          time: appointment_time,
+          services: service_names,
+          notes: notes
+        });
+      }
+    } catch (emailErr) {
+      console.error('Failed to send doctor notification email for walk-in:', emailErr.message);
+    }
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
