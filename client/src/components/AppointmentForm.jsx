@@ -67,6 +67,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
         }
       } catch (err) {
         console.error('Failed to fetch dentists', err);
+        setError('Failed to load available dentists. Please try again.');
       }
     };
     fetch();
