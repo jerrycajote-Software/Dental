@@ -35,4 +35,9 @@ const deleteAccount = async () => {
   return response.data;
 };
 
-export default { login, register, logout, getCurrentUser, resendVerification, deleteAccount };
+const updatePassword = async (currentPassword, newPassword) => {
+  const response = await api.patch('/auth/update-password', { currentPassword, newPassword });
+  return response.data;
+};
+
+export default { login, register, logout, getCurrentUser, resendVerification, deleteAccount, updatePassword };

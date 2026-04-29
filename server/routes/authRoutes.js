@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, verifyEmail, resendVerification, createDoctor, getDoctors, deleteDoctor, getPatients, deletePatient, deleteSelf, forgotPassword, resetPassword, updateAvailability, getUnavailableDates, addUnavailableDate, deleteUnavailableDate, getMe, manualVerifyUser } = require('../controllers/authController');
+const { register, login, verifyEmail, resendVerification, createDoctor, getDoctors, deleteDoctor, getPatients, deletePatient, deleteSelf, forgotPassword, resetPassword, updatePassword, updateAvailability, getUnavailableDates, addUnavailableDate, deleteUnavailableDate, getMe, manualVerifyUser } = require('../controllers/authController');
 const { authMiddleware, adminMiddleware } = require('../middleware/authMiddleware');
 
 router.post('/register', register);
@@ -9,6 +9,7 @@ router.get('/verify-email/:token', verifyEmail);
 router.post('/resend-verification', resendVerification);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+router.patch('/update-password', authMiddleware, updatePassword);
 
 // Own profile (any authenticated user)
 router.get('/me', authMiddleware, getMe);

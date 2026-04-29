@@ -228,8 +228,7 @@ const sendWalkinVerificationEmail = async (to, name, token, tempPassword) => {
           <!-- Warning -->
           <div style="background:#fff8e1;border-left:4px solid #f59e0b;border-radius:8px;padding:14px 18px;margin-top:4px;">
             <p style="color:#92400e;font-size:13px;margin:0;line-height:1.6;">
-              <strong>⚠️ Important:</strong> You <strong>cannot log in</strong> until you verify your email by clicking the button above.
-              This verification link expires in <strong>7 days</strong>.
+              <strong>💡 Note:</strong> You can now log in immediately using the credentials above, but we still recommend verifying your email for account security.
             </p>
           </div>
 

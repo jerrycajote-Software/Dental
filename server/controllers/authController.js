@@ -201,11 +201,9 @@ const login = async (req, res) => {
 
     // Check if email is verified
     if (!user.rows[0].email_verified) {
-      return res.status(403).json({ 
-        message: 'Please verify your email before logging in. Check your inbox for the verification link.',
-        needsVerification: true,
-        email: trimmedEmail
-      });
+      // For doctors and admins, we skip the verification check to allow immediate access if email is broken
+      // For users (patients), we also allow it for now until email features are stable
+      console.log(`⚠️ User ${trimmedEmail} logged in without email verification.`);
     }
 
     const token = jwt.sign({ id: user.rows[0].id, role: user.rows[0].role }, process.env.JWT_SECRET, {
@@ -482,6 +480,38 @@ const deleteUnavailableDate = async (req, res) => {
   }
 };
 
+const updatePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const userId = req.user.id;
+
+  try {
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Both current and new passwords are required' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: 'New password must be at least 8 characters long' });
+    }
+
+    const user = await db.query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (user.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.rows[0].password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    await db.query('UPDATE users SET password = $1 WHERE id = $2', [hashedNewPassword, userId]);
+
+    res.json({ message: 'Password updated successfully!' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = { 
   register, 
   login, 
@@ -495,11 +525,12 @@ module.exports = {
   deleteSelf,
   forgotPassword, 
   resetPassword,
+  updatePassword,
   updateAvailability,
   getUnavailableDates,
   addUnavailableDate,
   deleteUnavailableDate,
   getMe,
-  manualVerifyUser,
+  manualVerifyUser
 };
 

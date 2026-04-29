@@ -13,6 +13,33 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Overview');
   const [deleting, setDeleting] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordStatus, setPasswordStatus] = useState({ message: '', error: '' });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordStatus({ message: '', error: 'Passwords do not match' });
+      return;
+    }
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordStatus({ message: '', error: 'New password must be at least 8 characters long' });
+      return;
+    }
+
+    setPasswordLoading(true);
+    setPasswordStatus({ message: '', error: '' });
+    try {
+      const response = await authService.updatePassword(passwordForm.currentPassword, passwordForm.newPassword);
+      setPasswordStatus({ message: response.message, error: '' });
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (err) {
+      setPasswordStatus({ message: '', error: err.response?.data?.message || 'Failed to update password' });
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   const formatTime12h = (time24) => {
     if (!time24) return '';
@@ -152,6 +179,56 @@ const Dashboard = () => {
             <h3 className="mb-8 text-2xl font-black text-slate-900">Account Settings</h3>
 
             <div className="space-y-10">
+              {/* CHANGE PASSWORD SECTION */}
+              <div className="p-8 border border-slate-100 rounded-3xl bg-slate-50/50">
+                <h4 className="mb-4 text-lg font-black text-slate-800">Change Password</h4>
+                <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
+                  {passwordStatus.message && <p className="text-sm font-bold text-emerald-600">{passwordStatus.message}</p>}
+                  {passwordStatus.error && <p className="text-sm font-bold text-rose-600">{passwordStatus.error}</p>}
+                  
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Password</label>
+                    <input 
+                      type="password" 
+                      required
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                      className="w-full p-4 text-sm font-bold border-none bg-white rounded-2xl focus:ring-2 focus:ring-blue-100" 
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">New Password</label>
+                    <input 
+                      type="password" 
+                      required
+                      value={passwordForm.newPassword}
+                      onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                      className="w-full p-4 text-sm font-bold border-none bg-white rounded-2xl focus:ring-2 focus:ring-blue-100" 
+                      placeholder="Minimum 8 characters"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Confirm New Password</label>
+                    <input 
+                      type="password" 
+                      required
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                      className="w-full p-4 text-sm font-bold border-none bg-white rounded-2xl focus:ring-2 focus:ring-blue-100" 
+                      placeholder="Repeat new password"
+                    />
+                  </div>
+                  <button 
+                    type="submit"
+                    disabled={passwordLoading}
+                    className="px-8 py-4 font-black text-white transition-all bg-blue-600 shadow-lg hover:bg-blue-700 rounded-2xl shadow-blue-600/20 disabled:opacity-50"
+                  >
+                    {passwordLoading ? 'Updating...' : 'Update Password'}
+                  </button>
+                </form>
+              </div>
+
               <div className="p-8 border border-red-100 rounded-3xl bg-red-50">
                 <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
                   <div className="space-y-2">

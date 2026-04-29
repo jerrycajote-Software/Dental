@@ -40,11 +40,45 @@ const DoctorDashboard = () => {
   const [newUnavailableDate, setNewUnavailableDate] = useState('');
   const [unavailLoading, setUnavailLoading] = useState(false);
 
+  // Password change state
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordStatus, setPasswordStatus] = useState({ message: '', error: '' });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
   useEffect(() => {
     fetchAppointments();
     fetchAvailability();
     fetchUnavailableDates();
   }, []);
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordStatus({ message: '', error: 'Passwords do not match' });
+      return;
+    }
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordStatus({ message: '', error: 'New password must be at least 8 characters long' });
+      return;
+    }
+
+    setPasswordLoading(true);
+    setPasswordStatus({ message: '', error: '' });
+    try {
+      await api.patch('/auth/update-password', {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword
+      });
+      setPasswordStatus({ message: 'Password updated successfully!', error: '' });
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setTimeout(() => setShowPasswordChange(false), 2000);
+    } catch (err) {
+      setPasswordStatus({ message: '', error: err.response?.data?.message || 'Failed to update password' });
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   const fetchAppointments = async () => {
     try {
@@ -243,6 +277,13 @@ const DoctorDashboard = () => {
               <FiPlus size={20} />
               Book Walk-in Patient
             </button>
+            <button
+              onClick={() => setShowPasswordChange(true)}
+              className="bg-white text-slate-700 border border-slate-200 px-6 py-3.5 rounded-xl hover:bg-slate-50 transition-colors font-bold shadow-sm flex items-center justify-center gap-2"
+            >
+              <FiActivity size={20} className="text-[#1089d3]" />
+              Change Password
+            </button>
           </div>
 
           {showForm && (
@@ -251,6 +292,67 @@ const DoctorDashboard = () => {
               onClose={() => setShowForm(false)}
               onSuccess={fetchAppointments}
             />
+          )}
+
+          {showPasswordChange && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
+              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 animate-in zoom-in-95 duration-300 relative">
+                <button 
+                  onClick={() => setShowPasswordChange(false)}
+                  className="absolute top-6 right-6 p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400"
+                >
+                  <FiXCircle size={24} />
+                </button>
+                <h3 className="text-xl font-black text-slate-900 mb-2">Change Password</h3>
+                <p className="text-slate-500 text-sm font-medium mb-6">Update your security credentials.</p>
+                
+                <form onSubmit={handlePasswordChange} className="space-y-4">
+                  {passwordStatus.message && <p className="text-sm font-bold text-emerald-600 bg-emerald-50 p-3 rounded-xl">{passwordStatus.message}</p>}
+                  {passwordStatus.error && <p className="text-sm font-bold text-rose-600 bg-rose-50 p-3 rounded-xl">{passwordStatus.error}</p>}
+                  
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Password</label>
+                    <input 
+                      type="password" 
+                      required
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                      className="w-full p-4 text-sm font-bold bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-[#1089d3]/20 focus:outline-none" 
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">New Password</label>
+                    <input 
+                      type="password" 
+                      required
+                      value={passwordForm.newPassword}
+                      onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                      className="w-full p-4 text-sm font-bold bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-[#1089d3]/20 focus:outline-none" 
+                      placeholder="Minimum 8 characters"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Confirm New Password</label>
+                    <input 
+                      type="password" 
+                      required
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                      className="w-full p-4 text-sm font-bold bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-[#1089d3]/20 focus:outline-none" 
+                      placeholder="Repeat new password"
+                    />
+                  </div>
+                  <button 
+                    type="submit"
+                    disabled={passwordLoading}
+                    className="w-full py-4 font-black text-white transition-all bg-[#1089d3] shadow-lg hover:bg-[#0d73b0] rounded-2xl shadow-blue-500/20 disabled:opacity-50 mt-2"
+                  >
+                    {passwordLoading ? 'Updating...' : 'Update Password'}
+                  </button>
+                </form>
+              </div>
+            </div>
           )}
 
           {/* Stats Grid */}
