@@ -77,6 +77,13 @@ const DoctorDashboard = () => {
       setPasswordStatus({ message: '', error: 'New password must be at least 8 characters long' });
       return;
     }
+    if (passwordForm.newPassword === passwordForm.currentPassword) {
+      setPasswordStatus({ 
+        message: '', 
+        error: 'your new password is the same in the current, you must create new one and unique password make sure that is not the same in the current password' 
+      });
+      return;
+    }
 
     setPasswordLoading(true);
     setPasswordStatus({ message: '', error: '' });

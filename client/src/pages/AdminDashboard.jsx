@@ -41,10 +41,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
-import profilePic from '../assets/profile.png';
-
-// No dummy data for the chart - we will use real data or empty state
-const chartData = [];
+import profilePic from '../assets/admin.png';
 
 // Helper to get initials
 const getInitials = (name) => {
@@ -342,7 +339,7 @@ const AdminDashboard = () => {
 
             <button className="relative p-2 mr-2 transition-colors rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100">
               <img src="/bell.png" alt="Notifications" className="object-contain w-5 h-5" />
-              <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+              <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-200 rounded-full border-2 border-white"></span>
             </button>
 
             {/* <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
@@ -414,61 +411,6 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* LOWER SECTION: CHART & ACTIVITY */}
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-
-              {/* Appointments Overview Chart */}
-                <div className="lg:col-span-3 bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-bold text-slate-800">Appointments Overview</h3>
-                    <select className="text-xs font-semibold bg-transparent border-none outline-none cursor-pointer text-slate-500 hover:text-slate-700">
-                      <option>This Week</option>
-                      <option>Last Week</option>
-                      <option>This Month</option>
-                    </select>
-                  </div>
-
-                  <div className="w-full h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="colorAppointments" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
-                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis
-                          dataKey="name"
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }}
-                          dy={10}
-                        />
-                        <YAxis
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }}
-                          tickCount={5}
-                        />
-                        <Tooltip
-                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                          itemStyle={{ color: '#0f172a', fontWeight: 'bold' }}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="appointments"
-                          stroke="#3b82f6"
-                          strokeWidth={3}
-                          fillOpacity={1}
-                          fill="url(#colorAppointments)"
-                          activeDot={{ r: 6, strokeWidth: 0, fill: '#3b82f6' }}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
             </>
           )}
 

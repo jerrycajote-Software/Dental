@@ -503,6 +503,14 @@ const updatePassword = async (req, res) => {
       return res.status(400).json({ message: 'Current password is incorrect' });
     }
 
+    // Check if new password is same as current password
+    const isSameAsCurrent = await bcrypt.compare(newPassword, user.rows[0].password);
+    if (isSameAsCurrent) {
+      return res.status(400).json({ 
+        message: 'your new password is the same in the current, you must create new one and unique password make sure that is not the same in the current password' 
+      });
+    }
+
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
     await db.query('UPDATE users SET password = $1 WHERE id = $2', [hashedNewPassword, userId]);
 

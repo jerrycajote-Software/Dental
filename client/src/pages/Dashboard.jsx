@@ -27,6 +27,13 @@ const Dashboard = () => {
       setPasswordStatus({ message: '', error: 'New password must be at least 8 characters long' });
       return;
     }
+    if (passwordForm.newPassword === passwordForm.currentPassword) {
+      setPasswordStatus({ 
+        message: '', 
+        error: 'your new password is the same in the current, you must create new one and unique password make sure that is not the same in the current password' 
+      });
+      return;
+    }
 
     setPasswordLoading(true);
     setPasswordStatus({ message: '', error: '' });
@@ -182,40 +189,40 @@ const Dashboard = () => {
               {/* CHANGE PASSWORD SECTION */}
               <div className="p-8 border border-slate-100 rounded-3xl bg-slate-50/50">
                 <h4 className="mb-4 text-lg font-black text-slate-800">Change Password</h4>
-                <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
+                <form onSubmit={handlePasswordChange} className="max-w-md space-y-4">
                   {passwordStatus.message && <p className="text-sm font-bold text-emerald-600">{passwordStatus.message}</p>}
                   {passwordStatus.error && <p className="text-sm font-bold text-rose-600">{passwordStatus.error}</p>}
                   
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Password</label>
+                    <label className="text-xs font-bold tracking-wider uppercase text-slate-400">Current Password</label>
                     <input 
                       type="password" 
                       required
                       value={passwordForm.currentPassword}
                       onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
-                      className="w-full p-4 text-sm font-bold border-none bg-white rounded-2xl focus:ring-2 focus:ring-blue-100" 
+                      className="w-full p-4 text-sm font-bold bg-white border-none rounded-2xl focus:ring-2 focus:ring-blue-100" 
                       placeholder="••••••••"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">New Password</label>
+                    <label className="text-xs font-bold tracking-wider uppercase text-slate-400">New Password</label>
                     <input 
                       type="password" 
                       required
                       value={passwordForm.newPassword}
                       onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
-                      className="w-full p-4 text-sm font-bold border-none bg-white rounded-2xl focus:ring-2 focus:ring-blue-100" 
+                      className="w-full p-4 text-sm font-bold bg-white border-none rounded-2xl focus:ring-2 focus:ring-blue-100" 
                       placeholder="Minimum 8 characters"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Confirm New Password</label>
+                    <label className="text-xs font-bold tracking-wider uppercase text-slate-400">Confirm New Password</label>
                     <input 
                       type="password" 
                       required
                       value={passwordForm.confirmPassword}
                       onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
-                      className="w-full p-4 text-sm font-bold border-none bg-white rounded-2xl focus:ring-2 focus:ring-blue-100" 
+                      className="w-full p-4 text-sm font-bold bg-white border-none rounded-2xl focus:ring-2 focus:ring-blue-100" 
                       placeholder="Repeat new password"
                     />
                   </div>
@@ -261,7 +268,7 @@ const Dashboard = () => {
             <div className="overflow-hidden bg-white border shadow-sm rounded-2xl border-slate-100">
               <div className="flex items-center justify-between px-6 py-5 border-b border-slate-50 bg-white/50">
                 <div className="flex items-center gap-3">
-                  <Calendar className="text-blue-600" size={20} />
+                  <img src="/appointments.png" alt="Upcoming Appointments" className="object-contain w-8 h-8"/>
                   <h3 className="text-[17px] font-bold text-slate-800">Upcoming Appointments</h3>
                 </div>
                 <span className="px-3 py-1 text-xs font-bold text-blue-500 rounded-full bg-blue-50">
