@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import appointmentService from '../services/appointmentService';
 import api from '../services/api';
 import WalkinAppointmentForm from '../components/WalkinAppointmentForm'; //
+import WalkinRegisteredForm from '../components/WalkinRegisteredForm';
 import styled from 'styled-components';
 import {
   FiCalendar,
@@ -30,12 +31,13 @@ const DoctorDashboard = () => {
   const [error, setError] = useState(null);
   const [stats, setStats] = useState({
     total: 0,
-    pending: 0,
     confirmed: 0,
     completed: 0
   });
 
   const [showForm, setShowForm] = useState(false); //
+  const [showBookingChoice, setShowBookingChoice] = useState(false);
+  const [bookingMode, setBookingMode] = useState(null); // 'new' or 'registered'
   const [isAvailable, setIsAvailable] = useState(true);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [unavailableDates, setUnavailableDates] = useState([]);
@@ -109,11 +111,10 @@ const DoctorDashboard = () => {
       setAppointments(data);
       const newStats = data.reduce((acc, appt) => {
         acc.total++;
-        if (appt.status === 'pending') acc.pending++;
         if (appt.status === 'confirmed') acc.confirmed++;
         if (appt.status === 'completed') acc.completed++;
         return acc;
-      }, { total: 0, pending: 0, confirmed: 0, completed: 0 });
+      }, { total: 0, confirmed: 0, completed: 0 });
       setStats(newStats);
       setLoading(false);
     } catch (err) {
@@ -206,9 +207,8 @@ const DoctorDashboard = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'confirmed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      case 'pending': return 'bg-amber-100 text-amber-700 border-amber-200';
-      case 'completed': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'confirmed': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'completed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
       case 'cancelled': return 'bg-rose-100 text-rose-700 border-rose-200';
       default: return 'bg-slate-100 text-slate-700 border-slate-200';
     }
@@ -341,7 +341,7 @@ const DoctorDashboard = () => {
               <p className="font-medium text-slate-500">Here's what's happening with your appointments today.</p>
             </div>
             <button
-              onClick={() => setShowForm(true)}
+              onClick={() => setShowBookingChoice(true)}
               className="bg-[#1089d3] text-white px-6 py-3.5 rounded-xl hover:bg-[#0d73b0] transition-colors font-bold shadow-md shadow-blue-500/30 flex items-center justify-center gap-2"
             >
               <FiPlus size={20} />
@@ -349,10 +349,65 @@ const DoctorDashboard = () => {
             </button>
           </div>
 
-          {showForm && (
+          {showBookingChoice && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
+              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 animate-in zoom-in-95 duration-300 relative">
+                <button 
+                  onClick={() => setShowBookingChoice(false)}
+                  className="absolute top-6 right-6 p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400"
+                >
+                  <FiXCircle size={24} />
+                </button>
+                <h3 className="text-xl font-black text-slate-900 mb-2 text-center">Book Walk-in Patient</h3>
+                <p className="text-slate-500 text-sm font-medium mb-8 text-center">Choose how you want to book the appointment.</p>
+                
+                <div className="space-y-4">
+                  <button
+                    onClick={() => {
+                      setBookingMode('registered');
+                      setShowForm(true);
+                      setShowBookingChoice(false);
+                    }}
+                    className="w-full p-6 text-left border-2 border-slate-100 rounded-2xl hover:border-[#1089d3] hover:bg-blue-50 transition-all group"
+                  >
+                    <p className="font-black text-slate-900 group-hover:text-[#1089d3]">Book Appointment with Already Registered Account</p>
+                    <p className="text-xs text-slate-500 font-medium mt-1">Search for an existing patient and pre-fill their details.</p>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setBookingMode('new');
+                      setShowForm(true);
+                      setShowBookingChoice(false);
+                    }}
+                    className="w-full p-6 text-left border-2 border-slate-100 rounded-2xl hover:border-[#1089d3] hover:bg-blue-50 transition-all group"
+                  >
+                    <p className="font-black text-slate-900 group-hover:text-[#1089d3]">Book Appointment and Create New Account</p>
+                    <p className="text-xs text-slate-500 font-medium mt-1">Register a new patient and schedule their first visit.</p>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showForm && bookingMode === 'new' && (
             <WalkinAppointmentForm
               currentDentistId={user?.id}
-              onClose={() => setShowForm(false)}
+              onClose={() => {
+                setShowForm(false);
+                setBookingMode(null);
+              }}
+              onSuccess={fetchAppointments}
+            />
+          )}
+
+          {showForm && bookingMode === 'registered' && (
+            <WalkinRegisteredForm
+              currentDentistId={user?.id}
+              onClose={() => {
+                setShowForm(false);
+                setBookingMode(null);
+              }}
               onSuccess={fetchAppointments}
             />
           )}
@@ -419,10 +474,9 @@ const DoctorDashboard = () => {
           )}
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 gap-6 mb-10 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 mb-10 sm:grid-cols-2 lg:grid-cols-3">
             {[
               { label: 'Total Appointments', value: stats.total, img: '/appointment.png', color: 'blue' },
-              { label: 'Pending Approval', value: stats.pending, img: '/pending.png', color: 'amber' },
               { label: 'Confirmed Today', value: stats.confirmed, img: '/confirm.png', color: 'emerald' },
               { label: 'Completed', value: stats.completed, img: '/complete.png', color: 'indigo' }
             ].map((stat, i) => (
@@ -516,7 +570,7 @@ const DoctorDashboard = () => {
           <div className="overflow-hidden bg-white border shadow-xl rounded-3xl border-slate-200 shadow-slate-200/50">
             <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100">
               <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900">
-                <img src="/pending.png" alt="Schedule" className="w-5 h-5 object-contain" />
+                <img src="/appointments.png" alt="Schedule" className="w-5 h-5 object-contain" />
                 Appointment Schedule
               </h3>
               <button
@@ -603,15 +657,6 @@ const DoctorDashboard = () => {
                               >
                                 <FiActivity />
                               </button>
-                              {appt.status === 'pending' && (
-                                <button
-                                  onClick={() => handleStatusUpdate(appt.id, 'confirmed')}
-                                  className="p-2 transition-all duration-200 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white"
-                                  title="Confirm Appointment"
-                                >
-                                  <FiCheckCircle />
-                                </button>
-                              )}
                               {appt.status === 'confirmed' && (
                                 isPast ? (
                                   <button
@@ -631,7 +676,7 @@ const DoctorDashboard = () => {
                                   </button>
                                 )
                               )}
-                              {(appt.status === 'pending' || appt.status === 'confirmed') && (
+                              {appt.status === 'confirmed' && (
                                 <button
                                   onClick={() => handleStatusUpdate(appt.id, 'cancelled')}
                                   className="p-2 transition-all duration-200 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white"
@@ -683,17 +728,14 @@ const StyledWrapper = styled.div`
 
   /* Stat card border colors (safelist for tailwind if needed) */
   .border-blue-500 { border-left-color: #3b82f6; }
-  .border-amber-500 { border-left-color: #f59e0b; }
   .border-emerald-500 { border-left-color: #10b981; }
   .border-indigo-500 { border-left-color: #6366f1; }
   
   .bg-blue-50 { background-color: #eff6ff; }
-  .bg-amber-50 { background-color: #fffbeb; }
   .bg-emerald-50 { background-color: #ecfdf5; }
   .bg-indigo-50 { background-color: #eef2ff; }
   
   .text-blue-600 { color: #2563eb; }
-  .text-amber-600 { color: #d97706; }
   .text-emerald-600 { color: #059669; }
   .text-indigo-600 { color: #4f46e5; }
 `;

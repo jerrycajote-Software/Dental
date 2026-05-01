@@ -412,6 +412,27 @@ const deleteSelf = async (req, res) => {
 };
 
 // Return own profile (used by doctor to persist is_available on reload)
+const getPatientDetails = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const patient = await db.query(
+      `SELECT id, first_name, last_name, middle_name, name, email, age, date_of_birth, 
+              contact_number, home_address, blood_type, civil_status 
+       FROM users 
+       WHERE id = $1 AND role = 'user'`,
+      [id]
+    );
+
+    if (patient.rows.length === 0) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+
+    res.json(patient.rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 const getMe = async (req, res) => {
   try {
     const result = await db.query(
@@ -574,6 +595,7 @@ module.exports = {
   addUnavailableDate,
   deleteUnavailableDate,
   getMe,
-  manualVerifyUser
+  manualVerifyUser,
+  getPatientDetails
 };
 

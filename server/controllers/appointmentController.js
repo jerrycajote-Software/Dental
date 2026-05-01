@@ -306,6 +306,30 @@ const createWalkinAppointment = async (req, res) => {
     let tempPassword = null;
     if (userResult.rows.length > 0) {
       user_id = userResult.rows[0].id;
+      // Update existing user with latest info from the form
+      await db.query(
+        `UPDATE users SET 
+          age = COALESCE($1, age), 
+          date_of_birth = COALESCE($2, date_of_birth), 
+          contact_number = COALESCE($3, contact_number), 
+          home_address = COALESCE($4, home_address), 
+          allergies = $5, 
+          previous_dental_history = $6, 
+          blood_type = COALESCE($7, blood_type), 
+          civil_status = COALESCE($8, civil_status)
+         WHERE id = $9`,
+        [
+          age || null, 
+          date_of_birth || null,
+          contact_number?.trim() || null,
+          home_address?.trim() || null,
+          allergies?.trim() || null,
+          previous_dental_history?.trim() || null,
+          blood_type || null,
+          civil_status || null,
+          user_id
+        ]
+      );
     } else {
       // ── Generate deterministic temp password ──────────────────────────────
       // Format: first 2 letters of first name + first 2 letters of last name + birth year
