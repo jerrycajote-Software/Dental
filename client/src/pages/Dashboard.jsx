@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import appointmentService from '../services/appointmentService';
 import {
   Calendar, Clock, CheckCircle, XCircle, AlertCircle,
-  MapPin, Plus, FileText, Activity, User as UserIcon, Bell
+  MapPin, Plus, FileText, Activity, User as UserIcon, Bell, X
 } from 'lucide-react';
 import authService from '../services/authService';
 
@@ -12,6 +12,8 @@ const Dashboard = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Overview');
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [fetchingNotifications, setFetchingNotifications] = useState(false);
@@ -185,189 +187,206 @@ const Dashboard = () => {
         {/* NAVIGATION TABS */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
-            {[
-              { id: 'Overview', label: 'Overview', icon: '/overview.png' },
-              { id: 'Notifications', label: 'Notifications', icon: '/bell.png' },
-              { id: 'Settings', label: 'Settings', icon: '/settings.png' }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all relative ${activeTab === tab.id
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                    : 'text-slate-500 hover:bg-white hover:text-slate-800'
-                  }`}
-              >
-                <img src={tab.icon} alt={tab.label} className={`w-4 h-4 object-contain ${activeTab === tab.id ? 'brightness-0 invert' : 'opacity-70'}`} />
-                {tab.label}
-                {tab.id === 'Notifications' && unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white ring-2 ring-white">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-            ))}
+            <button
+              className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all relative bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+            >
+              <img src="/overview.png" alt="Overview" className="w-4 h-4 object-contain brightness-0 invert" />
+              Overview
+            </button>
+
+            <button
+              onClick={() => setShowNotificationsModal(true)}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all relative text-slate-500 hover:bg-white hover:text-slate-800"
+            >
+              <img src="/bell.png" alt="Notifications" className="w-4 h-4 opacity-70 object-contain" />
+              Notifications
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white ring-2 ring-white">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setShowSettingsModal(true)}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all relative text-slate-500 hover:bg-white hover:text-slate-800"
+            >
+              <img src="/settings.png" alt="Settings" className="w-4 h-4 opacity-70 object-contain" />
+              Settings
+            </button>
           </div>
         </div>
 
-        {activeTab === 'Overview' ? (
-          <>
-            {/* HEADER SECTION */}
-            <div className="flex flex-col items-start justify-between gap-6 mb-2 md:flex-row md:items-center">
-              <div>
-                <h2 className="text-3xl font-black tracking-tight text-slate-900">
-                  Welcome back, {user?.name ? user.name.split(' ')[0] : 'John'}!
-                </h2>
-                <p className="mt-2 font-medium text-slate-500 text-md">
-                  Here is your dental health overview.
-                </p>
-              </div>
-            </div>
-
-            {/* ... rest of the Overview content ... */}
-          </>
-        ) : activeTab === 'Notifications' ? (
-          /* NOTIFICATIONS TAB */
-          <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-blue-900/5 overflow-hidden border border-blue-50 p-10">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h3 className="text-2xl font-black text-slate-900">Notifications</h3>
-                <p className="mt-1 font-medium text-slate-500 text-sm">Stay updated with your appointment activities.</p>
-              </div>
-              {notifications.length > 0 && (
-                <button 
-                  onClick={markAllAsRead}
-                  className="text-xs font-black text-blue-600 hover:text-blue-800 transition-colors uppercase tracking-widest"
-                >
-                  Mark all as read
-                </button>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              {notifications.length > 0 ? (
-                notifications.map(n => (
-                  <div 
-                    key={n.id} 
-                    onClick={() => !n.is_read && markAsRead(n.id)}
-                    className={`p-6 rounded-3xl border-2 transition-all cursor-pointer ${
-                      n.is_read 
-                        ? 'bg-white border-slate-50 opacity-60' 
-                        : 'bg-blue-50/30 border-blue-100 shadow-sm'
-                    } hover:border-blue-200 hover:bg-blue-50/50 group`}
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className={`mt-1 h-10 w-10 shrink-0 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${
-                        n.is_read ? 'bg-slate-100 text-slate-400' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                      }`}>
-                        <Bell size={18} />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between gap-4">
-                          <h4 className={`font-black text-sm ${n.is_read ? 'text-slate-700' : 'text-slate-900'}`}>
-                            {n.title}
-                          </h4>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter shrink-0">
-                            {new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {new Date(n.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <p className={`mt-1 text-sm font-medium leading-relaxed ${n.is_read ? 'text-slate-500' : 'text-slate-600'}`}>
-                          {n.message}
-                        </p>
-                      </div>
-                      {!n.is_read && (
-                        <div className="h-2 w-2 rounded-full bg-blue-600 mt-2 shrink-0 animate-pulse"></div>
-                      )}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="flex flex-col items-center justify-center py-24 px-10 bg-slate-50/30 rounded-[2.5rem] border-2 border-dashed border-slate-100 shadow-inner">
-                  <div className="relative mb-6">
-                    <div className="absolute inset-0 bg-blue-100 blur-2xl opacity-40 animate-pulse"></div>
-                    <div className="relative h-20 w-20 bg-white rounded-3xl shadow-xl flex items-center justify-center text-slate-300 rotate-12 group-hover:rotate-0 transition-transform duration-500">
-                      <Bell size={40} />
-                    </div>
-                  </div>
-                  <h4 className="text-xl font-black text-slate-900 mb-2">Your notification center is empty</h4>
-                  <p className="max-w-xs text-center text-sm font-medium text-slate-500 leading-relaxed">
-                    We'll keep you posted here when there are updates to your appointments or clinic news.
-                  </p>
-                </div>
-              )}
-            </div>
+        {/* HEADER SECTION */}
+        <div className="flex flex-col items-start justify-between gap-6 mb-2 md:flex-row md:items-center">
+          <div>
+            <h2 className="text-3xl font-black tracking-tight text-slate-900">
+              Welcome back, {user?.name ? user.name.split(' ')[0] : 'John'}!
+            </h2>
+            <p className="mt-2 font-medium text-slate-500 text-md">
+              Here is your dental health overview.
+            </p>
           </div>
-        ) : (
-          /* SETTINGS TAB  */
-          <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-blue-900/5 overflow-hidden border border-blue-50 p-10">
-            <h3 className="mb-8 text-2xl font-black text-slate-900">Account Settings</h3>
+        </div>
 
-            <div className="space-y-10">
-              {/* CHANGE PASSWORD SECTION */}
-              <div className="p-8 border border-slate-100 rounded-3xl bg-slate-50/50">
-                <h4 className="mb-4 text-lg font-black text-slate-800">Change Password</h4>
-                <form onSubmit={handlePasswordChange} className="max-w-md space-y-4">
-                  {passwordStatus.message && <p className="text-sm font-bold text-emerald-600">{passwordStatus.message}</p>}
-                  {passwordStatus.error && <p className="text-sm font-bold text-rose-600">{passwordStatus.error}</p>}
-                  
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold tracking-wider uppercase text-slate-400">Current Password</label>
-                    <input 
-                      type="password" 
-                      required
-                      value={passwordForm.currentPassword}
-                      onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
-                      className="w-full p-4 text-sm font-bold bg-white border-none rounded-2xl focus:ring-2 focus:ring-blue-100" 
-                      placeholder="••••••••"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold tracking-wider uppercase text-slate-400">New Password</label>
-                    <input 
-                      type="password" 
-                      required
-                      value={passwordForm.newPassword}
-                      onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
-                      className="w-full p-4 text-sm font-bold bg-white border-none rounded-2xl focus:ring-2 focus:ring-blue-100" 
-                      placeholder="Minimum 8 characters"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold tracking-wider uppercase text-slate-400">Confirm New Password</label>
-                    <input 
-                      type="password" 
-                      required
-                      value={passwordForm.confirmPassword}
-                      onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
-                      className="w-full p-4 text-sm font-bold bg-white border-none rounded-2xl focus:ring-2 focus:ring-blue-100" 
-                      placeholder="Repeat new password"
-                    />
-                  </div>
-                  <button 
-                    type="submit"
-                    disabled={passwordLoading}
-                    className="px-8 py-4 font-black text-white transition-all bg-blue-600 shadow-lg hover:bg-blue-700 rounded-2xl shadow-blue-600/20 disabled:opacity-50"
-                  >
-                    {passwordLoading ? 'Updating...' : 'Update Password'}
+        {/* NOTIFICATIONS MODAL */}
+        {showNotificationsModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden border border-blue-50 animate-in zoom-in-95 duration-300">
+              <div className="flex items-center justify-between p-10 pb-0">
+                <div>
+                  <h3 className="text-2xl font-black text-slate-900">Notifications</h3>
+                  <p className="mt-1 font-medium text-slate-500 text-sm">Stay updated with your appointment activities.</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  {notifications.length > 0 && (
+                    <button 
+                      onClick={markAllAsRead}
+                      className="text-xs font-black text-blue-600 hover:text-blue-800 transition-colors uppercase tracking-widest"
+                    >
+                      Mark all as read
+                    </button>
+                  )}
+                  <button onClick={() => setShowNotificationsModal(false)} className="p-2 transition-colors hover:bg-slate-100 rounded-2xl text-slate-400">
+                    <X size={24} />
                   </button>
-                </form>
+                </div>
               </div>
 
-              <div className="p-8 border border-red-100 rounded-3xl bg-red-50">
-                <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
-                  <div className="space-y-2">
-                    <h4 className="text-lg font-black text-red-600">Delete Account</h4>
-                    <p className="max-w-md text-sm font-medium text-red-400">
-                      Permanently remove your account and all associated data. You won't be able to re-register with this email address for 24 hours.
+              <div className="p-10 pt-8 space-y-4 max-h-[60vh] overflow-y-auto">
+                {notifications.length > 0 ? (
+                  notifications.map(n => (
+                    <div 
+                      key={n.id} 
+                      onClick={() => !n.is_read && markAsRead(n.id)}
+                      className={`p-6 rounded-3xl border-2 transition-all cursor-pointer ${
+                        n.is_read 
+                          ? 'bg-white border-slate-50 opacity-60' 
+                          : 'bg-blue-50/30 border-blue-100 shadow-sm'
+                      } hover:border-blue-200 hover:bg-blue-50/50 group`}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className={`mt-1 h-10 w-10 shrink-0 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                          n.is_read ? 'bg-slate-100 text-slate-400' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                        }`}>
+                          <Bell size={18} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between gap-4">
+                            <h4 className={`font-black text-sm ${n.is_read ? 'text-slate-700' : 'text-slate-900'}`}>
+                              {n.title}
+                            </h4>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter shrink-0">
+                              {new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {new Date(n.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className={`mt-1 text-sm font-medium leading-relaxed ${n.is_read ? 'text-slate-500' : 'text-slate-600'}`}>
+                            {n.message}
+                          </p>
+                        </div>
+                        {!n.is_read && (
+                          <div className="h-2 w-2 rounded-full bg-blue-600 mt-2 shrink-0 animate-pulse"></div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 bg-slate-50/30 rounded-[2.5rem] border-2 border-dashed border-slate-100 shadow-inner">
+                    <div className="relative mb-6">
+                      <div className="absolute inset-0 bg-blue-100 blur-2xl opacity-40 animate-pulse"></div>
+                      <div className="relative h-20 w-20 bg-white rounded-3xl shadow-xl flex items-center justify-center text-slate-300 rotate-12 group-hover:rotate-0 transition-transform duration-500">
+                        <Bell size={40} />
+                      </div>
+                    </div>
+                    <h4 className="text-xl font-black text-slate-900 mb-2">Your notification center is empty</h4>
+                    <p className="max-w-xs text-center text-sm font-medium text-slate-500 leading-relaxed text-center">
+                      We'll keep you posted here when there are updates to your appointments or clinic news.
                     </p>
                   </div>
-                  <button
-                    onClick={handleDeleteAccount}
-                    disabled={deleting}
-                    className="px-8 py-4 font-black text-white transition-all bg-red-600 shadow-lg hover:bg-red-700 rounded-2xl shadow-red-600/20 disabled:opacity-50"
-                  >
-                    {deleting ? 'Deleting...' : 'Delete My Account'}
-                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SETTINGS MODAL */}
+        {showSettingsModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden border border-blue-50 animate-in zoom-in-95 duration-300">
+              <div className="flex items-center justify-between p-10 pb-0">
+                <h3 className="text-2xl font-black text-slate-900">Account Settings</h3>
+                <button onClick={() => setShowSettingsModal(false)} className="p-2 transition-colors hover:bg-slate-100 rounded-2xl text-slate-400">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="p-10 pt-8 space-y-8 max-h-[70vh] overflow-y-auto">
+                {/* CHANGE PASSWORD SECTION */}
+                <div className="p-8 border border-slate-100 rounded-3xl bg-slate-50/50">
+                  <h4 className="mb-4 text-lg font-black text-slate-800">Change Password</h4>
+                  <form onSubmit={handlePasswordChange} className="max-w-md space-y-4">
+                    {passwordStatus.message && <p className="text-sm font-bold text-emerald-600">{passwordStatus.message}</p>}
+                    {passwordStatus.error && <p className="text-sm font-bold text-rose-600">{passwordStatus.error}</p>}
+                    
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold tracking-wider uppercase text-slate-400">Current Password</label>
+                      <input 
+                        type="password" 
+                        required
+                        value={passwordForm.currentPassword}
+                        onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                        className="w-full p-4 text-sm font-bold bg-white border-none rounded-2xl focus:ring-2 focus:ring-blue-100 focus:outline-none" 
+                        placeholder="••••••••"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold tracking-wider uppercase text-slate-400">New Password</label>
+                      <input 
+                        type="password" 
+                        required
+                        value={passwordForm.newPassword}
+                        onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                        className="w-full p-4 text-sm font-bold bg-white border-none rounded-2xl focus:ring-2 focus:ring-blue-100 focus:outline-none" 
+                        placeholder="Minimum 8 characters"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold tracking-wider uppercase text-slate-400">Confirm New Password</label>
+                      <input 
+                        type="password" 
+                        required
+                        value={passwordForm.confirmPassword}
+                        onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                        className="w-full p-4 text-sm font-bold bg-white border-none rounded-2xl focus:ring-2 focus:ring-blue-100 focus:outline-none" 
+                        placeholder="Repeat new password"
+                      />
+                    </div>
+                    <button 
+                      type="submit"
+                      disabled={passwordLoading}
+                      className="px-8 py-4 font-black text-white transition-all bg-blue-600 shadow-lg hover:bg-blue-700 rounded-2xl shadow-blue-600/20 disabled:opacity-50"
+                    >
+                      {passwordLoading ? 'Updating...' : 'Update Password'}
+                    </button>
+                  </form>
+                </div>
+
+                <div className="p-8 border border-red-100 rounded-3xl bg-red-50">
+                  <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
+                    <div className="space-y-2">
+                      <h4 className="text-lg font-black text-red-600">Delete Account</h4>
+                      <p className="max-w-md text-sm font-medium text-red-400">
+                        Permanently remove your account and all associated data. You won't be able to re-register with this email address for 24 hours.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={deleting}
+                      className="px-8 py-4 font-black text-white transition-all bg-red-600 shadow-lg hover:bg-red-700 rounded-2xl shadow-red-600/20 disabled:opacity-50"
+                    >
+                      {deleting ? 'Deleting...' : 'Delete My Account'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
