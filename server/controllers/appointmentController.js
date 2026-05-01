@@ -2,7 +2,7 @@ const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { sendWalkinVerificationEmail, sendDoctorAppointmentNotification } = require('../utils/email');
-const { sendStatusUpdateNotification, sendAppointmentReminder } = require('./notificationController');
+const { sendStatusUpdateNotification, sendAppointmentReminder, createWebNotification } = require('./notificationController');
 
 const getAppointments = async (req, res) => {
   try {
@@ -135,6 +135,17 @@ const createAppointment = async (req, res) => {
           services: service_name,
           notes: notes
         });
+
+        // Add Web Notification for Patient
+        const aptDate = new Date(appointment_date).toLocaleDateString('en-US', { 
+          weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' 
+        });
+        await createWebNotification(
+          client_id,
+          newAppointment.rows[0].id,
+          'Appointment Booked 📅',
+          `You have successfully booked an appointment for ${aptDate} at ${appointment_time} with Dr. ${doctor_name}.`
+        );
       }
     } catch (emailErr) {
       console.error('Failed to send doctor notification email:', emailErr.message);
@@ -160,6 +171,22 @@ const updateAppointmentStatus = async (req, res) => {
       sendStatusUpdateNotification(id, status).catch(err => 
         console.error('[Notification] Error sending status update:', err.message)
       );
+
+      // Add Web Notification
+      const title = {
+        confirmed: 'Appointment Confirmed ✅',
+        cancelled: 'Appointment Cancelled ❌',
+        completed: 'Appointment Completed ✅',
+      };
+      const msg = {
+        confirmed: 'Your appointment has been confirmed by the clinic.',
+        cancelled: 'Your appointment has been cancelled.',
+        completed: 'Your appointment is now marked as complete.',
+      };
+      
+      if (title[status]) {
+        createWebNotification(updated.rows[0].client_id, id, title[status], msg[status]);
+      }
     }
 
     res.json(updated.rows[0]);
@@ -428,6 +455,17 @@ const createWalkinAppointment = async (req, res) => {
           services: service_names,
           notes: notes
         });
+
+        // Add Web Notification for Patient
+        const aptDate = new Date(appointment_date).toLocaleDateString('en-US', { 
+          weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' 
+        });
+        await createWebNotification(
+          user_id,
+          newAppointment.rows[0].id,
+          'New Appointment Scheduled 📅',
+          `A new appointment has been scheduled for you on ${aptDate} at ${appointment_time} with Dr. ${doctor_name}.`
+        );
       }
     } catch (emailErr) {
       console.error('Failed to send doctor notification email for walk-in:', emailErr.message);

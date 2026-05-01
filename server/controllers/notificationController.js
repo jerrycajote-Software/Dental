@@ -138,6 +138,57 @@ const sendAppointmentReminder = async (appointmentId) => {
   }
 };
 
+const getWebNotifications = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const result = await db.query(
+      'SELECT * FROM web_notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50',
+      [userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const markWebNotificationAsRead = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    await db.query(
+      'UPDATE web_notifications SET is_read = TRUE WHERE id = $1 AND user_id = $2',
+      [id, userId]
+    );
+    res.json({ message: 'Notification marked as read' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const markAllWebNotificationsAsRead = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    await db.query(
+      'UPDATE web_notifications SET is_read = TRUE WHERE user_id = $1',
+      [userId]
+    );
+    res.json({ message: 'All notifications marked as read' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const createWebNotification = async (userId, appointmentId, title, message) => {
+  try {
+    await db.query(
+      'INSERT INTO web_notifications (user_id, appointment_id, title, message) VALUES ($1, $2, $3, $4)',
+      [userId, appointmentId, title, message]
+    );
+  } catch (err) {
+    console.error('[Web Notification] Error creating:', err.message);
+  }
+};
+
 const sendStatusUpdateNotification = async (appointmentId, newStatus) => {
   try {
     const appointmentResult = await db.query(
@@ -192,4 +243,8 @@ module.exports = {
   sendPushNotification,
   sendAppointmentReminder,
   sendStatusUpdateNotification,
+  getWebNotifications,
+  markWebNotificationAsRead,
+  markAllWebNotificationsAsRead,
+  createWebNotification
 };

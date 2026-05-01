@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import appointmentService from '../services/appointmentService';
 import {
   Calendar, Clock, CheckCircle, XCircle, AlertCircle,
-  MapPin, Plus, FileText, Activity, User as UserIcon
+  MapPin, Plus, FileText, Activity, User as UserIcon, Bell
 } from 'lucide-react';
 import authService from '../services/authService';
 
@@ -12,6 +12,9 @@ const Dashboard = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Overview');
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [fetchingNotifications, setFetchingNotifications] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [passwordStatus, setPasswordStatus] = useState({ message: '', error: '' });
@@ -59,7 +62,38 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchAppointments();
+    fetchNotifications();
   }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await api.get('/notifications/web');
+      setNotifications(res.data);
+      setUnreadCount(res.data.filter(n => !n.is_read).length);
+    } catch (err) {
+      console.error('Failed to fetch notifications', err);
+    }
+  };
+
+  const markAsRead = async (id) => {
+    try {
+      await api.patch(`/notifications/web/${id}/read`);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('Failed to mark as read', err);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await api.patch('/notifications/web/read-all');
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      console.error('Failed to mark all as read', err);
+    }
+  };
 
   const fetchAppointments = async () => {
     try {
@@ -149,19 +183,31 @@ const Dashboard = () => {
       <div className="max-w-5xl mx-auto space-y-8">
 
         {/* NAVIGATION TABS */}
-        <div className="flex items-center gap-4 mb-2">
-          {['Overview', 'Settings'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${activeTab === tab
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                  : 'text-slate-500 hover:bg-white hover:text-slate-800'
-                }`}
-            >
-              {tab}
-            </button>
-          ))}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-4">
+            {[
+              { id: 'Overview', label: 'Overview', icon: '/overview.png' },
+              { id: 'Notifications', label: 'Notifications', icon: '/bell.png' },
+              { id: 'Settings', label: 'Settings', icon: '/settings.png' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all relative ${activeTab === tab.id
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                    : 'text-slate-500 hover:bg-white hover:text-slate-800'
+                  }`}
+              >
+                <img src={tab.icon} alt={tab.label} className={`w-4 h-4 object-contain ${activeTab === tab.id ? 'brightness-0 invert' : 'opacity-70'}`} />
+                {tab.label}
+                {tab.id === 'Notifications' && unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white ring-2 ring-white">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
         {activeTab === 'Overview' ? (
@@ -180,6 +226,77 @@ const Dashboard = () => {
 
             {/* ... rest of the Overview content ... */}
           </>
+        ) : activeTab === 'Notifications' ? (
+          /* NOTIFICATIONS TAB */
+          <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-blue-900/5 overflow-hidden border border-blue-50 p-10">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h3 className="text-2xl font-black text-slate-900">Notifications</h3>
+                <p className="mt-1 font-medium text-slate-500 text-sm">Stay updated with your appointment activities.</p>
+              </div>
+              {notifications.length > 0 && (
+                <button 
+                  onClick={markAllAsRead}
+                  className="text-xs font-black text-blue-600 hover:text-blue-800 transition-colors uppercase tracking-widest"
+                >
+                  Mark all as read
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              {notifications.length > 0 ? (
+                notifications.map(n => (
+                  <div 
+                    key={n.id} 
+                    onClick={() => !n.is_read && markAsRead(n.id)}
+                    className={`p-6 rounded-3xl border-2 transition-all cursor-pointer ${
+                      n.is_read 
+                        ? 'bg-white border-slate-50 opacity-60' 
+                        : 'bg-blue-50/30 border-blue-100 shadow-sm'
+                    } hover:border-blue-200 hover:bg-blue-50/50 group`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className={`mt-1 h-10 w-10 shrink-0 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                        n.is_read ? 'bg-slate-100 text-slate-400' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                      }`}>
+                        <Bell size={18} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between gap-4">
+                          <h4 className={`font-black text-sm ${n.is_read ? 'text-slate-700' : 'text-slate-900'}`}>
+                            {n.title}
+                          </h4>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter shrink-0">
+                            {new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {new Date(n.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className={`mt-1 text-sm font-medium leading-relaxed ${n.is_read ? 'text-slate-500' : 'text-slate-600'}`}>
+                          {n.message}
+                        </p>
+                      </div>
+                      {!n.is_read && (
+                        <div className="h-2 w-2 rounded-full bg-blue-600 mt-2 shrink-0 animate-pulse"></div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center py-24 px-10 bg-slate-50/30 rounded-[2.5rem] border-2 border-dashed border-slate-100 shadow-inner">
+                  <div className="relative mb-6">
+                    <div className="absolute inset-0 bg-blue-100 blur-2xl opacity-40 animate-pulse"></div>
+                    <div className="relative h-20 w-20 bg-white rounded-3xl shadow-xl flex items-center justify-center text-slate-300 rotate-12 group-hover:rotate-0 transition-transform duration-500">
+                      <Bell size={40} />
+                    </div>
+                  </div>
+                  <h4 className="text-xl font-black text-slate-900 mb-2">Your notification center is empty</h4>
+                  <p className="max-w-xs text-center text-sm font-medium text-slate-500 leading-relaxed">
+                    We'll keep you posted here when there are updates to your appointments or clinic news.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         ) : (
           /* SETTINGS TAB  */
           <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-blue-900/5 overflow-hidden border border-blue-50 p-10">
