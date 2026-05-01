@@ -43,16 +43,27 @@ export const AuthProvider = ({ children }) => {
       window.addEventListener(event, resetTimer);
     });
 
-    // Handle logout in other tabs
+    // Handle logout in other tabs or interceptors
     const handleStorageChange = (e) => {
-      if (e.key === 'token' && !e.newValue) {
+      if ((e.key === 'token' || e.key === 'user') && !e.newValue) {
         setUser(null);
+        window.location.href = '/login?expired=true';
       }
     };
     window.addEventListener('storage', handleStorageChange);
 
+    // Also check periodically if the token was removed by the interceptor
+    const checkInterval = setInterval(() => {
+      if (user && !localStorage.getItem('token')) {
+        console.log('Token missing, logging out...');
+        setUser(null);
+        window.location.href = '/login?expired=true';
+      }
+    }, 2000);
+
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
+      clearInterval(checkInterval);
       events.forEach(event => {
         window.removeEventListener(event, resetTimer);
       });
