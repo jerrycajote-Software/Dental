@@ -110,7 +110,8 @@ const createAppointment = async (req, res) => {
       [client_id, dentist_id, service_id, appointment_date, appointment_time, notes]
     );
 
-    // Send email notification to doctor
+    // Fetch details for notifications
+    let doctor_name = 'Doctor';
     try {
       // Fetch doctor, patient, and service details for the email
       const detailsQuery = `
@@ -126,7 +127,8 @@ const createAppointment = async (req, res) => {
       const details = await db.query(detailsQuery, [dentist_id, client_id, service_id]);
       
       if (details.rows.length > 0) {
-        const { doctor_name, doctor_email, patient_name, service_name } = details.rows[0];
+        const { doctor_email, patient_name, service_name } = details.rows[0];
+        doctor_name = details.rows[0].doctor_name;
         
         await sendDoctorAppointmentNotification(doctor_email, doctor_name, {
           patientName: patient_name,
@@ -135,20 +137,24 @@ const createAppointment = async (req, res) => {
           services: service_name,
           notes: notes
         });
-
-        // Add Web Notification for Patient
-        const aptDate = new Date(appointment_date).toLocaleDateString('en-US', { 
-          weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' 
-        });
-        await createWebNotification(
-          client_id,
-          newAppointment.rows[0].id,
-          'Appointment Booked 📅',
-          `You have successfully booked an appointment for ${aptDate} at ${appointment_time} with Dr. ${doctor_name}.`
-        );
       }
     } catch (emailErr) {
       console.error('Failed to send doctor notification email:', emailErr.message);
+    }
+
+    // Add Web Notification for Patient
+    try {
+      const aptDate = new Date(appointment_date).toLocaleDateString('en-US', { 
+        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' 
+      });
+      await createWebNotification(
+        client_id,
+        newAppointment.rows[0].id,
+        'Appointment Booked 📅',
+        `You have successfully booked an appointment for ${aptDate} at ${appointment_time} with Dr. ${doctor_name}.`
+      );
+    } catch (webNotifErr) {
+      console.error('Failed to create web notification:', webNotifErr.message);
     }
 
     res.status(201).json(newAppointment.rows[0]);
@@ -429,7 +435,8 @@ const createWalkinAppointment = async (req, res) => {
       email: trimmedEmail
     });
 
-    // Send email notification to doctor
+    // Fetch details for notifications
+    let doctor_name = 'Doctor';
     try {
       // Fetch doctor, patient, and services details for the email
       const detailsQuery = `
@@ -446,7 +453,8 @@ const createWalkinAppointment = async (req, res) => {
       const details = await db.query(detailsQuery, [dentistIdNum, user_id, ids]);
       
       if (details.rows.length > 0) {
-        const { doctor_name, doctor_email, patient_name, service_names } = details.rows[0];
+        const { doctor_email, patient_name, service_names } = details.rows[0];
+        doctor_name = details.rows[0].doctor_name;
         
         await sendDoctorAppointmentNotification(doctor_email, doctor_name, {
           patientName: patient_name,
@@ -455,20 +463,24 @@ const createWalkinAppointment = async (req, res) => {
           services: service_names,
           notes: notes
         });
-
-        // Add Web Notification for Patient
-        const aptDate = new Date(appointment_date).toLocaleDateString('en-US', { 
-          weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' 
-        });
-        await createWebNotification(
-          user_id,
-          newAppointment.rows[0].id,
-          'New Appointment Scheduled 📅',
-          `A new appointment has been scheduled for you on ${aptDate} at ${appointment_time} with Dr. ${doctor_name}.`
-        );
       }
     } catch (emailErr) {
       console.error('Failed to send doctor notification email for walk-in:', emailErr.message);
+    }
+
+    // Add Web Notification for Patient
+    try {
+      const aptDate = new Date(appointment_date).toLocaleDateString('en-US', { 
+        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' 
+      });
+      await createWebNotification(
+        user_id,
+        newAppointment.rows[0].id,
+        'New Appointment Scheduled 📅',
+        `A new appointment has been scheduled for you on ${aptDate} at ${appointment_time} with Dr. ${doctor_name}.`
+      );
+    } catch (webNotifErr) {
+      console.error('Failed to create web notification:', webNotifErr.message);
     }
   } catch (err) {
     res.status(500).json({ message: err.message });
