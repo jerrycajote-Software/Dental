@@ -36,6 +36,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
     previous_dental_history: '', // explicitly not pre-filled
     blood_type: '',
     civil_status: '',
+    gender: '',
     service_ids: [],
     dentist_id: currentDentistId ? String(currentDentistId) : '',
     appointment_date: todayStr,
@@ -138,6 +139,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
         home_address: p.home_address || '',
         blood_type: p.blood_type || '',
         civil_status: p.civil_status || '',
+        gender: p.gender || '',
         // Allergies and History are NOT pre-filled as per requirement
         allergies: '',
         previous_dental_history: '',
@@ -294,6 +296,10 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
                 <div>
                   <p className={labelClass}>Contact Number</p>
                   <p className="font-bold text-slate-900 mt-1">{formData.contact_number || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className={labelClass}>Gender</p>
+                  <p className="font-bold text-slate-900 mt-1">{formData.gender || 'N/A'}</p>
                 </div>
               </div>
 

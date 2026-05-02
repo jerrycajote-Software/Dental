@@ -152,9 +152,7 @@ const Login = () => {
                   {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
                 </button>
               </div>
-              <span className="forgot-password">
-                <Link to="/forgot-password">Forgot Password ?</Link>
-              </span>
+
               <input className="login-button" type="submit" value="Sign In" />
             </form>
             
@@ -238,17 +236,7 @@ const StyledWrapper = styled.div`
     color: #12B1D1;
   }
 
-  .form .forgot-password {
-    display: block;
-    margin-top: 10px;
-    margin-left: 10px;
-  }
 
-  .form .forgot-password a {
-    font-size: 11px;
-    color: #0099ff;
-    text-decoration: none;
-  }
 
   .form .login-button {
     display: block;

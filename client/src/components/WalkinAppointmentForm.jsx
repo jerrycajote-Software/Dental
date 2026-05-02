@@ -30,6 +30,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
     previous_dental_history: '',
     blood_type: '',
     civil_status: '',
+    gender: '',
     service_ids: [],
     dentist_id: currentDentistId ? String(currentDentistId) : '',
     appointment_date: todayStr,
@@ -323,6 +324,16 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
                   <option value="Widowed">Widowed</option>
                   <option value="Separated">Separated</option>
                   <option value="In a Relationship">In a Relationship</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className={labelClass}>Gender</label>
+                <select name="gender" value={formData.gender} onChange={handleChange} className={inputClass}>
+                  <option value="">Select gender...</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                  <option value="Prefer not to say">Prefer not to say</option>
                 </select>
               </div>
             </div>

@@ -281,7 +281,7 @@ const createWalkinAppointment = async (req, res) => {
   const {
     first_name, last_name, middle_name, age, date_of_birth,
     contact_number, email, home_address, allergies, previous_dental_history,
-    blood_type, civil_status,
+    blood_type, civil_status, gender,
     service_ids,   // array of service IDs (new multi-service)
     dentist_id, appointment_date, appointment_time, notes,
   } = req.body;
@@ -349,8 +349,9 @@ const createWalkinAppointment = async (req, res) => {
           allergies = $5, 
           previous_dental_history = $6, 
           blood_type = COALESCE($7, blood_type), 
-          civil_status = COALESCE($8, civil_status)
-         WHERE id = $9`,
+          civil_status = COALESCE($8, civil_status),
+          gender = COALESCE($9, gender)
+         WHERE id = $10`,
         [
           age || null, 
           date_of_birth || null,
@@ -360,6 +361,7 @@ const createWalkinAppointment = async (req, res) => {
           previous_dental_history?.trim() || null,
           blood_type || null,
           civil_status || null,
+          gender || null,
           user_id
         ]
       );
@@ -385,9 +387,9 @@ const createWalkinAppointment = async (req, res) => {
         `INSERT INTO users (
           first_name, last_name, middle_name, name, email, password, role,
           age, date_of_birth, contact_number, home_address, allergies, previous_dental_history,
-          blood_type, civil_status,
+          blood_type, civil_status, gender,
           email_verified, verification_token, verification_token_expires
-        ) VALUES ($1, $2, $3, $4, $5, $6, 'user', $7, $8, $9, $10, $11, $12, $13, $14, FALSE, $15, $16)
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'user', $7, $8, $9, $10, $11, $12, $13, $14, $15, FALSE, $16, $17)
         RETURNING id`,
         [
           first_name.trim(), last_name.trim(), middle_name?.trim() || null,
@@ -395,7 +397,7 @@ const createWalkinAppointment = async (req, res) => {
           age || null, date_of_birth || null,
           contact_number?.trim() || null, home_address?.trim() || null,
           allergies?.trim() || null, previous_dental_history?.trim() || null,
-          blood_type || null, civil_status || null,
+          blood_type || null, civil_status || null, gender || null,
           verificationToken, tokenExpires,
         ]
       );
