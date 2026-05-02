@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   header: {
     marginBottom: 20,
@@ -407,10 +407,11 @@ const styles = StyleSheet.create({
   },
   chatbotBtn: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 90,
     right: 24,
-    backgroundColor: '#0ea5e9', 
+    backgroundColor: '#0ea5e9',
     height: 65,
+    width: 65,
     borderRadius: 33,
     justifyContent: 'center',
     alignItems: 'center',

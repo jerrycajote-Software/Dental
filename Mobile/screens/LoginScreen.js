@@ -56,8 +56,12 @@ const LoginScreen = ({ navigation }) => {
       
       navigation.replace('Dashboard');
     } catch (error) {
-      const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
-      Alert.alert('Login Failed', message);
+      console.error('Login Error:', error);
+      const backendMessage = error.response?.data?.message;
+      const networkMessage = error.message;
+      const finalMessage = backendMessage || networkMessage || 'Login failed. Please check your connection and credentials.';
+      
+      Alert.alert('Login Failed', finalMessage);
     } finally {
       setLoading(false);
     }
@@ -98,6 +102,8 @@ const LoginScreen = ({ navigation }) => {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                   {showPassword ? (
@@ -108,10 +114,6 @@ const LoginScreen = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
             </View>
-
-            <TouchableOpacity activeOpacity={0.7} style={styles.forgotPassword}>
-              <Text style={styles.forgotText}>Forgot Password ?</Text>
-            </TouchableOpacity>
 
             <TouchableOpacity 
               style={[styles.button, loading && styles.buttonDisabled]} 
@@ -125,13 +127,6 @@ const LoginScreen = ({ navigation }) => {
                 <Text style={styles.buttonText}>Sign In</Text>
               )}
             </TouchableOpacity>
-
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Don't have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                <Text style={styles.linkText}>Sign Up</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -196,16 +191,6 @@ const styles = StyleSheet.create({
     color: '#333',
     height: '100%',
   },
-  forgotPassword: {
-    alignSelf: 'flex-start',
-    marginLeft: 10,
-    marginBottom: 20,
-  },
-  forgotText: {
-    color: '#0099ff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
   button: {
     backgroundColor: '#1089d3',
     borderRadius: 20,
@@ -225,21 +210,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#ffffff',
     fontSize: 18,
-    fontWeight: 'bold',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  footerText: {
-    color: '#aaa',
-    fontSize: 12,
-  },
-  linkText: {
-    color: '#0099ff',
-    fontSize: 12,
     fontWeight: 'bold',
   },
 });

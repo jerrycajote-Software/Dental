@@ -269,7 +269,7 @@ const DoctorDashboard = () => {
         <div className="flex items-center justify-between px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1089d3] to-[#12b1d1] flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-200/50 transform hover:scale-105 transition-transform duration-300 overflow-hidden">
-              <img src="/doctor.png" alt="Doctor Portal" className="w-8 h-8 object-contain" />
+              <img src="/doctor.png" alt="Doctor Portal" className="object-contain w-8 h-8" />
             </div>
             <div>
               <h1 className="text-xl font-bold leading-none tracking-tight text-slate-900">
@@ -299,8 +299,8 @@ const DoctorDashboard = () => {
               </button>
 
               {showSettingsDropdown && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-2 border-b border-slate-50 mb-1">
+                <div className="absolute right-0 z-50 w-56 py-2 mt-2 duration-200 bg-white border shadow-xl rounded-2xl border-slate-100 animate-in fade-in slide-in-from-top-2">
+                  <div className="px-4 py-2 mb-1 border-b border-slate-50">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Account Settings</p>
                   </div>
                   <button
@@ -334,7 +334,7 @@ const DoctorDashboard = () => {
       <main className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <StyledWrapper>
           {/* Welcome Section */}
-          <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col justify-between gap-4 mb-10 sm:flex-row sm:items-center">
             <div>
               <h2 className="mb-2 text-3xl font-black text-slate-900">Hello, Dr. {user?.name?.split(' ')[0]} 👋</h2>
               <p className="font-medium text-slate-500">Here's what's happening with your appointments today.</p>
@@ -350,15 +350,15 @@ const DoctorDashboard = () => {
 
           {showBookingChoice && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
-              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 animate-in zoom-in-95 duration-300 relative">
+              <div className="relative w-full max-w-md p-8 duration-300 bg-white shadow-2xl rounded-3xl animate-in zoom-in-95">
                 <button 
                   onClick={() => setShowBookingChoice(false)}
-                  className="absolute top-6 right-6 p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400"
+                  className="absolute p-2 transition-colors top-6 right-6 hover:bg-slate-100 rounded-xl text-slate-400"
                 >
                   <FiXCircle size={24} />
                 </button>
-                <h3 className="text-xl font-black text-slate-900 mb-2 text-center">Book Walk-in Patient</h3>
-                <p className="text-slate-500 text-sm font-medium mb-8 text-center">Choose how you want to book the appointment.</p>
+                <h3 className="mb-2 text-xl font-black text-center text-slate-900">Book Walk-in Patient</h3>
+                <p className="mb-8 text-sm font-medium text-center text-slate-500">Choose how you want to book the appointment.</p>
                 
                 <div className="space-y-4">
                   <button
@@ -370,7 +370,7 @@ const DoctorDashboard = () => {
                     className="w-full p-6 text-left border-2 border-slate-100 rounded-2xl hover:border-[#1089d3] hover:bg-blue-50 transition-all group"
                   >
                     <p className="font-black text-slate-900 group-hover:text-[#1089d3]">Book Appointment with Already Registered Account</p>
-                    <p className="text-xs text-slate-500 font-medium mt-1">Search for an existing patient and pre-fill their details.</p>
+                    <p className="mt-1 text-xs font-medium text-slate-500">Search for an existing patient and pre-fill their details.</p>
                   </button>
 
                   <button
@@ -382,7 +382,7 @@ const DoctorDashboard = () => {
                     className="w-full p-6 text-left border-2 border-slate-100 rounded-2xl hover:border-[#1089d3] hover:bg-blue-50 transition-all group"
                   >
                     <p className="font-black text-slate-900 group-hover:text-[#1089d3]">Book Appointment and Create New Account</p>
-                    <p className="text-xs text-slate-500 font-medium mt-1">Register a new patient and schedule their first visit.</p>
+                    <p className="mt-1 text-xs font-medium text-slate-500">Register a new patient and schedule their first visit.</p>
                   </button>
                 </div>
               </div>
@@ -413,22 +413,22 @@ const DoctorDashboard = () => {
 
           {showPasswordChange && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
-              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 animate-in zoom-in-95 duration-300 relative">
+              <div className="relative w-full max-w-md p-8 duration-300 bg-white shadow-2xl rounded-3xl animate-in zoom-in-95">
                 <button 
                   onClick={() => setShowPasswordChange(false)}
-                  className="absolute top-6 right-6 p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400"
+                  className="absolute p-2 transition-colors top-6 right-6 hover:bg-slate-100 rounded-xl text-slate-400"
                 >
                   <FiXCircle size={24} />
                 </button>
-                <h3 className="text-xl font-black text-slate-900 mb-2">Change Password</h3>
-                <p className="text-slate-500 text-sm font-medium mb-6">Update your security credentials.</p>
+                <h3 className="mb-2 text-xl font-black text-slate-900">Change Password</h3>
+                <p className="mb-6 text-sm font-medium text-slate-500">Update your security credentials.</p>
                 
                 <form onSubmit={handlePasswordChange} className="space-y-4">
-                  {passwordStatus.message && <p className="text-sm font-bold text-emerald-600 bg-emerald-50 p-3 rounded-xl">{passwordStatus.message}</p>}
-                  {passwordStatus.error && <p className="text-sm font-bold text-rose-600 bg-rose-50 p-3 rounded-xl">{passwordStatus.error}</p>}
+                  {passwordStatus.message && <p className="p-3 text-sm font-bold text-emerald-600 bg-emerald-50 rounded-xl">{passwordStatus.message}</p>}
+                  {passwordStatus.error && <p className="p-3 text-sm font-bold text-rose-600 bg-rose-50 rounded-xl">{passwordStatus.error}</p>}
                   
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Password</label>
+                    <label className="text-xs font-bold tracking-wider uppercase text-slate-400">Current Password</label>
                     <input 
                       type="password" 
                       required
@@ -439,7 +439,7 @@ const DoctorDashboard = () => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">New Password</label>
+                    <label className="text-xs font-bold tracking-wider uppercase text-slate-400">New Password</label>
                     <input 
                       type="password" 
                       required
@@ -450,7 +450,7 @@ const DoctorDashboard = () => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Confirm New Password</label>
+                    <label className="text-xs font-bold tracking-wider uppercase text-slate-400">Confirm New Password</label>
                     <input 
                       type="password" 
                       required
@@ -486,7 +486,7 @@ const DoctorDashboard = () => {
                     <p className="text-3xl font-black text-slate-900">{stat.value}</p>
                   </div>
                   <div className={`icon-box bg-${stat.color}-50 text-${stat.color}-600 group-hover:scale-110 transition-transform duration-300 overflow-hidden`}>
-                    <img src={stat.img} alt={stat.label} className="w-6 h-6 object-contain" />
+                    <img src={stat.img} alt={stat.label} className="object-contain w-6 h-6" />
                   </div>
                 </div>
               </div>
@@ -497,7 +497,7 @@ const DoctorDashboard = () => {
           <div className="mb-10 overflow-hidden bg-white border shadow-sm rounded-3xl border-slate-200">
             <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
               <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900">
-                <img src="/available.png" alt="Availability" className="w-5 h-5 object-contain" />
+                <img src="/available.png" alt="Availability" className="object-contain w-5 h-5" />
                 Availability Settings
               </h3>
               <p className="mt-1 text-sm text-slate-500">Manage when you're available for patient bookings.</p>
@@ -569,7 +569,7 @@ const DoctorDashboard = () => {
           <div className="overflow-hidden bg-white border shadow-xl rounded-3xl border-slate-200 shadow-slate-200/50">
             <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100">
               <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900">
-                <img src="/appointments.png" alt="Schedule" className="w-5 h-5 object-contain" />
+                <img src="/appointments.png" alt="Schedule" className="object-contain w-5 h-5" />
                 Appointment Schedule
               </h3>
               <button
@@ -651,10 +651,10 @@ const DoctorDashboard = () => {
                             <div className="flex items-center justify-end gap-2 transition-opacity opacity-0 group-hover:opacity-100">
                               <button
                                 onClick={() => handleResetPatientPassword(appt.client_id, appt.client_name)}
-                                className="p-2 transition-all duration-200 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white"
+                                className="p-2 text-blue-600 transition-all duration-200 rounded-lg bg-blue-50 hover:bg-blue-600 hover:text-white"
                                 title="Reset patient password"
                               >
-                                <img src="/resetpassword.png" alt="Reset Password" className="w-5 h-5 object-contain" />
+                                <img src="/resetpassword.png" alt="Reset Password" className="object-contain w-5 h-5" />
                               </button>
                               {appt.status === 'confirmed' && (
                                 isPast ? (
@@ -663,7 +663,7 @@ const DoctorDashboard = () => {
                                     className="p-2 text-blue-600 transition-all duration-200 rounded-lg bg-blue-50 hover:bg-blue-600 hover:text-white"
                                     title="Mark as Completed"
                                   >
-                                    <img src="/markascomplete.png" alt="Mark as Complete" className="w-5 h-5 object-contain" />
+                                    <img src="/markascomplete.png" alt="Mark as Complete" className="object-contain w-5 h-5" />
                                   </button>
                                 ) : (
                                   <button
@@ -671,7 +671,7 @@ const DoctorDashboard = () => {
                                     className="p-2 rounded-lg cursor-not-allowed text-slate-300 bg-slate-50"
                                     title="Appointment has not occurred yet"
                                   >
-                                    <img src="/markascomplete.png" alt="Mark as Complete" className="w-5 h-5 object-contain opacity-50" />
+                                    <img src="/markascomplete.png" alt="Mark as Complete" className="object-contain w-5 h-5 opacity-50" />
                                   </button>
                                 )
                               )}
