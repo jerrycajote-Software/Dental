@@ -13,7 +13,6 @@ import {
   FiClock,
   FiXCircle,
   FiLoader,
-  FiActivity,
   FiToggleLeft,
   FiToggleRight,
   FiCalendar as FiCalIcon,
@@ -655,7 +654,7 @@ const DoctorDashboard = () => {
                                 className="p-2 transition-all duration-200 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white"
                                 title="Reset patient password"
                               >
-                                <FiActivity />
+                                <img src="/resetpassword.png" alt="Reset Password" className="w-5 h-5 object-contain" />
                               </button>
                               {appt.status === 'confirmed' && (
                                 isPast ? (
@@ -664,7 +663,7 @@ const DoctorDashboard = () => {
                                     className="p-2 text-blue-600 transition-all duration-200 rounded-lg bg-blue-50 hover:bg-blue-600 hover:text-white"
                                     title="Mark as Completed"
                                   >
-                                    <FiActivity />
+                                    <img src="/markascomplete.png" alt="Mark as Complete" className="w-5 h-5 object-contain" />
                                   </button>
                                 ) : (
                                   <button
@@ -672,7 +671,7 @@ const DoctorDashboard = () => {
                                     className="p-2 rounded-lg cursor-not-allowed text-slate-300 bg-slate-50"
                                     title="Appointment has not occurred yet"
                                   >
-                                    <FiActivity />
+                                    <img src="/markascomplete.png" alt="Mark as Complete" className="w-5 h-5 object-contain opacity-50" />
                                   </button>
                                 )
                               )}
