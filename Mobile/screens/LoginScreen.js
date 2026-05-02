@@ -51,8 +51,12 @@ const LoginScreen = ({ navigation }) => {
       setAuthToken(token);
       setUserInfo(user);
       
-      // Register for push notifications
-      await registerForPushNotificationsAsync();
+      // Register for push notifications (wrapped in try-catch to prevent login failure if Firebase is not configured)
+      try {
+        await registerForPushNotificationsAsync();
+      } catch (pushError) {
+        console.warn('Push registration failed:', pushError.message);
+      }
       
       navigation.replace('Dashboard');
     } catch (error) {
