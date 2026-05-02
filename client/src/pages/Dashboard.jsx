@@ -6,6 +6,7 @@ import {
   MapPin, Plus, FileText, Activity, User as UserIcon, Bell, X
 } from 'lucide-react';
 import authService from '../services/authService';
+import api from '../services/api';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -65,6 +66,13 @@ const Dashboard = () => {
   useEffect(() => {
     fetchAppointments();
     fetchNotifications();
+
+    const interval = setInterval(() => {
+      fetchAppointments();
+      fetchNotifications();
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchNotifications = async () => {
