@@ -118,7 +118,7 @@ const Dashboard = () => {
 
   const handleDeleteAccount = async () => {
     const confirmation = window.confirm(
-      "Are you sure you want to delete your account? This action cannot be undone, and you won't be able to re-register with this email for 24 hours."
+      "Are you sure you want to delete your account? This action cannot be undone, and you won't be able to re-register with this email for 1 hour."
     );
 
     if (confirmation) {
@@ -384,7 +384,7 @@ const Dashboard = () => {
                     <div className="space-y-2">
                       <h4 className="text-lg font-black text-red-600">Delete Account</h4>
                       <p className="max-w-md text-sm font-medium text-red-400">
-                        Permanently remove your account and all associated data. You won't be able to re-register with this email address for 24 hours.
+                        Permanently remove your account and all associated data. You won't be able to re-register with this email address for 1 hour.
                       </p>
                     </div>
                     <button

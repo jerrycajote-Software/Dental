@@ -1,37 +1,61 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import api from '../services/api';
 
 const ChatBot = () => {
   const [messages, setMessages] = useState([
-    { id: 1, text: 'Hello! How can I help you today?', sender: 'bot' }
+    { id: 1, text: 'Hello! I am your Dental Assistant. How can I help you today?', sender: 'bot' }
   ]);
   const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const scrollViewRef = useRef(null);
 
-  const sendMessage = () => {
-    if (input.trim()) {
-      setMessages([...messages, { id: Date.now(), text: input, sender: 'user' }]);
-      setInput('');
-      // AI 
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return;
+
+    const userMessage = { id: Date.now(), text: input, sender: 'user' };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setLoading(true);
+
+    try {
+      const response = await api.post('/ai/chat', { message: input });
+      setMessages(prev => [...prev, { id: Date.now() + 1, text: response.data.reply, sender: 'bot' }]);
+    } catch (err) {
+      console.error('Chatbot error:', err);
+      setMessages(prev => [...prev, { id: Date.now() + 1, text: 'Sorry, I am having trouble connecting. Please try again later.', sender: 'bot' }]);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.chatArea}>
+      <ScrollView 
+        ref={scrollViewRef}
+        style={styles.chatArea}
+        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+      >
         {messages.map((msg) => (
           <View key={msg.id} style={[styles.bubble, msg.sender === 'user' ? styles.userBubble : styles.botBubble]}>
             <Text style={msg.sender === 'user' ? styles.userText : styles.botText}>{msg.text}</Text>
           </View>
         ))}
+        {loading && (
+          <View style={[styles.bubble, styles.botBubble]}>
+            <ActivityIndicator size="small" color="#333" />
+          </View>
+        )}
       </ScrollView>
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
           value={input}
           onChangeText={setInput}
-          placeholder="Type a message..."
+          placeholder="Ask a question..."
+          onSubmitEditing={sendMessage}
         />
-        <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+        <TouchableOpacity style={styles.sendButton} onPress={sendMessage} disabled={loading}>
           <Text style={styles.sendButtonText}>Send</Text>
         </TouchableOpacity>
       </View>

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import {
   Calendar, Clock, CheckCircle, XCircle, AlertCircle,
-  Plus, MessageCircle, X, FileText
+  MessageCircle, X, FileText
 } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import api, { getUserInfo } from '../services/api';
@@ -108,20 +108,6 @@ const DashboardScreen = ({ navigation }) => {
           <Text style={styles.subtitleText}>
             Here is your dental health overview.
           </Text>
-
-          <TouchableOpacity style={styles.bookButton} activeOpacity={0.8} onPress={() => navigation.navigate('Booking')}>
-            <Plus size={20} color="#fff" strokeWidth={2.5} />
-            <Text style={styles.bookButtonText}>Book New Appointment</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.medicalHistoryButton} 
-            activeOpacity={0.8} 
-            onPress={() => navigation.navigate('MedicalHistory')}
-          >
-            <FileText size={20} color="#1089d3" strokeWidth={2.5} />
-            <Text style={styles.medicalHistoryButtonText}>Medical History</Text>
-          </TouchableOpacity>
         </View>
 
         {/* CURRENT APPOINTMENT SCHEDULE */}
@@ -157,12 +143,6 @@ const DashboardScreen = ({ navigation }) => {
                     <View style={styles.scheduleActions}>
                       <TouchableOpacity
                         style={styles.actionIconButton}
-                        onPress={() => navigation.navigate('Booking', { rescheduleApt: apt })}
-                      >
-                        <Text style={styles.rescheduleText}>Reschedule</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.actionIconButton}
                         onPress={() => handleCancel(apt.id)}
                       >
                         <Text style={styles.cancelText}>Cancel</Text>
@@ -175,13 +155,25 @@ const DashboardScreen = ({ navigation }) => {
               <View style={styles.emptyState}>
                 <AlertCircle size={40} color="#cbd5e1" />
                 <Text style={styles.noDataText}>No active appointments found.</Text>
-                <TouchableOpacity style={styles.smallBookButton} onPress={() => navigation.navigate('Booking')}>
-                  <Text style={styles.smallBookButtonText}>Book Now</Text>
-                </TouchableOpacity>
               </View>
             )}
           </View>
         </View>
+
+        {/* APPOINTMENT HISTORY BUTTON */}
+        <TouchableOpacity
+          style={styles.historyButton}
+          onPress={() => navigation.navigate('AppointmentHistory')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.historyButtonContent}>
+            <FileText size={20} color="#2563eb" />
+            <Text style={styles.historyButtonText}>Appointment History</Text>
+          </View>
+          <View style={styles.historyButtonArrow}>
+            <Clock size={16} color="#94a3b8" />
+          </View>
+        </TouchableOpacity>
 
       </ScrollView>
 
@@ -248,44 +240,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#64748b',
     marginBottom: 20,
-  },
-  bookButton: {
-    backgroundColor: '#1d4ed8', 
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    shadowColor: '#1e3a8a', 
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  bookButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  medicalHistoryButton: {
-    backgroundColor: '#ffffff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#1089d3',
-    marginTop: 12,
-  },
-  medicalHistoryButtonText: {
-    color: '#1089d3',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 8,
   },
   card: {
     backgroundColor: '#ffffff',
@@ -393,18 +347,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 40,
   },
-  smallBookButton: {
-    marginTop: 16,
-    backgroundColor: '#2563eb',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  smallBookButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
   chatbotBtn: {
     position: 'absolute',
     bottom: 90,
@@ -457,6 +399,36 @@ const styles = StyleSheet.create({
   },
   chatbotCloseBtn: {
     padding: 4,
+  },
+  historyButton: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    padding: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  historyButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  historyButtonText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1e293b',
+  },
+  historyButtonArrow: {
+    backgroundColor: '#f8fafc',
+    padding: 8,
+    borderRadius: 10,
   },
 });
 

@@ -38,18 +38,18 @@ const register = async (req, res) => {
         return res.status(400).json({ message: 'User already exists' });
       }
 
-      // If soft-deleted, check 24-hour restriction
+      // If soft-deleted, check 1-hour restriction
       const deletedAt = new Date(existingUser.deleted_at);
       const now = new Date();
       const hoursDifference = (now - deletedAt) / (1000 * 60 * 60);
 
-      if (hoursDifference < 24) {
+      if (hoursDifference < 1) {
         return res.status(403).json({ 
-          message: `This account was recently deleted. You must wait ${Math.ceil(24 - hoursDifference)} more hours before re-registering with this email.` 
+          message: `This account was recently deleted. You must wait ${Math.ceil(1 - hoursDifference)} more hour before re-registering with this email.` 
         });
       }
 
-      // If more than 24 hours, we'll permanently delete the old record and create a new one
+      // If more than 1 hour, we'll permanently delete the old record and create a new one
       // or just update it. For simplicity and to keep it clean, let's delete the old one.
       await db.query('DELETE FROM users WHERE id = $1', [existingUser.id]);
     }

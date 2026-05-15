@@ -48,20 +48,6 @@ const BookingScreen = ({ navigation }) => {
 
   useEffect(() => {
     fetchInitialData();
-    
-    // Pre-fill if rescheduling
-    const rescheduleApt = navigation.getState().routes.find(r => r.name === 'Booking')?.params?.rescheduleApt;
-    if (rescheduleApt) {
-      // Format date from YYYY-MM-DD to DD/MM/YYYY
-      const [year, month, day] = rescheduleApt.appointment_date.split('-');
-      setFormData({
-        service_id: rescheduleApt.service_id,
-        dentist_id: rescheduleApt.dentist_id,
-        appointment_date: `${day}/${month}/${year}`,
-        appointment_time: rescheduleApt.appointment_time.substring(0, 5),
-        notes: rescheduleApt.notes || '',
-      });
-    }
   }, []);
 
   // Watch for date/dentist changes to fetch slots
@@ -179,27 +165,13 @@ const BookingScreen = ({ navigation }) => {
       const [day, month, year] = formData.appointment_date.split('/');
       const formattedDate = `${year}-${month}-${day}`;
       
-      const rescheduleApt = navigation.getState().routes.find(r => r.name === 'Booking')?.params?.rescheduleApt;
-
-      if (rescheduleApt) {
-        // Update existing
-        await api.put(`/appointments/${rescheduleApt.id}`, {
-          ...formData,
-          appointment_date: formattedDate,
-        });
-        Alert.alert('Success', 'Appointment rescheduled successfully!', [
-          { text: 'OK', onPress: () => navigation.navigate('Dashboard') }
-        ]);
-      } else {
-        // Create new
-        await api.post('/appointments', {
-          ...formData,
-          appointment_date: formattedDate,
-        });
-        Alert.alert('Success', 'Appointment booked successfully!', [
-          { text: 'OK', onPress: () => navigation.navigate('Dashboard') }
-        ]);
-      }
+      await api.post('/appointments', {
+        ...formData,
+        appointment_date: formattedDate,
+      });
+      Alert.alert('Success', 'Appointment booked successfully!', [
+        { text: 'OK', onPress: () => navigation.navigate('Dashboard') }
+      ]);
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to process appointment.';
       Alert.alert('Error', message);

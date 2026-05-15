@@ -1,5 +1,5 @@
-import React from 'react';
-import { Image, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Image, View, ActivityIndicator } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
@@ -13,7 +13,9 @@ import SettingsScreen from '../screens/SettingsScreen';
 
 // Sub-screens (accessible from Dashboard/Home tab)
 import BookingScreen from '../screens/BookingScreen';
-import MedicalHistoryScreen from '../screens/MedicalHistoryScreen';
+import AppointmentHistoryScreen from '../screens/AppointmentHistoryScreen';
+
+import { initializeAuth } from '../services/api';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -26,7 +28,7 @@ const HomeStack = () => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="DashboardMain" component={DashboardScreen} />
       <Stack.Screen name="Booking" component={BookingScreen} />
-      <Stack.Screen name="MedicalHistory" component={MedicalHistoryScreen} />
+      <Stack.Screen name="AppointmentHistory" component={AppointmentHistoryScreen} />
     </Stack.Navigator>
   );
 };
@@ -116,9 +118,29 @@ const MainTabs = () => {
 // Root Auth Stack
 // ─────────────────────────────────────────────
 const AppNavigator = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const authenticated = await initializeAuth();
+      setIsAuthenticated(authenticated);
+      setIsLoading(false);
+    };
+    checkAuth();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a237e' }}>
+        <ActivityIndicator size="large" color="#ffffff" />
+      </View>
+    );
+  }
+
   return (
     <Stack.Navigator
-      initialRouteName="Login"
+      initialRouteName={isAuthenticated ? 'Dashboard' : 'Login'}
       screenOptions={{ headerShown: false }}
     >
       <Stack.Screen name="Login" component={LoginScreen} />

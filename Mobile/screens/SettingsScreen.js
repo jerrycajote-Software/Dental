@@ -11,7 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { Lock, LogOut, Trash2, ChevronRight } from 'lucide-react-native';
-import api, { setAuthToken, setUserInfo, getUserInfo } from '../services/api';
+import api, { clearAuth, getUserInfo } from '../services/api';
 
 const SettingsScreen = ({ navigation }) => {
   const user = getUserInfo();
@@ -69,7 +69,7 @@ const SettingsScreen = ({ navigation }) => {
   const handleDeleteAccount = () => {
     Alert.alert(
       'Delete Account',
-      "Are you sure you want to delete your account? This action cannot be undone, and you won't be able to re-register with this email for 24 hours.",
+      "Are you sure you want to delete your account? This action cannot be undone, and you won't be able to re-register with this email for 1 hour.",
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -80,8 +80,7 @@ const SettingsScreen = ({ navigation }) => {
               setDeleting(true);
               await api.post('/auth/delete-account');
               Alert.alert('Account Deleted', 'Your account has been deleted. You will now be logged out.');
-              setAuthToken(null);
-              setUserInfo(null);
+              await clearAuth();
               navigation.replace('Login');
             } catch (err) {
               Alert.alert('Error', err.response?.data?.message || 'Failed to delete account.');
@@ -100,9 +99,8 @@ const SettingsScreen = ({ navigation }) => {
       {
         text: 'Log Out',
         style: 'destructive',
-        onPress: () => {
-          setAuthToken(null);
-          setUserInfo(null);
+        onPress: async () => {
+          await clearAuth();
           navigation.replace('Login');
         },
       },
