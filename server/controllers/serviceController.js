@@ -13,7 +13,7 @@ const getDentists = async (req, res) => {
   const { date, include_all } = req.query; // optional YYYY-MM-DD, include_all flag
   try {
     let query = `
-      SELECT id, name FROM users
+      SELECT id, name, is_available FROM users
       WHERE role = 'doctor'
         AND is_deleted IS NOT TRUE
     `;
@@ -29,7 +29,7 @@ const getDentists = async (req, res) => {
       query += `
         AND id NOT IN (
           SELECT doctor_id FROM doctor_unavailable_dates
-          WHERE unavailable_date = $1
+          WHERE unavailable_date = $${params.length}
         )
       `;
     }

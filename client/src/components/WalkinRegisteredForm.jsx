@@ -66,7 +66,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
   useEffect(() => {
     if (!formData.appointment_date) return;
     api
-      .get(`/services/dentists?date=${formData.appointment_date}&include_all=true`)
+      .get(`/services/dentists?date=${formData.appointment_date}`)
       .then(res => setDentists(res.data))
       .catch(err => {
         console.error('Failed to fetch dentists', err);

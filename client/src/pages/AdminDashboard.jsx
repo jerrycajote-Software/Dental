@@ -328,19 +328,11 @@ const AdminDashboard = () => {
           <h2 className="text-xl font-bold text-slate-900">Admin Dashboard</h2>
 
           <div className="flex items-center gap-6">
-            <div className="relative">
-              <Search className="absolute -translate-y-1/2 left-3 top-1/2 text-slate-400" size={16} />
-              <input
-                type="text"
-                placeholder="Search patients, appointments..."
-                className="py-2 pl-10 pr-4 text-sm transition-all bg-white border rounded-full w-72 border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 placeholder:text-slate-400"
-              />
-            </div>
 
-            <button className="relative p-2 mr-2 transition-colors rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+            {/* <button className="relative p-2 mr-2 transition-colors rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100">
               <img src="/bell.png" alt="Notifications" className="object-contain w-5 h-5" />
               <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-200 rounded-full border-2 border-white"></span>
-            </button>
+            </button> */}
 
             {/* <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
               <img
@@ -446,7 +438,7 @@ const AdminDashboard = () => {
               ) : analyticsData ? (
                 <>
                   {/* Summary Stats */}
-                  <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-5">
+                  <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-4">
                     <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
                       <p className="text-xs font-semibold text-slate-500">Total</p>
                       <h3 className="text-3xl font-bold text-slate-800">{analyticsData.summary?.total || 0}</h3>
@@ -458,10 +450,6 @@ const AdminDashboard = () => {
                     <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
                       <p className="text-xs font-semibold text-blue-600">Completed</p>
                       <h3 className="text-3xl font-bold text-blue-600">{analyticsData.summary?.completed || 0}</h3>
-                    </div>
-                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
-                      <p className="text-xs font-semibold text-amber-600">Pending</p>
-                      <h3 className="text-3xl font-bold text-amber-600">{analyticsData.summary?.pending || 0}</h3>
                     </div>
                     <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
                       <p className="text-xs font-semibold text-red-600">Cancelled</p>

@@ -6,6 +6,14 @@ const { sendStatusUpdateNotification, sendAppointmentReminder, createWebNotifica
 
 const getAppointments = async (req, res) => {
   try {
+    // First, auto-delete past confirmed appointments
+    await db.query(`
+      DELETE FROM appointments
+      WHERE status = 'confirmed'
+        AND (appointment_date < CURRENT_DATE OR 
+             (appointment_date = CURRENT_DATE AND appointment_time < CURRENT_TIME))
+    `);
+
     // COALESCE: if junction table has entries for this appointment, show all service names;
     // otherwise fall back to the single service_id join (backward compat with old records).
     let query = `
@@ -497,4 +505,5 @@ module.exports = {
   updateAppointment,
   deleteAppointment,
   createWalkinAppointment,
+  deleteOldAppointments,
 };

@@ -76,6 +76,27 @@ const BookingScreen = ({ navigation }) => {
     }
   };
 
+  // Fetch dentists when date changes
+  useEffect(() => {
+    if (!formData.appointment_date || formData.appointment_date.length !== 10) return;
+    
+    const fetchFilteredDentists = async () => {
+      try {
+        const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+        if (dateRegex.test(formData.appointment_date)) {
+          const [day, month, year] = formData.appointment_date.split('/');
+          const formattedDate = `${year}-${month}-${day}`;
+          const dentistsRes = await api.get('/services/dentists', { params: { date: formattedDate } });
+          setDentists(dentistsRes.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch filtered dentists:', err);
+      }
+    };
+    
+    fetchFilteredDentists();
+  }, [formData.appointment_date]);
+
   const fetchAvailableSlots = async () => {
     const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
     if (!dateRegex.test(formData.appointment_date)) return;

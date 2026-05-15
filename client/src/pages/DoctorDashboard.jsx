@@ -108,6 +108,7 @@ const DoctorDashboard = () => {
       setLoading(true);
       const data = await appointmentService.getAppointments();
       setAppointments(data);
+      
       const newStats = data.reduce((acc, appt) => {
         acc.total++;
         if (appt.status === 'confirmed') acc.confirmed++;
@@ -115,6 +116,7 @@ const DoctorDashboard = () => {
         return acc;
       }, { total: 0, confirmed: 0, completed: 0 });
       setStats(newStats);
+      
       setLoading(false);
     } catch (err) {
       setError('Failed to fetch appointments. Please try again.');
@@ -183,6 +185,16 @@ const DoctorDashboard = () => {
       fetchAppointments();
     } catch (err) {
       alert('Failed to update status.');
+    }
+  };
+
+  const handleDeleteAppointment = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this appointment?')) return;
+    try {
+      await api.delete(`/appointments/${id}`);
+      fetchAppointments();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete appointment.');
     }
   };
 
@@ -341,7 +353,12 @@ const DoctorDashboard = () => {
             </div>
             <button
               onClick={() => setShowBookingChoice(true)}
-              className="bg-[#1089d3] text-white px-6 py-3.5 rounded-xl hover:bg-[#0d73b0] transition-colors font-bold shadow-md shadow-blue-500/30 flex items-center justify-center gap-2"
+              disabled={!isAvailable}
+              className={`${
+                isAvailable
+                  ? 'bg-[#1089d3] text-white hover:bg-[#0d73b0]'
+                  : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+              } px-6 py-3.5 rounded-xl transition-colors font-bold shadow-md shadow-blue-500/30 flex items-center justify-center gap-2`}
             >
               <FiPlus size={20} />
               Book Appointment
@@ -684,6 +701,13 @@ const DoctorDashboard = () => {
                                   <FiXCircle />
                                 </button>
                               )}
+                              <button
+                                onClick={() => handleDeleteAppointment(appt.id)}
+                                className="p-2 transition-all duration-200 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-600 hover:text-white"
+                                title="Delete Appointment"
+                              >
+                                <FiTrash2 />
+                              </button>
                             </div>
                           </td>
                         </tr>
