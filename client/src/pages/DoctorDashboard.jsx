@@ -344,7 +344,7 @@ const DoctorDashboard = () => {
               className="bg-[#1089d3] text-white px-6 py-3.5 rounded-xl hover:bg-[#0d73b0] transition-colors font-bold shadow-md shadow-blue-500/30 flex items-center justify-center gap-2"
             >
               <FiPlus size={20} />
-              Book Walk-in Patient
+              Book Appointment
             </button>
           </div>
 
@@ -357,7 +357,7 @@ const DoctorDashboard = () => {
                 >
                   <FiXCircle size={24} />
                 </button>
-                <h3 className="mb-2 text-xl font-black text-center text-slate-900">Book Walk-in Patient</h3>
+                <h3 className="mb-2 text-xl font-black text-center text-slate-900">Book Appointment</h3>
                 <p className="mb-8 text-sm font-medium text-center text-slate-500">Choose how you want to book the appointment.</p>
                 
                 <div className="space-y-4">

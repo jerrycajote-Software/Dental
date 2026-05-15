@@ -170,8 +170,20 @@ const Dashboard = () => {
     }
   };
 
-  const upcomingAppointments = appointments.filter(a => a.status === 'confirmed' || a.status === 'pending');
-  const pastAppointments = appointments.filter(a => a.status === 'completed' || a.status === 'cancelled');
+  const isAppointmentExpired = (appointment) => {
+    const now = new Date();
+    const apptDate = new Date(appointment.appointment_date);
+    const [hours, minutes] = appointment.appointment_time.split(':');
+    apptDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    return apptDate < now;
+  };
+
+  const upcomingAppointments = appointments.filter(a => 
+    (a.status === 'confirmed' || a.status === 'pending') && !isAppointmentExpired(a)
+  );
+  const pastAppointments = appointments.filter(a => 
+    a.status === 'completed' || a.status === 'cancelled'
+  );
 
   
   const todayStr = new Date().toISOString().split('T')[0];

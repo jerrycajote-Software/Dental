@@ -38,7 +38,17 @@ const AppointmentHistoryScreen = ({ navigation }) => {
     }
   };
 
-  const pastAppointments = appointments.filter(a => a.status === 'completed' || a.status === 'cancelled');
+  const isAppointmentExpired = (appointment) => {
+    const now = new Date();
+    const apptDate = new Date(appointment.appointment_date);
+    const [hours, minutes] = appointment.appointment_time.split(':');
+    apptDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    return apptDate < now;
+  };
+
+  const pastAppointments = appointments.filter(a => 
+    (a.status === 'completed' || a.status === 'cancelled') && !isAppointmentExpired(a)
+  );
 
   const formatTime12h = (time24) => {
     if (!time24) return '';

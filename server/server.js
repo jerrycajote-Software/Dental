@@ -42,7 +42,7 @@ app.listen(PORT, async () => {
 
   // Auto-cancellation job: cancel pending appointments not approved within 1 hour
   const db = require('./config/db');
-  const { sendAppointmentReminder } = require('./controllers/notificationController');
+  const { sendAppointmentReminder, handleMissedAppointment } = require('./controllers/notificationController');
 
   const runAutoCancellation = async () => {
     try {
@@ -57,6 +57,28 @@ app.listen(PORT, async () => {
       }
     } catch (err) {
       console.error('[Auto-Cancel] Error running auto-cancellation:', err.message);
+    }
+  };
+
+  // Missed appointment job: cancel expired appointments and notify patients
+  const runMissedAppointmentJob = async () => {
+    try {
+      const result = await db.query(
+        `UPDATE appointments SET status = 'cancelled'
+         WHERE (status = 'pending' OR status = 'confirmed')
+           AND (appointment_date < CURRENT_DATE 
+                OR (appointment_date = CURRENT_DATE AND appointment_time < NOW()))
+         RETURNING id`
+      );
+
+      if (result.rowCount > 0) {
+        console.log(`[Missed] Found ${result.rowCount} expired appointment(s).`);
+        for (const row of result.rows) {
+          await handleMissedAppointment(row.id);
+        }
+      }
+    } catch (err) {
+      console.error('[Missed] Error running missed appointment job:', err.message);
     }
   };
 
@@ -86,6 +108,10 @@ app.listen(PORT, async () => {
   // Run immediately on startup, then every 5 minutes
   runAutoCancellation();
   setInterval(runAutoCancellation, 5 * 60 * 1000);
+
+  // Run missed appointment check every 5 minutes
+  runMissedAppointmentJob();
+  setInterval(runMissedAppointmentJob, 5 * 60 * 1000);
 
   // Run reminder check every 15 minutes
   runReminderJob();

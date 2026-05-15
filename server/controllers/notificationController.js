@@ -189,6 +189,56 @@ const createWebNotification = async (userId, appointmentId, title, message) => {
   }
 };
 
+const handleMissedAppointment = async (appointmentId) => {
+  try {
+    const appointmentResult = await db.query(
+      `SELECT a.*, 
+              c.name AS client_name, c.expo_push_token AS client_token,
+              d.name AS dentist_name
+       FROM appointments a
+       JOIN users c ON a.client_id = c.id
+       JOIN users d ON a.dentist_id = d.id
+       WHERE a.id = $1`,
+      [appointmentId]
+    );
+
+    if (appointmentResult.rows.length === 0) return;
+
+    const apt = appointmentResult.rows[0];
+
+    const dateStr = new Date(apt.appointment_date).toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+    const timeStr = apt.appointment_time.substring(0, 5);
+
+    const title = 'Appointment Missed ❌';
+    const message = `Your appointment on ${dateStr} at ${timeStr} with Dr. ${apt.dentist_name} was missed and has been cancelled. Please book a new appointment.`;
+
+    await createWebNotification(apt.client_id, appointmentId, title, message);
+
+    if (apt.client_token) {
+      await sendPushNotification(
+        apt.client_token,
+        title,
+        message,
+        { type: 'missed', appointment_id: appointmentId }
+      );
+    }
+
+    await db.query(
+      'INSERT INTO notification_log (user_id, appointment_id, notification_type) VALUES ($1, $2, $3)',
+      [apt.client_id, appointmentId, 'missed']
+    );
+
+    console.log(`[Missed] Notified patient for appointment ${appointmentId}`);
+  } catch (err) {
+    console.error(`[Missed] Error handling appointment ${appointmentId}:`, err.message);
+  }
+};
+
 const sendStatusUpdateNotification = async (appointmentId, newStatus) => {
   try {
     const appointmentResult = await db.query(
@@ -246,5 +296,6 @@ module.exports = {
   getWebNotifications,
   markWebNotificationAsRead,
   markAllWebNotificationsAsRead,
-  createWebNotification
+  createWebNotification,
+  handleMissedAppointment
 };
