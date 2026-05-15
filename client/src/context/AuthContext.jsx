@@ -72,6 +72,9 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   const login = async (email, password) => {
+    if (!navigator.onLine) {
+      throw new Error('Please check your internet connection and try again.');
+    }
     const data = await authService.login(email, password);
     setUser(data.user);
     return data;

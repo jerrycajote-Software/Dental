@@ -23,6 +23,12 @@ const Login = () => {
     setError('');
     setNeedsVerification(false);
     setResendMessage('');
+    
+    if (!navigator.onLine) {
+      setError('Please check your internet connection and try again.');
+      return;
+    }
+    
     try {
       const data = await login(email, password);
       if (data.user.role === 'admin') {

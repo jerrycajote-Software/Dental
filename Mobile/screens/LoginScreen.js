@@ -13,6 +13,7 @@ import {
   ScrollView
 } from 'react-native';
 import { Lock, Mail, Eye, EyeOff } from 'lucide-react-native';
+import * as Network from 'expo-network';
 import api, { setAuthToken, setUserInfo } from '../services/api';
 import { registerForPushNotificationsAsync } from '../services/notifications';
 
@@ -25,6 +26,12 @@ const LoginScreen = ({ navigation }) => {
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password.');
+      return;
+    }
+
+    const networkState = await Network.getNetworkStateAsync();
+    if (!networkState.isConnected || !networkState.isInternetReachable) {
+      Alert.alert('No Internet', 'Please check your internet connection and try again.');
       return;
     }
 
