@@ -3,7 +3,7 @@ import api from '../services/api';
 import appointmentService from '../services/appointmentService';
 import { X, Clock } from 'lucide-react';
 
-// Fixed 1-hour slots: 9 AM through 5 PM (last slot runs 5–6 PM)
+
 const ALL_SLOTS = [
   { label: '9:00 AM',  value: '09:00' },
   { label: '10:00 AM', value: '10:00' },
@@ -216,25 +216,25 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
         <div className="bg-gradient-to-r from-[#1a237e] to-[#42a5f5] p-8 text-white flex justify-between items-center">
           <div>
             <h3 className="text-2xl font-black">{appointment ? 'Reschedule Appointment' : 'Book Appointment'}</h3>
-            <p className="text-blue-100 text-sm font-bold opacity-80 mt-1">
+            <p className="mt-1 text-sm font-bold text-blue-100 opacity-80">
               {appointment ? 'Update your visit details' : 'Schedule your next dental visit'}
             </p>
           </div>
-          <button onClick={onClose} className="hover:bg-white/20 p-2 rounded-2xl transition-all duration-300">
+          <button onClick={onClose} className="p-2 transition-all duration-300 hover:bg-white/20 rounded-2xl">
             <X size={28} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
           {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm font-bold border border-red-100">
+            <div className="p-4 text-sm font-bold text-red-600 border border-red-100 bg-red-50 rounded-2xl">
               {error}
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="block text-sm font-black text-slate-700 ml-1 uppercase tracking-widest">Select Service</label>
+              <label className="block ml-1 text-sm font-black tracking-widest uppercase text-slate-700">Select Service</label>
               <select
                 name="service_id"
                 value={formData.service_id}
@@ -250,7 +250,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-black text-slate-700 ml-1 uppercase tracking-widest">Select Dentist</label>
+              <label className="block ml-1 text-sm font-black tracking-widest uppercase text-slate-700">Select Dentist</label>
               <select
                 name="dentist_id"
                 value={formData.dentist_id}
@@ -267,7 +267,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-black text-slate-700 ml-1 uppercase tracking-widest">Preferred Date</label>
+            <label className="block ml-1 text-sm font-black tracking-widest uppercase text-slate-700">Preferred Date</label>
             <input
               type="date"
               name="appointment_date"
@@ -281,13 +281,13 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
 
           {/* Time Slot Picker */}
           <div className="space-y-3">
-            <label className="block text-sm font-black text-slate-700 ml-1 uppercase tracking-widest flex items-center gap-2">
+            <label className="flex items-center block gap-2 ml-1 text-sm font-black tracking-widest uppercase text-slate-700">
               <Clock size={14} className="text-slate-400" />
               Select Time Slot
-              <span className="text-xs font-medium text-slate-400 normal-case tracking-normal">(1-hour sessions)</span>
+              <span className="text-xs font-medium tracking-normal normal-case text-slate-400">(1-hour sessions)</span>
             </label>
             {!formData.dentist_id || !formData.appointment_date ? (
-              <p className="text-xs text-slate-400 italic px-1">Select a dentist and date to see available slots.</p>
+              <p className="px-1 text-xs italic text-slate-400">Select a dentist and date to see available slots.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {ALL_SLOTS.map(slot => {
@@ -316,7 +316,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-black text-slate-700 ml-1 uppercase tracking-widest">Notes (Optional)</label>
+            <label className="block ml-1 text-sm font-black tracking-widest uppercase text-slate-700">Notes (Optional)</label>
             <textarea
               name="notes"
               value={formData.notes}
@@ -337,7 +337,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>

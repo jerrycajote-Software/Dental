@@ -497,6 +497,21 @@ const createWalkinAppointment = async (req, res) => {
   }
 };
 
+const deleteOldAppointments = async (req, res) => {
+  try {
+    const result = await db.query(`
+      DELETE FROM appointments
+      WHERE status = 'confirmed'
+        AND (appointment_date < CURRENT_DATE OR 
+             (appointment_date = CURRENT_DATE AND appointment_time < CURRENT_TIME))
+      RETURNING *
+    `);
+    res.json({ message: `Deleted ${result.rowCount} old confirmed appointments`, appointments: result.rows });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   getAppointments,
   getBookedSlots,
