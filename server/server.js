@@ -23,6 +23,7 @@ const serviceRoutes = require('./routes/serviceRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const medicalRoutes = require('./routes/medicalRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 const bootstrapAdmin = require('./utils/bootstrap');
 
 // Use Routes
@@ -33,6 +34,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/medical', medicalRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/settings', settingsRoutes);
 
 const PORT = process.env.PORT || 5000;
 
@@ -67,7 +69,7 @@ app.listen(PORT, async () => {
         `UPDATE appointments SET status = 'cancelled'
          WHERE (status = 'pending' OR status = 'confirmed')
            AND (appointment_date < CURRENT_DATE 
-                OR (appointment_date = CURRENT_DATE AND appointment_time < NOW()))
+                OR (appointment_date + appointment_time) < NOW())
          RETURNING id`
       );
 
@@ -89,8 +91,8 @@ app.listen(PORT, async () => {
         `SELECT id FROM appointments
          WHERE status = 'confirmed'
            AND appointment_date = CURRENT_DATE
-           AND appointment_time > NOW() + INTERVAL '45 minutes'
-           AND appointment_time < NOW() + INTERVAL '65 minutes'`
+           AND (appointment_date + appointment_time) > NOW() + INTERVAL '45 minutes'
+           AND (appointment_date + appointment_time) < NOW() + INTERVAL '65 minutes'`
       );
 
       for (const row of result.rows) {

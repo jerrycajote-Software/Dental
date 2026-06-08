@@ -57,7 +57,7 @@ const Navbar = () => {
                   to="/login"
                   className="rounded-xl bg-slate-900 px-6 py-2.5 text-sm font-black text-white shadow-md hover:bg-slate-800 hover:-translate-y-0.5 transition-all duration-300"
                 >
-                  Sign In
+                  Login
                 </Link>
               </div>
             )}
@@ -104,7 +104,7 @@ const Navbar = () => {
                   onClick={closeMenu}
                   className="w-full py-4 text-base font-black text-center text-white transition-all shadow-xl rounded-2xl bg-slate-900 hover:bg-slate-800"
                 >
-                  Sign In
+                  Login
                 </Link>
               </>
             )}

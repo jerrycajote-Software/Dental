@@ -1,8 +1,42 @@
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { sendWalkinVerificationEmail, sendDoctorAppointmentNotification } = require('../utils/email');
+const { sendWalkinVerificationEmail, sendDoctorAppointmentNotification, sendPatientAppointmentNotification } = require('../utils/email');
 const { sendStatusUpdateNotification, sendAppointmentReminder, createWebNotification } = require('./notificationController');
+
+// Helper function to get today's date string (YYYY-MM-DD)
+const getTodayStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+// Helper function to get tomorrow's date string (YYYY-MM-DD)
+const getTomorrowStr = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+// Helper function to check if time is within doctor's schedule
+const isWithinDoctorSchedule = async (dentistId, apptDateStr, apptTimeStr) => {
+  const dayOfWeek = new Date(apptDateStr).getDay();
+  const scheduleRes = await db.query(
+    'SELECT start_time, end_time FROM schedules WHERE dentist_id = $1 AND day_of_week = $2',
+    [dentistId, dayOfWeek]
+  );
+  
+  if (!scheduleRes.rows.length) {
+    return false;
+  }
+  
+  const { start_time, end_time } = scheduleRes.rows[0];
+  // Convert to strings to make comparison easier
+  const startStr = start_time.toString().slice(0, 5);
+  const endStr = end_time.toString().slice(0, 5);
+  
+  // Check if appointment time is >= start and < end
+  return apptTimeStr >= startStr && apptTimeStr < endStr;
+};
 
 const getAppointments = async (req, res) => {
   try {
@@ -11,7 +45,7 @@ const getAppointments = async (req, res) => {
       DELETE FROM appointments
       WHERE status = 'confirmed'
         AND (appointment_date < CURRENT_DATE OR 
-             (appointment_date = CURRENT_DATE AND appointment_time < CURRENT_TIME))
+             (appointment_date + appointment_time) < NOW())
     `);
 
     // COALESCE: if junction table has entries for this appointment, show all service names;
@@ -31,14 +65,15 @@ const getAppointments = async (req, res) => {
       JOIN services s ON a.service_id = s.id
       JOIN users u ON a.dentist_id = u.id
       JOIN users c ON a.client_id = c.id
+      WHERE (c.is_deleted = false OR c.is_deleted IS NULL)
     `;
     let params = [];
 
     if (req.user.role === 'user') {
-      query += ' WHERE a.client_id = $1';
+      query += ' AND a.client_id = $1';
       params.push(req.user.id);
     } else if (req.user.role === 'doctor') {
-      query += ' WHERE a.dentist_id = $1';
+      query += ' AND a.dentist_id = $1';
       params.push(req.user.id);
     }
 
@@ -96,10 +131,28 @@ const createAppointment = async (req, res) => {
   const client_id = req.user.id;
 
   try {
+    // Same-day booking validation
+    const todayStr = getTodayStr();
+    if (appointment_date <= todayStr) {
+      return res.status(400).json({ message: 'Same-day booking is not allowed. Please select a date starting from tomorrow.' });
+    }
+
     // Past date/time validation
     const apptDateTime = new Date(`${appointment_date}T${appointment_time}`);
     if (apptDateTime < new Date()) {
       return res.status(400).json({ message: 'Cannot book an appointment in the past. Please select a future date and time.' });
+    }
+
+    // Validate appointment time is between 9:00 AM and 4:00 PM
+    const [hours, minutes] = appointment_time.split(':').map(Number);
+    if (hours < 9 || hours >= 16 || (hours === 16 && minutes > 0)) {
+      return res.status(400).json({ message: 'Appointment time must be between 9:00 AM and 4:00 PM only.' });
+    }
+
+    // Doctor's working hours validation
+    const isWithinSchedule = await isWithinDoctorSchedule(dentist_id, appointment_date, appointment_time);
+    if (!isWithinSchedule) {
+      return res.status(400).json({ message: 'The selected time is outside the doctor\'s working hours. Please choose another time.' });
     }
 
     // Conflict check
@@ -125,7 +178,7 @@ const createAppointment = async (req, res) => {
       const detailsQuery = `
         SELECT 
           d.name as doctor_name, d.email as doctor_email,
-          p.name as patient_name,
+          p.name as patient_name, p.email as patient_email,
           s.name as service_name
         FROM users d
         JOIN users p ON p.id = $2
@@ -135,11 +188,20 @@ const createAppointment = async (req, res) => {
       const details = await db.query(detailsQuery, [dentist_id, client_id, service_id]);
       
       if (details.rows.length > 0) {
-        const { doctor_email, patient_name, service_name } = details.rows[0];
+        const { doctor_email, patient_name, patient_email, service_name } = details.rows[0];
         doctor_name = details.rows[0].doctor_name;
         
         await sendDoctorAppointmentNotification(doctor_email, doctor_name, {
           patientName: patient_name,
+          date: appointment_date,
+          time: appointment_time,
+          services: service_name,
+          notes: notes
+        });
+
+        // Notify patient
+        await sendPatientAppointmentNotification(patient_email, patient_name, {
+          doctorName: doctor_name,
           date: appointment_date,
           time: appointment_time,
           services: service_name,
@@ -214,10 +276,28 @@ const updateAppointment = async (req, res) => {
   const { dentist_id, service_id, appointment_date, appointment_time, notes } = req.body;
 
   try {
+    // Same-day booking validation
+    const todayStr = getTodayStr();
+    if (appointment_date <= todayStr) {
+      return res.status(400).json({ message: 'Same-day booking is not allowed. Please select a date starting from tomorrow.' });
+    }
+
     // Past date/time validation
     const apptDateTime = new Date(`${appointment_date}T${appointment_time}`);
     if (apptDateTime < new Date()) {
       return res.status(400).json({ message: 'Cannot reschedule to a past date/time.' });
+    }
+
+    // Validate appointment time is between 9:00 AM and 4:00 PM
+    const [hours, minutes] = appointment_time.split(':').map(Number);
+    if (hours < 9 || hours >= 16 || (hours === 16 && minutes > 0)) {
+      return res.status(400).json({ message: 'Appointment time must be between 9:00 AM and 4:00 PM only.' });
+    }
+
+    // Doctor's working hours validation
+    const isWithinSchedule = await isWithinDoctorSchedule(dentist_id, appointment_date, appointment_time);
+    if (!isWithinSchedule) {
+      return res.status(400).json({ message: 'The selected time is outside the doctor\'s working hours. Please choose another time.' });
     }
 
     // Conflict check (exclude self)
@@ -298,8 +378,8 @@ const createWalkinAppointment = async (req, res) => {
     // ── Validation ──────────────────────────────────────────────────────────
     const missingFields = [];
     if (!first_name) missingFields.push('First Name');
-    if (!last_name)  missingFields.push('Last Name');
-    if (!email)      missingFields.push('Email');
+    if (!last_name) missingFields.push('Last Name');
+    if (!email) missingFields.push('Email');
     if (!dentist_id) missingFields.push('Dentist');
     if (!appointment_date) missingFields.push('Appointment Date');
     if (!appointment_time) missingFields.push('Appointment Time');
@@ -319,10 +399,28 @@ const createWalkinAppointment = async (req, res) => {
       return res.status(400).json({ message: 'At least one service must be selected.' });
     }
 
+    // Same-day booking validation for walk-ins
+    const todayStr = getTodayStr();
+    if (appointment_date <= todayStr) {
+      return res.status(400).json({ message: 'Same-day booking is not allowed. Please select a date starting from tomorrow.' });
+    }
+
     // Past date/time guard
     const apptDateTime = new Date(`${appointment_date}T${appointment_time}`);
     if (apptDateTime < new Date()) {
       return res.status(400).json({ message: 'Cannot book an appointment in the past.' });
+    }
+
+    // Validate appointment time is between 9:00 AM and 4:00 PM
+    const [hours, minutes] = appointment_time.split(':').map(Number);
+    if (hours < 9 || hours >= 16 || (hours === 16 && minutes > 0)) {
+      return res.status(400).json({ message: 'Appointment time must be between 9:00 AM and 4:00 PM only.' });
+    }
+
+    // Doctor's working hours validation for walk-ins
+    const isWithinSchedule = await isWithinDoctorSchedule(dentistIdNum, appointment_date, appointment_time);
+    if (!isWithinSchedule) {
+      return res.status(400).json({ message: 'The selected time is outside the doctor\'s working hours. Please choose another time.' });
     }
 
     // Use first selected service as primary (backward compat with appointments.service_id FK)
@@ -339,7 +437,7 @@ const createWalkinAppointment = async (req, res) => {
       return res.status(409).json({ message: 'This time slot is already booked for this doctor.' });
     }
 
-    // ── Upsert patient user ──────────────────────────────────────────────────
+    // Upsert patient user
     let user_id;
     const trimmedEmail = email.trim().toLowerCase();
     const userResult = await db.query('SELECT * FROM users WHERE email = $1', [trimmedEmail]);
@@ -373,6 +471,35 @@ const createWalkinAppointment = async (req, res) => {
           user_id
         ]
       );
+
+      // If the existing user has never verified their email, they probably never got their password.
+      // We must regenerate the temp password and resend the Walk-in verification email to ensure they can login.
+      if (!userResult.rows[0].email_verified) {
+        const fn = first_name.trim();
+        const ln = last_name.trim();
+        const birthYear = date_of_birth ? String(date_of_birth).slice(0, 4) : '0000';
+        tempPassword =
+          (fn.slice(0, 1).toUpperCase() + fn.slice(1, 2).toLowerCase()) +
+          (ln.slice(0, 1).toUpperCase() + ln.slice(1, 2).toLowerCase()) +
+          birthYear;
+
+        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        const tokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+        const fullName = `${fn} ${ln}`;
+
+        await db.query(
+          'UPDATE users SET password = $1, verification_token = $2, verification_token_expires = $3 WHERE id = $4',
+          [hashedPassword, verificationToken, tokenExpires, user_id]
+        );
+
+        try {
+          await sendWalkinVerificationEmail(trimmedEmail, fullName, verificationToken, tempPassword);
+          console.log(`Resent walk-in verification email to existing unverified user: ${trimmedEmail}`);
+        } catch (emailErr) {
+          console.error('Failed to resend walkin verification email to unverified user:', emailErr.message);
+        }
+      }
     } else {
       // ── Generate deterministic temp password ──────────────────────────────
       // Format: first 2 letters of first name + first 2 letters of last name + birth year
@@ -448,11 +575,11 @@ const createWalkinAppointment = async (req, res) => {
     // Fetch details for notifications
     let doctor_name = 'Doctor';
     try {
-      // Fetch doctor, patient, and services details for the email
+      // Fetch doctor, patient, and service details for the email
       const detailsQuery = `
         SELECT 
           d.name as doctor_name, d.email as doctor_email,
-          p.name as patient_name,
+          p.name as patient_name, p.email as patient_email,
           (SELECT STRING_AGG(s.name, ', ') 
            FROM services s 
            WHERE s.id = ANY($3::int[])) as service_names
@@ -463,11 +590,21 @@ const createWalkinAppointment = async (req, res) => {
       const details = await db.query(detailsQuery, [dentistIdNum, user_id, ids]);
       
       if (details.rows.length > 0) {
-        const { doctor_email, patient_name, service_names } = details.rows[0];
+        const { doctor_email, patient_name, patient_email, service_names } = details.rows[0];
         doctor_name = details.rows[0].doctor_name;
         
+        // Notify doctor
         await sendDoctorAppointmentNotification(doctor_email, doctor_name, {
           patientName: patient_name,
+          date: appointment_date,
+          time: appointment_time,
+          services: service_names,
+          notes: notes
+        });
+
+        // Notify patient
+        await sendPatientAppointmentNotification(patient_email, patient_name, {
+          doctorName: doctor_name,
           date: appointment_date,
           time: appointment_time,
           services: service_names,
@@ -503,7 +640,7 @@ const deleteOldAppointments = async (req, res) => {
       DELETE FROM appointments
       WHERE status = 'confirmed'
         AND (appointment_date < CURRENT_DATE OR 
-             (appointment_date = CURRENT_DATE AND appointment_time < CURRENT_TIME))
+             (appointment_date + appointment_time) < NOW())
       RETURNING *
     `);
     res.json({ message: `Deleted ${result.rowCount} old confirmed appointments`, appointments: result.rows });

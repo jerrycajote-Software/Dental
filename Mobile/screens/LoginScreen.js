@@ -86,7 +86,7 @@ const LoginScreen = ({ navigation }) => {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.card}>
-            <Text style={styles.heading}>Sign In</Text>
+            <Text style={styles.heading}>Login</Text>
 
             <View style={styles.inputContainer}>
               <View style={styles.inputWrapper}>
@@ -135,7 +135,7 @@ const LoginScreen = ({ navigation }) => {
               {loading ? (
                 <ActivityIndicator color="#ffffff" />
               ) : (
-                <Text style={styles.buttonText}>Sign In</Text>
+                <Text style={styles.buttonText}>Login</Text>
               )}
             </TouchableOpacity>
           </View>

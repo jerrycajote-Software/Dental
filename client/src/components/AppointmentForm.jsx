@@ -12,8 +12,6 @@ const ALL_SLOTS = [
   { label: '1:00 PM',  value: '13:00' },
   { label: '2:00 PM',  value: '14:00' },
   { label: '3:00 PM',  value: '15:00' },
-  { label: '4:00 PM',  value: '16:00' },
-  { label: '5:00 PM',  value: '17:00' },
 ];
 
 const SLOT_DURATION_MINS = 60;
@@ -35,7 +33,14 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
+  // Compute tomorrow's local date string
+  const getTomorrowStr = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
   const todayStr = getTodayStr();
+  const tomorrowStr = getTomorrowStr();
 
   const [formData, setFormData] = useState({
     service_id: appointment?.service_id || '',
@@ -185,6 +190,21 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
       return;
     }
 
+    // Prevent same-day booking
+    if (formData.appointment_date && formData.appointment_date <= todayStr) {
+      setError('Same-day booking is not allowed. Please select a date starting from tomorrow.');
+      setLoading(false);
+      return;
+    }
+
+    // Validate appointment time is between 9:00 AM and 4:00 PM (client-side)
+    const [hours, minutes] = formData.appointment_time.split(':').map(Number);
+    if (hours < 9 || hours >= 16 || (hours === 16 && minutes > 0)) {
+      setError('Appointment time must be between 9:00 AM and 4:00 PM only.');
+      setLoading(false);
+      return;
+    }
+
     // Prevent booking in the past
     if (formData.appointment_date && formData.appointment_time) {
       const apptDateTime = new Date(`${formData.appointment_date}T${formData.appointment_time}`);
@@ -273,7 +293,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
               name="appointment_date"
               value={formData.appointment_date}
               onChange={handleChange}
-              min={todayStr}
+              min={tomorrowStr}
               className="w-full bg-slate-50 border-none rounded-2xl p-4 text-slate-900 font-bold focus:ring-2 focus:ring-[#a1c4fd] transition-all"
               required
             />

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { X, Clock, User, AlertTriangle, CheckSquare, Search, ChevronRight } from 'lucide-react';
+import Loader from './Loader';
 
 const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
   const [step, setStep] = useState(1); // 1: Search, 2: Form
   const [searchQuery, setSearchQuery] = useState('');
   const [patients, setPatients] = useState([]);
+  const [allPatients, setAllPatients] = useState([]);
   const [searching, setSearching] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
 
@@ -47,7 +49,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Fetch services on mount
+  // Fetch services and patients on mount
   useEffect(() => {
     setFetchingServices(true);
     api.get('/services')
@@ -60,6 +62,21 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
         setError('Failed to load services.');
         setFetchingServices(false);
       });
+
+    const fetchPatients = async () => {
+      setSearching(true);
+      try {
+        const res = await api.get('/auth/patients');
+        const activePatients = res.data.filter(p => !p.is_deleted);
+        setAllPatients(activePatients);
+        setPatients(activePatients);
+      } catch (err) {
+        console.error('Failed to fetch patients', err);
+      } finally {
+        setSearching(false);
+      }
+    };
+    fetchPatients();
   }, []);
 
   // Fetch dentists when date changes
@@ -97,27 +114,20 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
     fetchBookedSlots();
   }, [formData.dentist_id, formData.appointment_date]);
 
-  const handleSearch = async (e) => {
+  const handleSearch = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
-    if (query.length < 2) {
-      setPatients([]);
+    
+    if (query.trim() === '') {
+      setPatients(allPatients);
       return;
     }
 
-    setSearching(true);
-    try {
-      const res = await api.get('/auth/patients');
-      const filtered = res.data.filter(p => 
-        p.name.toLowerCase().includes(query.toLowerCase()) || 
-        p.email.toLowerCase().includes(query.toLowerCase())
-      );
-      setPatients(filtered);
-    } catch (err) {
-      console.error('Search failed', err);
-    } finally {
-      setSearching(false);
-    }
+    const filtered = allPatients.filter(p => 
+      p.name.toLowerCase().includes(query.toLowerCase()) || 
+      p.email.toLowerCase().includes(query.toLowerCase())
+    );
+    setPatients(filtered);
   };
 
   const selectPatient = async (patient) => {
@@ -194,6 +204,33 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
       return;
     }
 
+    // Validate appointment time is between 9:00 AM and 4:00 PM (client-side)
+    const [hours, minutes] = formData.appointment_time.split(':').map(Number);
+    if (hours < 9 || hours >= 16 || (hours === 16 && minutes > 0)) {
+      setError('Appointment time must be between 9:00 AM and 4:00 PM only.');
+      setLoading(false);
+      return;
+    }
+
+    // Doctor's working hours validation (client-side guard)
+    if (formData.dentist_id && doctorSchedule) {
+      const timeToMinutes = (timeStr) => {
+        if (!timeStr || typeof timeStr !== 'string') return 0;
+        const [h, m] = timeStr.split(':').map(Number);
+        return h * 60 + m;
+      };
+      
+      const apptMinutes = timeToMinutes(formData.appointment_time);
+      const startMinutes = timeToMinutes(doctorSchedule.start);
+      const endMinutes = timeToMinutes(doctorSchedule.end);
+      
+      if (apptMinutes < startMinutes || apptMinutes >= endMinutes) {
+        setError('The selected time is outside the doctor\'s working hours. Please choose another time.');
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       // Use existing walk-in endpoint which handles existing accounts via email
       await api.post('/appointments/walkin', formData);
@@ -210,7 +247,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300 font-sans overflow-y-auto">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl my-8 overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl my-8 overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
         
         {/* Header */}
         <div className="bg-[#1089d3] p-6 text-white flex justify-between items-center shrink-0">
@@ -274,10 +311,10 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
                       <ChevronRight className="text-slate-300 group-hover:text-[#1089d3]" size={20} />
                     </button>
                   ))
-                ) : searchQuery.length >= 2 ? (
+                ) : searchQuery.length > 0 ? (
                   <p className="text-center py-10 text-slate-500 font-medium">No patients found matching "{searchQuery}"</p>
                 ) : (
-                  <p className="text-center py-10 text-slate-500 font-medium italic">Type at least 2 characters to search.</p>
+                  <p className="text-center py-10 text-slate-500 font-medium italic">No active registered patients found.</p>
                 )}
               </div>
             </div>
@@ -384,6 +421,8 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
                       type="time"
                       name="appointment_time"
                       value={formData.appointment_time}
+                      min="09:00"
+                      max="15:59"
                       onChange={handleChange}
                       className={inputClass}
                       required
@@ -422,6 +461,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
             </form>
           )}
         </div>
+        {loading && <Loader overlay text="Processing..." />}
       </div>
     </div>
   );

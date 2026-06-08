@@ -38,18 +38,18 @@ const register = async (req, res) => {
         return res.status(400).json({ message: 'User already exists' });
       }
 
-      // If soft-deleted, check 1-hour restriction
+      // If soft-deleted, check 10-minute restriction
       const deletedAt = new Date(existingUser.deleted_at);
       const now = new Date();
-      const hoursDifference = (now - deletedAt) / (1000 * 60 * 60);
+      const minutesDifference = (now - deletedAt) / (1000 * 60);
 
-      if (hoursDifference < 1) {
+      if (minutesDifference < 10) {
         return res.status(403).json({ 
-          message: `This account was recently deleted. You must wait ${Math.ceil(1 - hoursDifference)} more hour before re-registering with this email.` 
+          message: `This account was recently deleted. You must wait ${Math.ceil(10 - minutesDifference)} more minutes before re-registering with this email.` 
         });
       }
 
-      // If more than 1 hour, we'll permanently delete the old record and create a new one
+      // If more than 10 minutes, we'll permanently delete the old record and create a new one
       // or just update it. For simplicity and to keep it clean, let's delete the old one.
       await db.query('DELETE FROM users WHERE id = $1', [existingUser.id]);
     }
@@ -194,6 +194,16 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+    // Check if customer web access is disabled
+    const platform = req.headers['x-platform'] || 'web'; // Default to web if no header
+    if (user.rows[0].role === 'user' && platform === 'web') {
+      const settingResult = await db.query("SELECT value FROM settings WHERE key = 'customer_web_access_enabled'");
+      const webAccessEnabled = settingResult.rows.length > 0 ? settingResult.rows[0].value === 'true' : true;
+      if (!webAccessEnabled) {
+        return res.status(403).json({ message: 'Customer web access is currently disabled. Please use the mobile app.' });
+      }
+    }
+
     const isMatch = await bcrypt.compare(password, user.rows[0].password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
@@ -201,9 +211,12 @@ const login = async (req, res) => {
 
     // Check if email is verified
     if (!user.rows[0].email_verified) {
-      // For doctors and admins, we skip the verification check to allow immediate access if email is broken
-      // For users (patients), we also allow it for now until email features are stable
-      console.log(`⚠️ User ${trimmedEmail} logged in without email verification.`);
+      // Only allow doctors and admins to login without verification
+      if (user.rows[0].role === 'user') {
+        return res.status(403).json({ message: 'Please verify your email address before logging in. Check your inbox for the verification link.' });
+      }
+      // For doctors and admins, we allow login but log a warning
+      console.log(`⚠️ ${user.rows[0].role} ${trimmedEmail} logged in without email verification.`);
     }
 
     const token = jwt.sign({ id: user.rows[0].id, role: user.rows[0].role }, process.env.JWT_SECRET, {
@@ -252,15 +265,21 @@ const createDoctor = async (req, res) => {
       return res.status(400).json({ message: 'A user with this email already exists' });
     }
 
+    // Split name into first and last
+    const trimmedName = name.trim();
+    const nameParts = trimmedName.split(' ');
+    const first_name = nameParts[0];
+    const last_name = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     const newDoctor = await db.query(
-      `INSERT INTO users (name, email, password, role, email_verified, verification_token, verification_token_expires) 
-       VALUES ($1, $2, $3, 'doctor', FALSE, $4, $5) 
+      `INSERT INTO users (name, first_name, last_name, email, password, role, email_verified, verification_token, verification_token_expires) 
+       VALUES ($1, $2, $3, $4, $5, 'doctor', FALSE, $6, $7) 
        RETURNING id, name, email, role, email_verified, created_at`,
-      [name.trim(), trimmedEmail, hashedPassword, verificationToken, tokenExpires]
+      [trimmedName, first_name, last_name, trimmedEmail, hashedPassword, verificationToken, tokenExpires]
     );
 
     // Send verification email
@@ -369,7 +388,7 @@ const resetPassword = async (req, res) => {
 const getPatients = async (req, res) => {
   try {
     const patients = await db.query(
-      "SELECT id, name, email, role, email_verified, is_deleted, deleted_at, created_at FROM users WHERE role = 'user' ORDER BY created_at DESC"
+      "SELECT id, name, email, role, email_verified, is_deleted, deleted_at, created_at FROM users WHERE role = 'user' AND (is_deleted = false OR is_deleted IS NULL) ORDER BY created_at DESC"
     );
     res.json(patients.rows);
   } catch (err) {
@@ -544,10 +563,17 @@ const updatePassword = async (req, res) => {
 const resetToTempPassword = async (req, res) => {
   const { id } = req.params;
   try {
-    const user = await db.query('SELECT first_name, last_name, date_of_birth FROM users WHERE id = $1', [id]);
+    const user = await db.query('SELECT name, first_name, last_name, date_of_birth FROM users WHERE id = $1', [id]);
     if (user.rows.length === 0) return res.status(404).json({ message: 'User not found' });
 
-    const { first_name, last_name, date_of_birth } = user.rows[0];
+    let { name, first_name, last_name, date_of_birth } = user.rows[0];
+    
+    // If first/last name are missing, split the "name" column
+    if (!first_name || !last_name) {
+      const nameParts = (name || '').trim().split(' ');
+      if (nameParts.length >= 1) first_name = nameParts[0];
+      if (nameParts.length >= 2) last_name = nameParts[nameParts.length - 1];
+    }
     
     // Deterministic format: FiLaYYYY
     const fn = (first_name || '').trim();
@@ -559,8 +585,8 @@ const resetToTempPassword = async (req, res) => {
     }
 
     const tempPassword =
-      (fn.slice(0, 1).toUpperCase() + fn.slice(1, 2).toLowerCase()) +
-      (ln.slice(0, 1).toUpperCase() + ln.slice(1, 2).toLowerCase()) +
+      (fn.slice(0, 1).toUpperCase() + (fn.slice(1, 2) || '').toLowerCase()) +
+      (ln.slice(0, 1).toUpperCase() + (ln.slice(1, 2) || '').toLowerCase()) +
       birthYear;
 
     const hashedPassword = await bcrypt.hash(tempPassword, 10);

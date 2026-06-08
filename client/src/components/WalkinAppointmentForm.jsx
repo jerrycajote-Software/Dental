@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { X, Clock, User, AlertTriangle, CheckSquare } from 'lucide-react';
+import Loader from './Loader';
 
 const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
   const [services, setServices] = useState([]);
@@ -14,8 +15,16 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
+  
+  // Get tomorrow's date string in local time (YYYY-MM-DD)
+  const getTomorrowStr = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
 
   const todayStr = getTodayStr();
+  const tomorrowStr = getTomorrowStr();
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -33,14 +42,13 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
     gender: '',
     service_ids: [],
     dentist_id: currentDentistId ? String(currentDentistId) : '',
-    appointment_date: todayStr,
+    appointment_date: tomorrowStr,
     appointment_time: '',
     notes: '',
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [successData, setSuccessData] = useState(null); // To store temp credentials on success
 
   // Fetch services on mount
   useEffect(() => {
@@ -159,6 +167,40 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
       return;
     }
 
+    // Same-day booking validation
+    if (formData.appointment_date <= todayStr) {
+      setError('Same-day booking is not allowed. Please select a date starting from tomorrow.');
+      setLoading(false);
+      return;
+    }
+
+    // Doctor's working hours validation (client-side guard)
+    if (formData.dentist_id && doctorSchedule) {
+      const timeToMinutes = (timeStr) => {
+        if (!timeStr || typeof timeStr !== 'string') return 0;
+        const [h, m] = timeStr.split(':').map(Number);
+        return h * 60 + m;
+      };
+      
+      const apptMinutes = timeToMinutes(formData.appointment_time);
+      const startMinutes = timeToMinutes(doctorSchedule.start);
+      const endMinutes = timeToMinutes(doctorSchedule.end);
+      
+      if (apptMinutes < startMinutes || apptMinutes >= endMinutes) {
+        setError('The selected time is outside the doctor\'s working hours. Please choose another time.');
+        setLoading(false);
+        return;
+      }
+    }
+
+    // Validate appointment time is between 9:00 AM and 4:00 PM (client-side)
+    const [hours, minutes] = formData.appointment_time.split(':').map(Number);
+    if (hours < 9 || hours >= 16 || (hours === 16 && minutes > 0)) {
+      setError('Appointment time must be between 9:00 AM and 4:00 PM only.');
+      setLoading(false);
+      return;
+    }
+
     // Past date/time validation (client-side guard)
     const apptDateTime = new Date(`${formData.appointment_date}T${formData.appointment_time}`);
     if (apptDateTime < new Date()) {
@@ -168,19 +210,9 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
     }
 
     try {
-      const res = await api.post('/appointments/walkin', formData);
-      if (res.data.tempPassword) {
-        // Show credentials to the doctor
-        setSuccessData({
-          email: res.data.email,
-          password: res.data.tempPassword
-        });
-        setLoading(false);
-        onSuccess(); // Refresh appointments in background
-      } else {
-        onSuccess();
-        onClose();
-      }
+      await api.post('/appointments/walkin', formData);
+      onSuccess();
+      onClose();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to book walk-in appointment');
       setLoading(false);
@@ -193,74 +225,40 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300 font-sans overflow-y-auto">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl my-8 overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl my-8 overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
 
         {/* Header */}
         <div className="bg-[#1089d3] p-6 text-white flex justify-between items-center shrink-0">
           <div>
-            <h3 className="text-xl font-black flex items-center gap-2">
+            <h3 className="flex items-center gap-2 text-xl font-black">
               <User size={24} />
               Walk-in Patient Registration &amp; Booking
             </h3>
-            <p className="text-blue-100 text-sm font-medium mt-1">
+            <p className="mt-1 text-sm font-medium text-blue-100">
               Create a new patient account and schedule their appointment.
             </p>
           </div>
-          <button onClick={onClose} className="hover:bg-white/20 p-2 rounded-xl transition-all duration-300">
+          <button onClick={onClose} className="p-2 transition-all duration-300 hover:bg-white/20 rounded-xl">
             <X size={24} />
           </button>
         </div>
 
-        {successData ? (
-          <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center justify-center text-center animate-in zoom-in-95 duration-500">
-            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6">
-              <CheckSquare size={40} />
-            </div>
-            <h3 className="text-2xl font-black text-slate-900 mb-2">Registration Successful!</h3>
-            <p className="text-slate-500 font-medium mb-8 max-w-md">
-              The patient's account has been created. Please provide them with these temporary login credentials:
-            </p>
-            
-            <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-8 w-full max-w-md space-y-6">
-              <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Login Email</p>
-                <p className="text-lg font-bold text-[#1089d3] break-all">{successData.email}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Temporary Password</p>
-                <p className="text-2xl font-black text-slate-900 tracking-wider font-mono">{successData.password}</p>
-              </div>
-              <div className="pt-4 border-t border-slate-200">
-                <p className="text-xs text-slate-400 font-medium">
-                  The patient should change their password immediately after logging in.
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={onClose}
-              className="mt-10 bg-[#1089d3] text-white px-10 py-4 rounded-2xl font-black hover:bg-[#0d73b0] transition-all shadow-lg shadow-blue-500/25 active:scale-95"
-            >
-              Done, Close Form
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-8">
+        <form onSubmit={handleSubmit} className="flex-1 p-8 space-y-8 overflow-y-auto">
           {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-bold border border-red-100 flex items-center gap-2">
+            <div className="flex items-center gap-2 p-4 text-sm font-bold text-red-600 border border-red-100 bg-red-50 rounded-xl">
               <AlertTriangle size={18} />
               {error}
             </div>
           )}
 
-          {/* ── PATIENT INFORMATION ── */}
+          {/* PATIENT INFORMATION */}
           <section>
-            <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">
+            <h4 className="pb-2 mb-4 text-sm font-black tracking-widest uppercase border-b text-slate-400 border-slate-100">
               Patient Information
             </h4>
 
             {/* Name row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <div className="space-y-1">
                 <label className={labelClass}>First Name *</label>
                 <input required type="text" name="first_name" value={formData.first_name} onChange={handleChange} className={inputClass} />
@@ -276,7 +274,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
             </div>
 
             {/* Email & Contact */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <div className="grid grid-cols-1 gap-6 mt-4 md:grid-cols-2">
               <div className="space-y-1">
                 <label className={labelClass}>Email Address (Gmail) *</label>
                 <input required type="email" name="email" value={formData.email} onChange={handleChange} placeholder="patient@gmail.com" className={inputClass} />
@@ -288,7 +286,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
             </div>
 
             {/* DOB → Age (auto) → Civil Status */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+            <div className="grid grid-cols-1 gap-6 mt-4 md:grid-cols-3">
               <div className="space-y-1">
                 <label className={labelClass}>Date of Birth</label>
                 <input
@@ -303,7 +301,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
               <div className="space-y-1">
                 <label className={labelClass}>
                   Age{' '}
-                  <span className="text-slate-400 normal-case font-normal">(auto-filled)</span>
+                  <span className="font-normal normal-case text-slate-400">(auto-filled)</span>
                 </label>
                 <input
                   type="number"
@@ -320,12 +318,11 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
                   <option value="">Select status...</option>
                   <option value="Single">Single</option>
                   <option value="Married">Married</option>
-                  <option value="Divorced">Divorced</option>
                   <option value="Widowed">Widowed</option>
                   <option value="Separated">Separated</option>
-                  <option value="In a Relationship">In a Relationship</option>
                 </select>
               </div>
+              
               <div className="space-y-1">
                 <label className={labelClass}>Gender</label>
                 <select name="gender" value={formData.gender} onChange={handleChange} className={inputClass}>
@@ -339,11 +336,11 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
             </div>
 
             {/* Blood Type & Home Address */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <div className="grid grid-cols-1 gap-6 mt-4 md:grid-cols-2">
               <div className="space-y-1">
                 <label className={labelClass}>
                   Blood Type{' '}
-                  <span className="text-slate-400 normal-case font-normal">(optional)</span>
+                  <span className="font-normal normal-case text-slate-400">(optional)</span>
                 </label>
                 <select name="blood_type" value={formData.blood_type} onChange={handleChange} className={inputClass}>
                   <option value="">Select blood type...</option>
@@ -359,7 +356,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
             </div>
 
             {/* Allergies & Dental History */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <div className="grid grid-cols-1 gap-6 mt-4 md:grid-cols-2">
               <div className="space-y-1">
                 <label className={labelClass}>Allergies</label>
                 <textarea
@@ -385,9 +382,9 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
             </div>
           </section>
 
-          {/* ── APPOINTMENT DETAILS ── */}
+          {/* APPOINTMENT DETAILS */}
           <section>
-            <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">
+            <h4 className="pb-2 mb-4 text-sm font-black tracking-widest uppercase border-b text-slate-400 border-slate-100">
               Appointment Details
             </h4>
 
@@ -396,14 +393,14 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
               <label className={`${labelClass} flex items-center gap-2`}>
                 <CheckSquare size={14} className="text-[#1089d3]" />
                 Services *
-                <span className="text-slate-400 normal-case font-normal text-xs">(select one or more)</span>
+                <span className="text-xs font-normal normal-case text-slate-400">(select one or more)</span>
               </label>
               {services.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">
+                <p className="text-xs italic text-slate-400">
                   {fetchingServices ? 'Loading services...' : 'No services available.'}
                 </p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
                   {services.map(s => {
                     const isChecked = formData.service_ids.includes(s.id);
                     return (
@@ -445,7 +442,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
             </div>
 
             {/* Dentist & Date */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div className="grid grid-cols-1 gap-6 mt-6 md:grid-cols-2">
               <div className="space-y-1">
                 <label className={labelClass}>Assign Dentist *</label>
                 <select
@@ -468,7 +465,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
                   type="date"
                   name="appointment_date"
                   value={formData.appointment_date}
-                  min={todayStr}
+                  min={tomorrowStr}
                   onChange={handleChange}
                   className={inputClass}
                 />
@@ -477,8 +474,8 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
 
             {/* Booked slots info panel */}
             {formData.dentist_id && formData.appointment_date && (
-              <div className="mt-5 bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                <p className="text-xs font-black text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <div className="p-4 mt-5 border bg-slate-50 rounded-2xl border-slate-100">
+                <p className="flex items-center gap-2 mb-3 text-xs font-black tracking-wider uppercase text-slate-500">
                   <Clock size={12} className="text-rose-400" />
                   Already Booked on{' '}
                   {new Date(formData.appointment_date + 'T00:00:00').toLocaleDateString('en-US', {
@@ -489,7 +486,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
                   })}
                 </p>
                 {bookedSlots.length === 0 ? (
-                  <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                  <p className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
@@ -509,7 +506,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
                   </div>
                 )}
                 {doctorSchedule && (
-                  <p className="text-xs text-slate-400 mt-3 border-t border-slate-100 pt-2">
+                  <p className="pt-2 mt-3 text-xs border-t text-slate-400 border-slate-100">
                     Doctor's working hours:{' '}
                     <span className="font-semibold text-slate-600">
                       {formatTime12h(doctorSchedule.start)} – {formatTime12h(doctorSchedule.end)}
@@ -524,14 +521,15 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
               <label className={`${labelClass} flex items-center gap-2`}>
                 <Clock size={14} className="text-[#1089d3]" />
                 Appointment Time *
-                <span className="text-slate-400 normal-case font-normal text-xs">(assigned by doctor)</span>
+                <span className="text-xs font-normal normal-case text-slate-400">(assigned by doctor, 9:00 AM - 4:00 PM)</span>
               </label>
               <input
                 required
                 type="time"
                 name="appointment_time"
                 value={formData.appointment_time}
-                min={getMinTime()}
+                min="09:00"
+                max="15:59"
                 onChange={handleChange}
                 className={`${inputClass} md:w-48`}
               />
@@ -557,11 +555,11 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
           </section>
 
           {/* Submit */}
-          <div className="pt-6 border-t border-slate-100 flex gap-4">
+          <div className="flex gap-4 pt-6 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-4 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+              className="flex-1 py-4 font-bold transition-colors rounded-xl text-slate-600 bg-slate-100 hover:bg-slate-200"
             >
               Cancel
             </button>
@@ -578,10 +576,10 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
             </button>
           </div>
         </form>
-      )}
+        {loading && <Loader overlay text="Processing Registration..." />}
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default WalkinAppointmentForm;

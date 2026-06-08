@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import authService from '../services/authService';
 import api from '../services/api';
+import Loader from '../components/Loader';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -118,7 +119,7 @@ const Dashboard = () => {
 
   const handleDeleteAccount = async () => {
     const confirmation = window.confirm(
-      "Are you sure you want to delete your account? This action cannot be undone, and you won't be able to re-register with this email for 1 hour."
+      "Are you sure you want to delete your account? This action cannot be undone, and you won't be able to re-register with this email for 10 minutes."
     );
 
     if (confirmation) {
@@ -342,7 +343,7 @@ const Dashboard = () => {
 
               <div className="p-10 pt-8 space-y-8 max-h-[70vh] overflow-y-auto">
                 {/* CHANGE PASSWORD SECTION */}
-                <div className="p-8 border border-slate-100 rounded-3xl bg-slate-50/50">
+                <div className="relative p-8 border border-slate-100 rounded-3xl bg-slate-50/50">
                   <h4 className="mb-4 text-lg font-black text-slate-800">Change Password</h4>
                   <form onSubmit={handlePasswordChange} className="max-w-md space-y-4">
                     {passwordStatus.message && <p className="text-sm font-bold text-emerald-600">{passwordStatus.message}</p>}
@@ -389,6 +390,7 @@ const Dashboard = () => {
                       {passwordLoading ? 'Updating...' : 'Update Password'}
                     </button>
                   </form>
+                  {passwordLoading && <Loader overlay text="Updating Password..." />}
                 </div>
 
                 <div className="p-8 border border-red-100 rounded-3xl bg-red-50">
@@ -396,7 +398,7 @@ const Dashboard = () => {
                     <div className="space-y-2">
                       <h4 className="text-lg font-black text-red-600">Delete Account</h4>
                       <p className="max-w-md text-sm font-medium text-red-400">
-                        Permanently remove your account and all associated data. You won't be able to re-register with this email address for 1 hour.
+                        Permanently remove your account and all associated data. You won't be able to re-register with this email address for 10 minutes.
                       </p>
                     </div>
                     <button
@@ -434,8 +436,9 @@ const Dashboard = () => {
 
               <div>
                 {loading ? (
-                  <div className="flex flex-col items-center py-8 text-sm animate-pulse text-slate-400">
-                    Loading...
+                  <div className="flex flex-col items-center py-10">
+                    <Loader />
+                    <p className="font-medium text-slate-500 mt-4">Loading your appointments...</p>
                   </div>
                 ) : upcomingAppointments.length > 0 ? (
                   <div className="divide-y divide-slate-50 max-h-[420px] overflow-y-auto">

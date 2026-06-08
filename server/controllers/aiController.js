@@ -1,4 +1,5 @@
 const OpenAI = require('openai');
+const db = require('../config/db');
 
 const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
@@ -9,12 +10,26 @@ const openai = new OpenAI({
   }
 });
 
-const DENTAL_SYSTEM_PROMPT = `You are a Dental Clinic AI Assistant. Your ONLY purpose is to answer questions strictly related to dental and oral health topics, including:
-- Dental procedures (cleanings, fillings, extractions, braces, implants, root canals, whitening, veneers, dentures, etc.)
-- Oral hygiene tips and best practices (brushing, flossing, mouthwash, diet for teeth, etc.)
-- Symptoms related to teeth, gums, or jaw (toothache, sensitivity, bleeding gums, jaw pain, etc.)
-- General dentistry information and terminology
-- Clinic-related queries (available services, treatment options, what to expect during a visit)
+const getAIChatResponse = async (req, res) => {
+  const { message } = req.body;
+
+  if (!message || !message.trim()) {
+    return res.status(400).json({ message: 'Message is required.' });
+  }
+
+  try {
+    // Fetch available services from database
+    const servicesResult = await db.query('SELECT name, description, price, duration_minutes FROM services');
+    const services = servicesResult.rows;
+
+    // Create services string to inject into prompt
+    const servicesInfo = services.map(s => 
+      `- **${s.name}**: ${s.description || 'No description available'} • Price: ₱${s.price} • Duration: ${s.duration_minutes} minutes`
+    ).join('\n');
+
+    const DENTAL_SYSTEM_PROMPT = `You are a Dental Clinic AI Assistant. Your ONLY purpose is to answer questions strictly related to the dental clinic's services, pricing, and information. Here are the clinic's available services:
+
+${servicesInfo}
 
 RESPONSE FORMATTING GUIDELINES (MUST FOLLOW):
 Always format your responses in a CLEAN, MODERN, ORGANIZED way using:
@@ -24,32 +39,11 @@ Always format your responses in a CLEAN, MODERN, ORGANIZED way using:
 4. **Short paragraphs** for readability
 5. **Emphasis** with **bold** for important terms
 
-Example structure:
-**Dental Cleaning: What to Expect**
+STRICT NON-NEGOTIABLE RULES:
+1. If a user asks about ANYTHING that is NOT related to the clinic's dental services (listed above), pricing, or general clinic information — you MUST respond with ONLY this exact message, nothing else: "Only dental clinic service information I can answer! Try Again."
+2. Only use the service information provided above. Do not invent or assume any services not listed.
+3. Keep responses focused on the clinic's services, pricing, and what's available.`;
 
-- Professional plaque and tartar removal
-- Teeth polishing for a smooth finish
-- Fluoride treatment to strengthen enamel
-
-**Key Benefits:**
-1. Prevents cavities and gum disease
-2. Freshens breath
-3. Maintains overall oral health
-
-STRICT NON-NEGOTIABLE RULE:
-If a user asks about ANYTHING that is NOT related to dental or oral health — including but not limited to topics like weather, politics, cooking, math, technology, entertainment, or any general knowledge — you MUST respond with ONLY this exact message, nothing else:
-"Only dental topic I can answer related! Try Again."
-
-Do NOT attempt to answer, explain, hint at, or engage with any off-topic question under any circumstance. No exceptions.`;
-
-const getAIChatResponse = async (req, res) => {
-  const { message } = req.body;
-
-  if (!message || !message.trim()) {
-    return res.status(400).json({ message: 'Message is required.' });
-  }
-
-  try {
     const completion = await openai.chat.completions.create({
       model: 'openai/gpt-3.5-turbo',
       messages: [

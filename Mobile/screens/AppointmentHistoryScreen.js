@@ -46,9 +46,7 @@ const AppointmentHistoryScreen = ({ navigation }) => {
     return apptDate < now;
   };
 
-  const pastAppointments = appointments.filter(a => 
-    (a.status === 'completed' || a.status === 'cancelled') && !isAppointmentExpired(a)
-  );
+  const pastAppointments = appointments; // Show all appointments
 
   const formatTime12h = (time24) => {
     if (!time24) return '';
@@ -102,7 +100,7 @@ const AppointmentHistoryScreen = ({ navigation }) => {
           <View style={styles.cardHeader}>
             <View style={styles.cardHeaderLeft}>
               <Calendar size={20} color="#2563eb" />
-              <Text style={styles.cardTitle}>Past Appointments</Text>
+              <Text style={styles.cardTitle}>All Appointments</Text>
             </View>
             <View style={styles.countBadge}>
               <Text style={styles.countBadgeText}>{pastAppointments.length}</Text>

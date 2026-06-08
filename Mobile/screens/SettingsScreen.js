@@ -69,7 +69,7 @@ const SettingsScreen = ({ navigation }) => {
   const handleDeleteAccount = () => {
     Alert.alert(
       'Delete Account',
-      "Are you sure you want to delete your account? This action cannot be undone, and you won't be able to re-register with this email for 1 hour.",
+      "Are you sure you want to delete your account? This action cannot be undone, and you won't be able to re-register with this email for 10 minutes.",
       [
         { text: 'Cancel', style: 'cancel' },
         {

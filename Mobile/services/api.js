@@ -88,6 +88,7 @@ api.interceptors.request.use(
     if (authToken) {
       config.headers.Authorization = `Bearer ${authToken}`;
     }
+    config.headers['X-Platform'] = 'mobile';
     return config;
   },
   (error) => Promise.reject(error)

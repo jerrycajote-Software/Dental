@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import appointmentService from '../services/appointmentService';
 import api from '../services/api';
+import Settings from './Settings';
 import {
   LayoutDashboard,
   Calendar,
   Users,
   Activity,
   FileText,
-  Settings,
+  Settings as SettingsIcon,
   Search,
   Bell,
   LogOut,
@@ -25,12 +26,8 @@ import {
   Phone,
   Plus,
   Mail,
-  User,
   Lock,
-  Moon,
-  Globe,
-  Save,
-  Smartphone
+  User
 } from 'lucide-react';
 import {
   AreaChart,
@@ -42,6 +39,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import profilePic from '../assets/admin.png';
+import Loader from '../components/Loader';
 
 // Helper to get initials
 const getInitials = (name) => {
@@ -51,11 +49,17 @@ const getInitials = (name) => {
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('Overview');
-  const [activeSettingsTab, setActiveSettingsTab] = useState('General');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('adminActiveTab') || 'Overview';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('adminActiveTab', activeTab);
+  }, [activeTab]);
   const [appointments, setAppointments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
+  const [filterDate, setFilterDate] = useState('All');
 
   // Doctor management state
   const [doctors, setDoctors] = useState([]);
@@ -71,11 +75,34 @@ const AdminDashboard = () => {
   const [analyticsPeriod, setAnalyticsPeriod] = useState('week');
   const [analyticsData, setAnalyticsData] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  
+  // Settings state
+  const [customerWebAccessEnabled, setCustomerWebAccessEnabled] = useState(true);
 
+  // Fetch settings
+  const fetchSettings = async () => {
+    try {
+      const response = await api.get('/settings');
+      if (response.data.customer_web_access_enabled !== undefined) {
+        setCustomerWebAccessEnabled(response.data.customer_web_access_enabled === 'true' || response.data.customer_web_access_enabled === true);
+      }
+    } catch (err) {
+      console.error('Failed to fetch settings:', err);
+    }
+  };
+  
   useEffect(() => {
     fetchAppointments();
     fetchDoctors();
     fetchPatients();
+    fetchSettings();
+
+    const interval = setInterval(() => {
+      fetchAppointments();
+      fetchPatients();
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Analytics fetch function
@@ -152,10 +179,13 @@ const AdminDashboard = () => {
   // Doctor management functions
   const fetchDoctors = async () => {
     try {
+      console.log('Fetching doctors...');
       const response = await api.get('/auth/doctors');
+      console.log('Doctors fetched successfully:', response.data);
       setDoctors(response.data);
     } catch (err) {
       console.error('Failed to fetch doctors', err);
+      setDoctors([]);
     }
   };
 
@@ -166,6 +196,7 @@ const AdminDashboard = () => {
     setIsCreatingDoctor(true);
     if (!doctorForm.email.toLowerCase().endsWith('@gmail.com')) {
       setDoctorError('Doctor account must use a valid Gmail address');
+      setTimeout(() => setDoctorError(''), 4000);
       setIsCreatingDoctor(false);
       return;
     }
@@ -173,10 +204,12 @@ const AdminDashboard = () => {
     try {
       const response = await api.post('/auth/doctors', doctorForm);
       setDoctorSuccess(response.data.message || 'Doctor account created successfully!');
+      setTimeout(() => setDoctorSuccess(''), 4000);
       setDoctorForm({ name: '', email: '', password: '' });
       fetchDoctors();
     } catch (err) {
       setDoctorError(err.response?.data?.message || 'Failed to create doctor account');
+      setTimeout(() => setDoctorError(''), 4000);
     } finally {
       setIsCreatingDoctor(false);
     }
@@ -245,11 +278,22 @@ const AdminDashboard = () => {
   };
 
   // Filtered Appointments
+  const todayStr = new Date().toISOString().split('T')[0];
   const filteredAppointments = appointments.filter(apt => {
     const matchesSearch = (apt.client_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (apt.dentist_name || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = filterStatus === 'All' || apt.status === filterStatus.toLowerCase();
-    return matchesSearch && matchesStatus;
+    
+    let matchesDate = true;
+    if (filterDate === 'Today') {
+      matchesDate = (apt.appointment_date || '').slice(0, 10) === todayStr;
+    } else if (filterDate === 'Upcoming') {
+      matchesDate = (apt.appointment_date || '').slice(0, 10) > todayStr;
+    } else if (filterDate === 'Past') {
+      matchesDate = (apt.appointment_date || '').slice(0, 10) < todayStr;
+    }
+
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   return (
@@ -325,7 +369,7 @@ const AdminDashboard = () => {
 
         {/* HEADER */}
         <header className="h-16 bg-[#f8fbff] flex items-center justify-between px-8 border-b border-slate-200 shrink-0">
-          <h2 className="text-xl font-bold text-slate-900">Admin Dashboard</h2>
+          <h2 className="font-bold text-x1 text-slate-900">Admin Dashboard</h2>
 
           <div className="flex items-center gap-6">
 
@@ -362,42 +406,42 @@ const AdminDashboard = () => {
 
               {/* STATS GRID */}
               <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-3">
-                <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
+                <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100" style={{ fontFamily: 'Lato, sans-serif' }}>
                   <div className="flex items-start justify-between mb-4">
-                    <p className="my-auto text-xs font-semibold text-slate-500">Total Appointments</p>
+                    <p className="my-auto text-base font-bold text-slate-600" style={{ fontWeight: 700 }}>Total Appointments</p>
                     <div className="flex items-center justify-center w-10 h-10 overflow-hidden text-white bg-blue-500 shadow-sm rounded-xl">
                       <img src="/appointment.svg" alt="Total Appointments" className="object-contain w-6 h-6" />
                     </div>
                   </div>
-                  <h3 className="mb-2 text-3xl font-bold text-slate-800">{appointments.length}</h3>
-                  <p className="flex items-center gap-1 text-xs font-medium text-slate-400">
+                  <h3 className="mb-2 text-[50px] text-slate-800 leading-tight" style={{ fontWeight: 700 }}>{appointments.length}</h3>
+                  <p className="flex items-center gap-1 text-sm text-slate-500" style={{ fontWeight: 700 }}>
                     Total in database
                   </p>
                 </div>
 
-                <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
+                <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100" style={{ fontFamily: 'Lato, sans-serif' }}>
                   <div className="flex items-start justify-between mb-4">
-                    <p className="my-auto text-xs font-semibold text-slate-500">New Patients</p>
+                    <p className="my-auto text-base font-bold text-slate-600" style={{ fontWeight: 700 }}>New Patients</p>
                     <div className="flex items-center justify-center w-10 h-10 overflow-hidden text-white bg-purple-500 shadow-sm rounded-xl">
                       <img src="/new patient.png" alt="New Patients" className="object-contain w-6 h-6" />
                     </div>
                   </div>
-                  <h3 className="mb-2 text-3xl font-bold text-slate-800">{[...new Set(appointments.map(a => a.client_id))].length}</h3>
-                  <p className="flex items-center gap-1 text-xs font-medium text-slate-400">
+                  <h3 className="mb-2 text-[50px] text-slate-800 leading-tight" style={{ fontWeight: 700 }}>{[...new Set(appointments.map(a => a.client_id))].length}</h3>
+                  <p className="flex items-center gap-1 text-sm text-slate-500" style={{ fontWeight: 700 }}>
                     Unique patients
                   </p>
                 </div>
 
 
-                <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
+                <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100" style={{ fontFamily: 'Lato, sans-serif' }}>
                   <div className="flex items-start justify-between mb-4">
-                    <p className="my-auto text-xs font-semibold text-slate-500">Cancelled</p>
+                    <p className="my-auto text-base font-bold text-slate-600" style={{ fontWeight: 700 }}>Cancelled</p>
                     <div className="flex items-center justify-center w-10 h-10 overflow-hidden text-white bg-red-200 shadow-sm rounded-xl">
                       <img src="/cancelled.png" alt="Cancelled" className="object-contain w-6 h-6" />
                     </div>
                   </div>
-                  <h3 className="mb-2 text-3xl font-bold text-slate-800">{appointments.filter(a => a.status === 'cancelled').length}</h3>
-                  <p className="flex items-center gap-1 text-xs font-medium text-slate-400">
+                  <h3 className="mb-2 text-[50px] text-slate-800 leading-tight" style={{ fontWeight: 700 }}>{appointments.filter(a => a.status === 'cancelled').length}</h3>
+                  <p className="flex items-center gap-1 text-sm text-slate-500" style={{ fontWeight: 700 }}>
                     Total cancelled
                   </p>
                 </div>
@@ -432,28 +476,29 @@ const AdminDashboard = () => {
               </div>
 
               {analyticsLoading ? (
-                <div className="flex items-center justify-center h-64">
-                  <div className="w-8 h-8 border-2 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
+                <div className="flex flex-col items-center justify-center h-64">
+                  <Loader />
+                  <p className="font-medium text-slate-500 mt-4">Loading analytics...</p>
                 </div>
               ) : analyticsData ? (
                 <>
                   {/* Summary Stats */}
                   <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-4">
-                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
-                      <p className="text-xs font-semibold text-slate-500">Total</p>
-                      <h3 className="text-3xl font-bold text-slate-800">{analyticsData.summary?.total || 0}</h3>
+                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100" style={{ fontFamily: 'Lato, sans-serif' }}>
+                      <p className="text-sm text-slate-500" style={{ fontWeight: 700 }}>Total</p>
+                      <h3 className="text-[50px] text-slate-800 leading-tight" style={{ fontWeight: 700 }}>{analyticsData.summary?.total || 0}</h3>
                     </div>
-                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
-                      <p className="text-xs font-semibold text-emerald-600">Confirmed</p>
-                      <h3 className="text-3xl font-bold text-emerald-600">{analyticsData.summary?.confirmed || 0}</h3>
+                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100" style={{ fontFamily: 'Lato, sans-serif' }}>
+                      <p className="text-sm text-emerald-600" style={{ fontWeight: 700 }}>Confirmed</p>
+                      <h3 className="text-[50px] text-emerald-600 leading-tight" style={{ fontWeight: 700 }}>{analyticsData.summary?.confirmed || 0}</h3>
                     </div>
-                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
-                      <p className="text-xs font-semibold text-blue-600">Completed</p>
-                      <h3 className="text-3xl font-bold text-blue-600">{analyticsData.summary?.completed || 0}</h3>
+                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100" style={{ fontFamily: 'Lato, sans-serif' }}>
+                      <p className="text-sm text-blue-600" style={{ fontWeight: 700 }}>Completed</p>
+                      <h3 className="text-[50px] text-blue-600 leading-tight" style={{ fontWeight: 700 }}>{analyticsData.summary?.completed || 0}</h3>
                     </div>
-                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
-                      <p className="text-xs font-semibold text-red-600">Cancelled</p>
-                      <h3 className="text-3xl font-bold text-red-600">{analyticsData.summary?.cancelled || 0}</h3>
+                    <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100" style={{ fontFamily: 'Lato, sans-serif' }}>
+                      <p className="text-sm text-red-600" style={{ fontWeight: 700 }}>Cancelled</p>
+                      <h3 className="text-[50px] text-red-600 leading-tight" style={{ fontWeight: 700 }}>{analyticsData.summary?.cancelled || 0}</h3>
                     </div>
                   </div>
 
@@ -556,9 +601,19 @@ const AdminDashboard = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="pl-4 pr-2 border-l border-slate-100">
+                <div className="pl-4 pr-2 border-l border-slate-100 flex gap-4">
                   <select
                     className="text-sm font-semibold bg-transparent outline-none cursor-pointer text-slate-600"
+                    value={filterDate}
+                    onChange={(e) => setFilterDate(e.target.value)}
+                  >
+                    <option value="All">All Dates</option>
+                    <option value="Today">Today</option>
+                    <option value="Upcoming">Upcoming</option>
+                    <option value="Past">Past</option>
+                  </select>
+                  <select
+                    className="text-sm font-semibold bg-transparent outline-none cursor-pointer text-slate-600 border-l pl-4 border-slate-100"
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
                   >
@@ -654,7 +709,7 @@ const AdminDashboard = () => {
             </>
           )}
 
-          {/* ---- PATIENTS TAB ---- */}
+          {/*  PATIENTS TAB  */}
           {activeTab === 'Patients' && (
             <>
               {/* Header */}
@@ -802,11 +857,7 @@ const AdminDashboard = () => {
                   </div>
 
                   <form onSubmit={handleCreateDoctor} className="p-6 space-y-4">
-                    {doctorError && (
-                      <div className="px-4 py-3 text-xs font-bold text-red-600 border border-red-200 bg-red-50 rounded-xl">
-                        {doctorError}
-                      </div>
-                    )}
+                    {/* Success message inline or popup? We'll leave success inline for now, or you can make it popup too. The user only specified the error banner. */}
                     {doctorSuccess && (
                       <div className="px-4 py-3 text-xs font-bold text-green-600 border border-green-200 bg-green-50 rounded-xl">
                         {doctorSuccess}
@@ -914,7 +965,7 @@ const AdminDashboard = () => {
                               </td>
                               <td className="px-6 py-4">
                                 <span className="text-xs font-medium text-slate-500">
-                                  {new Date(doc.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                  {doc.created_at ? new Date(doc.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
                                 </span>
                               </td>
                               <td className="px-6 py-4">
@@ -978,262 +1029,22 @@ const AdminDashboard = () => {
                 <p className="text-sm text-slate-500">Manage your account and application preferences.</p>
               </div>
 
-              <div className="flex flex-col gap-8 xl:flex-row">
-                {/* Settings Sidebar */}
-                <div className="w-full xl:w-64 shrink-0">
-                  <div className="flex flex-col gap-1 p-2 bg-white border shadow-sm rounded-2xl border-slate-100">
-                    <button
-                      onClick={() => setActiveSettingsTab('General')}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeSettingsTab === 'General' ? 'bg-blue-50/50 text-blue-600 border border-blue-100/50 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'}`}
-                    >
-                      <User size={18} className={activeSettingsTab === 'General' ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-500'} /> General
-                    </button>
-                    <button
-                      onClick={() => setActiveSettingsTab('Notifications')}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeSettingsTab === 'Notifications' ? 'bg-blue-50/50 text-blue-600 border border-blue-100/50 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'}`}
-                    >
-                      <Bell size={18} className={activeSettingsTab === 'Notifications' ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-500'} /> Notifications
-                    </button>
-                    <button className="flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-800">
-                      <Lock size={18} className="text-slate-400 group-hover:text-slate-500" /> Security
-                    </button>
-                    <button className="flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-800">
-                      <Globe size={18} className="text-slate-400 group-hover:text-slate-500" /> Language
-                    </button>
-                  </div>
-                </div>
-
-                {/* Settings Content */}
-                <div className="flex-1 p-8 bg-white border shadow-sm rounded-2xl border-slate-100">
-
-                  {/* General Settings */}
-                  {activeSettingsTab === 'General' && (
-                    <>
-                      {/* Clinic Profile Section */}
-                      <div className="mb-8">
-                        <h3 className="mb-6 text-base font-bold text-slate-800">Clinic Profile</h3>
-
-                        <div className="space-y-6">
-                          <div>
-                            <label className="block mb-2 text-xs font-semibold text-slate-600">Clinic Name</label>
-                            <input type="text" defaultValue="Dental CarePlus Clinic" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 font-medium focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
-                          </div>
-
-                          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div>
-                              <label className="block mb-2 text-xs font-semibold text-slate-600">Email Address</label>
-                              <input type="email" defaultValue="contact@dentalcareplus.com" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 font-medium focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
-                            </div>
-                            <div>
-                              <label className="block mb-2 text-xs font-semibold text-slate-600">Phone Number</label>
-                              <input type="text" defaultValue="+1 (555) 123-4567" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 font-medium focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors" />
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="block mb-2 text-xs font-semibold text-slate-600">Address</label>
-                            <textarea rows="3" defaultValue="123 Medical Center Dr, Suite 200, San Francisco, CA 94105" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 font-medium focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors resize-none"></textarea>
-                          </div>
-
-                          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div>
-                              <label className="block mb-2 text-xs font-semibold text-slate-600">Timezone</label>
-                              <select className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 font-medium focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors bg-white appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22currentColor%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M5.23%207.21a.75.75%200%20011.06.02L10%2011.168l3.71-3.938a.75.75%200%20111.08%201.04l-4.25%204.5a.75.75%200%2001-1.08%200l-4.25-4.5a.75.75%200%2001.02-1.06z%22%20clip-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_10px_center]">
-                                <option>Pacific Time (PT)</option>
-                                <option>Eastern Time (ET)</option>
-                                <option>Central Time (CT)</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <hr className="mb-8 border-slate-100" />
-
-                      {/* Business Hours Section */}
-                      <div className="mb-10">
-                        <h3 className="mb-6 text-base font-bold text-slate-800">Business Hours</h3>
-
-                        <div className="max-w-md space-y-4">
-                          {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(day => (
-                            <div key={day} className="flex items-center justify-between">
-                              <span className="w-24 text-sm font-semibold text-slate-600">{day}</span>
-                              <div className="flex items-center gap-3">
-                                <div className="relative">
-                                  <input type="text" defaultValue="09:00 am" className="py-2 pl-4 pr-8 text-xs font-semibold bg-white border w-28 rounded-xl border-slate-200 text-slate-800" />
-                                  <Clock size={14} className="absolute -translate-y-1/2 pointer-events-none right-3 top-1/2 text-slate-800" />
-                                </div>
-                                <span className="text-xs font-semibold text-slate-400">to</span>
-                                <div className="relative">
-                                  <input type="text" defaultValue="05:00 pm" className="py-2 pl-4 pr-8 text-xs font-semibold bg-white border w-28 rounded-xl border-slate-200 text-slate-800" />
-                                  <Clock size={14} className="absolute -translate-y-1/2 pointer-events-none right-3 top-1/2 text-slate-800" />
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Notifications Settings */}
-                  {activeSettingsTab === 'Notifications' && (
-                    <>
-                      <div className="mb-8">
-                        <h3 className="mb-1 text-lg font-bold text-slate-900">Notification Preferences</h3>
-                        <p className="text-sm text-slate-500">Choose how you want to receive notifications and alerts.</p>
-                      </div>
-
-                      {/* Notification Channels */}
-                      <div className="mb-8">
-                        <h4 className="mb-6 text-sm font-bold text-slate-800">Notification Channels</h4>
-
-                        <div className="space-y-6">
-                          {/* Channel 1 */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="flex items-center justify-center w-10 h-10 text-blue-500 rounded-full bg-blue-50 shrink-0">
-                                <Mail size={18} />
-                              </div>
-                              <div>
-                                <h5 className="text-sm font-bold text-slate-800">Email Notifications</h5>
-                                <p className="text-[11px] font-medium text-slate-500 mt-0.5">Receive notifications via email</p>
-                              </div>
-                            </div>
-                            {/* Toggle Switch */}
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input type="checkbox" className="sr-only peer" defaultChecked />
-                              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                          </div>
-
-                          {/* Channel 2 */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="flex items-center justify-center w-10 h-10 text-green-500 rounded-full bg-green-50 shrink-0">
-                                <Smartphone size={18} />
-                              </div>
-                              <div>
-                                <h5 className="text-sm font-bold text-slate-800">SMS Notifications</h5>
-                                <p className="text-[11px] font-medium text-slate-500 mt-0.5">Receive text message alerts</p>
-                              </div>
-                            </div>
-                            {/* Toggle Switch */}
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input type="checkbox" className="sr-only peer" defaultChecked />
-                              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                          </div>
-
-                          {/* Channel 3 */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="flex items-center justify-center w-10 h-10 text-purple-500 rounded-full bg-purple-50 shrink-0">
-                                <Bell size={18} />
-                              </div>
-                              <div>
-                                <h5 className="text-sm font-bold text-slate-800">Push Notifications</h5>
-                                <p className="text-[11px] font-medium text-slate-500 mt-0.5">Browser push notifications</p>
-                              </div>
-                            </div>
-                            {/* Toggle Switch */}
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input type="checkbox" className="sr-only peer" />
-                              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-
-                      <hr className="mb-8 border-slate-100" />
-
-                      {/* Notification Types */}
-                      <div className="mb-10">
-                        <h4 className="mb-6 text-sm font-bold text-slate-800">Notification Types</h4>
-
-                        <div className="space-y-6">
-                          {/* Type 1 */}
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h5 className="text-sm font-bold text-slate-800">Appointment Reminders</h5>
-                              <p className="text-[11px] font-medium text-slate-500 mt-0.5">Get notified about upcoming appointments</p>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input type="checkbox" className="sr-only peer" defaultChecked />
-                              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                          </div>
-
-                          {/* Type 2 */}
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h5 className="text-sm font-bold text-slate-800">New Patient Alerts</h5>
-                              <p className="text-[11px] font-medium text-slate-500 mt-0.5">Notify when new patients register</p>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input type="checkbox" className="sr-only peer" defaultChecked />
-                              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                          </div>
-
-                          {/* Type 3 */}
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h5 className="text-sm font-bold text-slate-800">Cancellation Alerts</h5>
-                              <p className="text-[11px] font-medium text-slate-500 mt-0.5">Notify when appointments are cancelled</p>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input type="checkbox" className="sr-only peer" defaultChecked />
-                              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                          </div>
-
-                          {/* Type 4 */}
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h5 className="text-sm font-bold text-slate-800">Weekly Reports</h5>
-                              <p className="text-[11px] font-medium text-slate-500 mt-0.5">Receive weekly performance summaries</p>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input type="checkbox" className="sr-only peer" />
-                              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                          </div>
-
-                          {/* Type 5 */}
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h5 className="text-sm font-bold text-slate-800">System Updates</h5>
-                              <p className="text-[11px] font-medium text-slate-500 mt-0.5">Important system and security updates</p>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input type="checkbox" className="sr-only peer" defaultChecked />
-                              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  <hr className="mb-6 border-slate-100" />
-
-                  {/* Actions */}
-                  <div className="flex items-center justify-end gap-3 mt-8">
-                    <button className="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm">
-                      Cancel
-                    </button>
-                    <button className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2563eb] hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-[0_4px_10px_-2px_rgba(37,99,235,0.3)]">
-                      <Save size={16} strokeWidth={2.5} /> Save Changes
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <Settings 
+                customerWebAccessEnabled={customerWebAccessEnabled}
+                setCustomerWebAccessEnabled={setCustomerWebAccessEnabled}
+              />
             </>
           )}
 
         </main>
       </div>
+
+      {/* Temporary Popup Alerts */}
+      {doctorError && (
+        <div className="fixed top-6 right-6 z-50 px-6 py-4 text-sm font-bold text-red-600 bg-red-50 border border-red-200 rounded-xl shadow-lg animate-in slide-in-from-top-4 fade-in duration-300">
+          {doctorError}
+        </div>
+      )}
 
     </div>
   );

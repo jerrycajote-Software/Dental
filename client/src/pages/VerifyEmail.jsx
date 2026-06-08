@@ -46,7 +46,7 @@ const VerifyEmail = () => {
                 <h2 className="status-title success">Email Verified!</h2>
                 <p className="status-message">{message}</p>
                 <Link to="/login" className="action-button">
-                  Go to Sign In
+                  Go to Log In
                 </Link>
               </div>
             )}
@@ -60,7 +60,7 @@ const VerifyEmail = () => {
                   Register Again
                 </Link>
                 <Link to="/login" className="action-link">
-                  Back to Sign In
+                  Back to Log In
                 </Link>
               </div>
             )}

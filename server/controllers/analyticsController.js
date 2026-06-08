@@ -7,19 +7,19 @@ const getAnalyticsSummary = async (req, res) => {
     let dateFilter;
     switch (period) {
       case 'day':
-        dateFilter = "CURRENT_DATE";
+        dateFilter = "= CURRENT_DATE";
         break;
       case 'week':
-        dateFilter = "CURRENT_DATE - INTERVAL '7 days'";
+        dateFilter = ">= CURRENT_DATE - INTERVAL '7 days'";
         break;
       case 'month':
-        dateFilter = "CURRENT_DATE - INTERVAL '30 days'";
+        dateFilter = ">= CURRENT_DATE - INTERVAL '30 days'";
         break;
       case 'year':
-        dateFilter = "CURRENT_DATE - INTERVAL '365 days'";
+        dateFilter = ">= CURRENT_DATE - INTERVAL '365 days'";
         break;
       default:
-        dateFilter = "CURRENT_DATE - INTERVAL '7 days'";
+        dateFilter = ">= CURRENT_DATE - INTERVAL '7 days'";
     }
 
     const appointmentResult = await db.query(
@@ -30,20 +30,20 @@ const getAnalyticsSummary = async (req, res) => {
         COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled,
         COUNT(*) FILTER (WHERE status = 'pending') as pending
        FROM appointments
-       WHERE appointment_date >= ${dateFilter}`
+       WHERE appointment_date ${dateFilter}`
     );
 
     const patientResult = await db.query(
       `SELECT COUNT(DISTINCT client_id) as unique_patients
        FROM appointments
-       WHERE appointment_date >= ${dateFilter}`
+       WHERE appointment_date ${dateFilter}`
     );
 
     const serviceResult = await db.query(
       `SELECT s.name, COUNT(*) as count
        FROM appointments a
        JOIN services s ON a.service_id = s.id
-       WHERE a.appointment_date >= ${dateFilter}
+       WHERE a.appointment_date ${dateFilter}
        GROUP BY s.id, s.name
        ORDER BY count DESC
        LIMIT 5`
@@ -53,7 +53,7 @@ const getAnalyticsSummary = async (req, res) => {
       `SELECT u.name, COUNT(*) as appointment_count
        FROM appointments a
        JOIN users u ON a.dentist_id = u.id
-       WHERE a.appointment_date >= ${dateFilter}
+       WHERE a.appointment_date ${dateFilter}
        GROUP BY u.id, u.name
        ORDER BY appointment_count DESC
        LIMIT 5`
@@ -64,7 +64,7 @@ const getAnalyticsSummary = async (req, res) => {
         appointment_date as date,
         COUNT(*) as count
        FROM appointments
-       WHERE appointment_date >= ${dateFilter}
+       WHERE appointment_date ${dateFilter}
        GROUP BY appointment_date
        ORDER BY appointment_date`
     );
@@ -74,7 +74,7 @@ const getAnalyticsSummary = async (req, res) => {
         EXTRACT(HOUR FROM appointment_time) as hour,
         COUNT(*) as count
        FROM appointments
-       WHERE appointment_date >= ${dateFilter}
+       WHERE appointment_date ${dateFilter}
        GROUP BY EXTRACT(HOUR FROM appointment_time)
        ORDER BY hour`
     );

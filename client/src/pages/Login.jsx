@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import authService from '../services/authService';
 import styled from 'styled-components';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
+import Loader from '../components/Loader';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -13,6 +14,7 @@ const Login = () => {
   const [resendMessage, setResendMessage] = useState('');
   const [isResending, setIsResending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -29,6 +31,7 @@ const Login = () => {
       return;
     }
     
+    setIsLoggingIn(true);
     try {
       const data = await login(email, password);
       if (data.user.role === 'admin') {
@@ -46,6 +49,8 @@ const Login = () => {
       } else {
         setError(responseData?.message || 'Login failed');
       }
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -67,7 +72,7 @@ const Login = () => {
       <div className="w-full max-w-[400px] relative z-10 animate-in fade-in duration-700 flex justify-center">
         <StyledWrapper>
           <div className="container">
-            <div className="heading">Sign In</div>
+            <div className="heading">Login</div>
             
             {isExpired && !error && (
               <div style={{ 
@@ -82,7 +87,7 @@ const Login = () => {
                 lineHeight: '1.5',
                 border: '1px solid #fbd38d'
               }}>
-                Your session has expired due to inactivity. Please sign in again.
+                Your session has expired due to inactivity. Please login again.
               </div>
             )}
 
@@ -159,10 +164,12 @@ const Login = () => {
                 </button>
               </div>
 
-              <input className="login-button" type="submit" value="Sign In" />
+              <input className="login-button" type="submit" value="Login" />
             </form>
             
             {/* Registration removed per new walk-in workflow */}
+            
+            {isLoggingIn && <Loader overlay text="Logging In..." />}
           </div>
         </StyledWrapper>
       </div>
@@ -172,6 +179,8 @@ const Login = () => {
 
 const StyledWrapper = styled.div`
   .container {
+    position: relative;
+    overflow: hidden;
     max-width: 350px;
     background: #F8F9FD;
     background: linear-gradient(0deg, rgb(255, 255, 255) 0%, rgb(244, 247, 251) 100%);

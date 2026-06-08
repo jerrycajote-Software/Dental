@@ -90,7 +90,7 @@ const ResetPassword = () => {
             )}
             
             <div className="footer">
-              <Link to="/login">Back to Sign In</Link>
+              <Link to="/login">Back to Login</Link>
             </div>
           </div>
         </StyledWrapper>

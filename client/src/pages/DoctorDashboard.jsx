@@ -5,6 +5,7 @@ import appointmentService from '../services/appointmentService';
 import api from '../services/api';
 import WalkinAppointmentForm from '../components/WalkinAppointmentForm'; //
 import WalkinRegisteredForm from '../components/WalkinRegisteredForm';
+import Loader from '../components/Loader';
 import styled from 'styled-components';
 import {
   FiCalendar,
@@ -485,6 +486,7 @@ const DoctorDashboard = () => {
                     {passwordLoading ? 'Updating...' : 'Update Password'}
                   </button>
                 </form>
+                {passwordLoading && <Loader overlay text="Updating Password..." />}
               </div>
             </div>
           )}
@@ -496,11 +498,11 @@ const DoctorDashboard = () => {
               { label: 'Confirmed Today', value: stats.confirmed, img: '/confirm.png', color: 'emerald' },
               { label: 'Completed', value: stats.completed, img: '/complete.png', color: 'indigo' }
             ].map((stat, i) => (
-              <div key={i} className={`stat-card border-l-4 border-${stat.color}-500 group`}>
+              <div key={i} className={`stat-card border-l-4 border-${stat.color}-500 group`} style={{ fontFamily: 'Lato, sans-serif' }}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="mb-1 text-xs font-bold tracking-wider uppercase text-slate-500">{stat.label}</p>
-                    <p className="text-3xl font-black text-slate-900">{stat.value}</p>
+                    <p className="mb-1 text-base text-slate-600" style={{ fontWeight: 700 }}>{stat.label}</p>
+                    <p className="text-[50px] text-slate-900 leading-tight" style={{ fontWeight: 700 }}>{stat.value}</p>
                   </div>
                   <div className={`icon-box bg-${stat.color}-50 text-${stat.color}-600 group-hover:scale-110 transition-transform duration-300 overflow-hidden`}>
                     <img src={stat.img} alt={stat.label} className="object-contain w-6 h-6" />
@@ -599,8 +601,8 @@ const DoctorDashboard = () => {
 
             {loading ? (
               <div className="p-20 text-center">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-[#1089d3] mb-4"></div>
-                <p className="font-medium text-slate-500">Analyzing schedules...</p>
+                <Loader />
+                <p className="font-medium text-slate-500 mt-4">Analyzing schedules...</p>
               </div>
             ) : error ? (
               <div className="p-20 text-center">

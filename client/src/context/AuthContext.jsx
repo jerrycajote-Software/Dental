@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import authService from '../services/authService';
+import Loader from '../components/Loader';
 
 const AuthContext = createContext();
 
@@ -8,11 +9,16 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const currentUser = authService.getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-    }
-    setLoading(false);
+    const initAuth = async () => {
+      const currentUser = authService.getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
+      }
+      // Provide a small artificial delay so the app boot loader is visible to the user
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setLoading(false);
+    };
+    initAuth();
   }, []);
 
   // SESSION TIMEOUT LOGIC
@@ -94,7 +100,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ user, login, register, logout, loading }}>
-      {!loading && children}
+      {loading ? <Loader fullScreen text="Initializing Application..." /> : children}
     </AuthContext.Provider>
   );
 };

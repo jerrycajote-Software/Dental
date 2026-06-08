@@ -129,8 +129,18 @@ const BookingScreen = ({ navigation }) => {
     try {
       const slots = [];
       // Ensure time string is clean (HH:mm)
-      const cleanStart = schedule.start.slice(0, 5);
-      const cleanEnd = schedule.end.slice(0, 5);
+      let cleanStart = schedule.start.slice(0, 5);
+      let cleanEnd = schedule.end.slice(0, 5);
+      
+      // Restrict to 9:00 AM - 4:00 PM
+      const [startHour, startMin] = cleanStart.split(':').map(Number);
+      const [endHour, endMin] = cleanEnd.split(':').map(Number);
+      
+      const adjustedStartHour = Math.max(startHour, 9);
+      const adjustedEndHour = Math.min(endHour, 16);
+      
+      cleanStart = `${String(adjustedStartHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
+      cleanEnd = `${String(adjustedEndHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
       
       let current = new Date(`2000-01-01T${cleanStart}:00`);
       const end = new Date(`2000-01-01T${cleanEnd}:00`);

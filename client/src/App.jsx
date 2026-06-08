@@ -6,7 +6,7 @@ import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
 import VerifyEmail from './pages/VerifyEmail';
-import ForgotPassword from './pages/ForgotPassword';
+
 import ResetPassword from './pages/ResetPassword';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -39,18 +39,17 @@ const PublicRoute = ({ children }) => {
 
 const AppContent = () => {
   const location = useLocation();
-  const isFullScreenPage = ['/login', '/admin', '/doctor', '/forgot-password'].includes(location.pathname) 
+  const isFullScreenPage = ['/login', '/admin', '/doctor'].includes(location.pathname) 
     || location.pathname.startsWith('/verify-email')
     || location.pathname.startsWith('/reset-password');
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col min-h-screen">
       {!isFullScreenPage && <Navbar />}
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
