@@ -4,22 +4,30 @@ const crypto = require('crypto');
 const { sendWalkinVerificationEmail, sendDoctorAppointmentNotification, sendPatientAppointmentNotification } = require('../utils/email');
 const { sendStatusUpdateNotification, sendAppointmentReminder, createWebNotification } = require('./notificationController');
 
-// Helper function to get today's date string (YYYY-MM-DD)
-const getTodayStr = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+// Helper: get current date string in PHT (UTC+8), regardless of server timezone
+// Cloud servers run UTC — using plain `new Date()` would return yesterday's date in PHT.
+const getPHTDateStr = (offsetDays = 0) => {
+  const now = new Date();
+  // Shift to PHT (UTC+8)
+  const pht = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  pht.setUTCDate(pht.getUTCDate() + offsetDays);
+  return `${pht.getUTCFullYear()}-${String(pht.getUTCMonth() + 1).padStart(2, '0')}-${String(pht.getUTCDate()).padStart(2, '0')}`;
 };
 
-// Helper function to get tomorrow's date string (YYYY-MM-DD)
-const getTomorrowStr = () => {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+// Helper function to get today's date string (YYYY-MM-DD) in PHT
+const getTodayStr = () => getPHTDateStr(0);
+
+// Helper function to get tomorrow's date string (YYYY-MM-DD) in PHT
+const getTomorrowStr = () => getPHTDateStr(1);
 
 // Helper function to check if time is within doctor's schedule
 const isWithinDoctorSchedule = async (dentistId, apptDateStr, apptTimeStr) => {
-  const dayOfWeek = new Date(apptDateStr).getDay();
+  // ⚠️ FIX: new Date("YYYY-MM-DD") parses as midnight UTC.
+  // On a UTC cloud server this rolls back one day in PHT (UTC+8), giving the wrong dayOfWeek.
+  // Solution: parse the date parts manually so it's always treated as a local/PHT date.
+  const [year, month, day] = apptDateStr.split('-').map(Number);
+  const dayOfWeek = new Date(year, month - 1, day).getDay(); // month is 0-indexed
+
   const scheduleRes = await db.query(
     'SELECT start_time, end_time FROM schedules WHERE dentist_id = $1 AND day_of_week = $2',
     [dentistId, dayOfWeek]
@@ -34,8 +42,8 @@ const isWithinDoctorSchedule = async (dentistId, apptDateStr, apptTimeStr) => {
   const startStr = start_time.toString().slice(0, 5);
   const endStr = end_time.toString().slice(0, 5);
   
-  // Check if appointment time is >= start and < end
-  return apptTimeStr >= startStr && apptTimeStr < endStr;
+  // Check if appointment time is >= start and <= end (inclusive of end hour)
+  return apptTimeStr >= startStr && apptTimeStr <= endStr;
 };
 
 const getAppointments = async (req, res) => {
