@@ -1,18 +1,19 @@
 const nodemailer = require('nodemailer');
 
-
 let transporter = null;
 let isInitializing = false;
 
+// The verified sender email — must match the email you verified in Brevo
+const FROM_ADDRESS = `"Dental CarePlus" <${process.env.SMTP_USER}>`;
+
 /**
- * Initialize the email transporter.
- * Uses Ethereal (fake SMTP) for development/testing.
- * To switch to Gmail, update the .env with SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS.
+ * Initialize the email transporter using Brevo SMTP relay.
+ * Brevo (smtp-relay.brevo.com:587) works reliably on Railway and
+ * does NOT require owning a custom domain — just a verified email.
  */
 const getTransporter = async () => {
   if (transporter) return transporter;
   if (isInitializing) {
-    // Wait for existing initialization to complete
     while (isInitializing) {
       await new Promise(resolve => setTimeout(resolve, 500));
       if (transporter) return transporter;
@@ -22,22 +23,28 @@ const getTransporter = async () => {
   isInitializing = true;
   try {
     if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      throw new Error('SMTP credentials are not fully configured in the environment variables. Production email requires SMTP_HOST, SMTP_USER, and SMTP_PASS.');
+      throw new Error(
+        'SMTP credentials are not fully configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS in Railway environment variables.'
+      );
     }
-    
+
     transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
+      host: process.env.SMTP_HOST,           // smtp-relay.brevo.com
       port: parseInt(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true',
+      secure: process.env.SMTP_SECURE === 'true', // false for port 587
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+        user: process.env.SMTP_USER,         // your Brevo login email
+        pass: process.env.SMTP_PASS,         // your Brevo SMTP Key
       },
-      connectionTimeout: 10000, // 10 seconds
-      greetingTimeout: 5000,    // 5 seconds
+      connectionTimeout: 10000,
+      greetingTimeout: 5000,
     });
-    console.log('✅ Email configured with custom SMTP');
+
+    // Verify connection on startup
+    await transporter.verify();
+    console.log('✅ Email configured via Brevo SMTP relay');
   } catch (error) {
+    transporter = null;
     console.error('❌ Failed to initialize email transporter:', error.message);
     throw error;
   } finally {
@@ -59,7 +66,7 @@ const sendVerificationEmail = async (to, name, token) => {
   const verificationLink = `${clientUrl}/verify-email/${token}`;
 
   const mailOptions = {
-    from: '"Dental CarePlus" <noreply@dentalcareplus.com>',
+    from: FROM_ADDRESS,
     to,
     subject: 'Verify Your Email - Dental CarePlus',
     html: `
@@ -94,31 +101,18 @@ const sendVerificationEmail = async (to, name, token) => {
         <div style="background: #e8eaf6; padding: 20px 30px; text-align: center;">
           <p style="color: #888; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} Dental CarePlus. All rights reserved.</p>
         </div>
-
       </div>
     `,
   };
 
   try {
     const info = await transport.sendMail(mailOptions);
-
-    // Log Ethereal preview URL for development
-    const previewUrl = nodemailer.getTestMessageUrl(info);
-    if (previewUrl) {
-      console.log('🔗 Email Preview URL:', previewUrl);
-      console.log('   Check this link to see the verification email in Test Mode.');
-    } else {
-      console.log(`✉️  Verification email sent to: ${to}`);
-    }
-
+    console.log(`✉️  Verification email sent to: ${to} (messageId: ${info.messageId})`);
     return info;
   } catch (error) {
     console.error('❌ Error sending verification email:');
     console.error(`   To: ${to}`);
     console.error(`   Error: ${error.message}`);
-    if (error.code === 'EAUTH') {
-      console.error('   Hint: Authentication failed. If using Gmail, make sure to use an App Password.');
-    }
     throw error;
   }
 };
@@ -131,7 +125,7 @@ const sendWalkinVerificationEmail = async (to, name, token, tempPassword) => {
   const loginLink = `${clientUrl}/login`;
 
   const mailOptions = {
-    from: '"Dental CarePlus" <noreply@dentalcareplus.com>',
+    from: FROM_ADDRESS,
     to,
     subject: '🦷 Your Dental CarePlus Account — Credentials & Verification',
     html: `
@@ -220,12 +214,7 @@ const sendWalkinVerificationEmail = async (to, name, token, tempPassword) => {
 
   try {
     const info = await transport.sendMail(mailOptions);
-    const previewUrl = nodemailer.getTestMessageUrl(info);
-    if (previewUrl) {
-      console.log('🔗 Walk-in email preview:', previewUrl);
-    } else {
-      console.log(`✉️  Walk-in credentials email sent to: ${to}`);
-    }
+    console.log(`✉️  Walk-in credentials email sent to: ${to} (messageId: ${info.messageId})`);
     return info;
   } catch (error) {
     console.error('❌ Error sending walk-in verification email:', error.message);
@@ -240,7 +229,7 @@ const sendPasswordResetEmail = async (to, resetLink) => {
   const transport = await getTransporter();
 
   const mailOptions = {
-    from: '"Dental CarePlus" <noreply@dentalcareplus.com>',
+    from: FROM_ADDRESS,
     to,
     subject: 'Reset Your Password - Dental CarePlus',
     html: `
@@ -296,7 +285,7 @@ const sendDoctorAppointmentNotification = async (doctorEmail, doctorName, appoin
   const { patientName, date, time, services, notes } = appointmentDetails;
 
   const mailOptions = {
-    from: '"Dental CarePlus" <noreply@dentalcareplus.com>',
+    from: FROM_ADDRESS,
     to: doctorEmail,
     subject: `🦷 New Appointment Booked - ${patientName}`,
     html: `
@@ -366,7 +355,7 @@ const sendPatientAppointmentNotification = async (patientEmail, patientName, app
   const { doctorName, date, time, services, notes } = appointmentDetails;
 
   const mailOptions = {
-    from: '"Dental CarePlus" <noreply@dentalcareplus.com>',
+    from: FROM_ADDRESS,
     to: patientEmail,
     subject: `🦷 Appointment Confirmed - Dental CarePlus`,
     html: `
@@ -421,7 +410,7 @@ const sendPatientAppointmentNotification = async (patientEmail, patientName, app
 
   try {
     await transport.sendMail(mailOptions);
-    console.log(`✉️  Appointment confirmation sent to Patient ${patientName} (${patientEmail})`);
+    console.log(`✉️  Appointment confirmation sent to ${patientName} (${patientEmail})`);
   } catch (error) {
     console.error(`❌ Error sending patient appointment confirmation: ${error.message}`);
   }
