@@ -186,7 +186,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
       const startMinutes = timeToMinutes(doctorSchedule.start);
       const endMinutes = timeToMinutes(doctorSchedule.end);
       
-      if (apptMinutes < startMinutes || apptMinutes >= endMinutes) {
+      if (apptMinutes < startMinutes || apptMinutes > endMinutes) {
         setError('The selected time is outside the doctor\'s working hours. Please choose another time.');
         setLoading(false);
         return;

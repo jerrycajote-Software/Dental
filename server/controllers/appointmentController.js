@@ -101,7 +101,10 @@ const getBookedSlots = async (req, res) => {
     return res.status(400).json({ message: 'dentist_id and date are required' });
   }
   try {
-    const dayOfWeek = new Date(date).getDay();
+    // ⚠️ FIX: new Date("YYYY-MM-DD") parses as midnight UTC, rolling back 1 day in PHT.
+    // Parse parts manually so dayOfWeek is always correct regardless of server timezone.
+    const [dyear, dmonth, dday] = date.split('-').map(Number);
+    const dayOfWeek = new Date(dyear, dmonth - 1, dday).getDay();
 
     const scheduleRes = await db.query(
       'SELECT start_time, end_time FROM schedules WHERE dentist_id = $1 AND day_of_week = $2',
