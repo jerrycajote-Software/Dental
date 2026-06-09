@@ -1,8 +1,4 @@
-/**
- * Admin Password Reset Script
- * Usage: node scripts/reset-password.js <email> <newPassword>
- * Example: node scripts/reset-password.js patient@gmail.com NewPass123
- */
+
 
 const bcrypt = require('bcryptjs');
 const { Pool } = require('pg');
@@ -19,7 +15,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 (async () => {
   try {
-    // Check if user exists
+   
     const check = await pool.query('SELECT id, name, email_verified FROM users WHERE email = $1', [email.toLowerCase().trim()]);
     if (check.rowCount === 0) {
       console.error(`❌  No user found with email: ${email}`);

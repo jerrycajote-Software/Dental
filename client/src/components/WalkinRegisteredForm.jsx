@@ -34,8 +34,8 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
     date_of_birth: '',
     contact_number: '',
     home_address: '',
-    allergies: '', // explicitly not pre-filled
-    previous_dental_history: '', // explicitly not pre-filled
+    allergies: '', 
+    previous_dental_history: '', 
     blood_type: '',
     civil_status: '',
     gender: '',
@@ -49,7 +49,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Fetch services and patients on mount
+ 
   useEffect(() => {
     setFetchingServices(true);
     api.get('/services')
@@ -79,7 +79,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
     fetchPatients();
   }, []);
 
-  // Fetch dentists when date changes
+ 
   useEffect(() => {
     if (!formData.appointment_date) return;
     api
@@ -90,7 +90,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
       });
   }, [formData.appointment_date]);
 
-  // Fetch booked slots when dentist or date changes
+
   useEffect(() => {
     if (!formData.dentist_id || !formData.appointment_date) {
       setBookedSlots([]);
@@ -150,7 +150,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
         blood_type: p.blood_type || '',
         civil_status: p.civil_status || '',
         gender: p.gender || '',
-        // Allergies and History are NOT pre-filled as per requirement
+        
         allergies: '',
         previous_dental_history: '',
       }));
@@ -204,7 +204,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
       return;
     }
 
-    // Validate appointment time is between 9:00 AM and 4:00 PM (client-side)
+   
     const [hours, minutes] = formData.appointment_time.split(':').map(Number);
     if (hours < 9 || hours >= 16 || (hours === 16 && minutes > 0)) {
       setError('Appointment time must be between 9:00 AM and 4:00 PM only.');
@@ -212,7 +212,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
       return;
     }
 
-    // Doctor's working hours validation (client-side guard)
+   
     if (formData.dentist_id && doctorSchedule) {
       const timeToMinutes = (timeStr) => {
         if (!timeStr || typeof timeStr !== 'string') return 0;
@@ -232,7 +232,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
     }
 
     try {
-      // Use existing walk-in endpoint which handles existing accounts via email
+     
       await api.post('/appointments/walkin', formData);
       onSuccess();
       onClose();
@@ -252,22 +252,22 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
         {/* Header */}
         <div className="bg-[#1089d3] p-6 text-white flex justify-between items-center shrink-0">
           <div>
-            <h3 className="text-xl font-black flex items-center gap-2">
+            <h3 className="flex items-center gap-2 text-xl font-black">
               <User size={24} />
               {step === 1 ? 'Search Registered Patient' : 'Book Appointment for Registered Patient'}
             </h3>
-            <p className="text-blue-100 text-sm font-medium mt-1">
+            <p className="mt-1 text-sm font-medium text-blue-100">
               {step === 1 ? 'Find an existing patient record in the system.' : `Booking for ${selectedPatient?.name}`}
             </p>
           </div>
-          <button onClick={onClose} className="hover:bg-white/20 p-2 rounded-xl transition-all duration-300">
+          <button onClick={onClose} className="p-2 transition-all duration-300 hover:bg-white/20 rounded-xl">
             <X size={24} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 p-8 overflow-y-auto">
           {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-bold border border-red-100 mb-6 flex items-center gap-2">
+            <div className="flex items-center gap-2 p-4 mb-6 text-sm font-bold text-red-600 border border-red-100 bg-red-50 rounded-xl">
               <AlertTriangle size={18} />
               {error}
             </div>
@@ -276,7 +276,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
           {step === 1 ? (
             <div className="space-y-6">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                <Search className="absolute -translate-y-1/2 left-4 top-1/2 text-slate-400" size={20} />
                 <input
                   type="text"
                   placeholder="Search by name or email..."
@@ -288,9 +288,9 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
 
               <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
                 {searching ? (
-                  <div className="text-center py-10">
+                  <div className="py-10 text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1089d3] mx-auto mb-4"></div>
-                    <p className="text-slate-500 font-medium">Searching patients...</p>
+                    <p className="font-medium text-slate-500">Searching patients...</p>
                   </div>
                 ) : patients.length > 0 ? (
                   patients.map(p => (
@@ -305,46 +305,46 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
                         </div>
                         <div className="text-left">
                           <p className="font-bold text-slate-900 group-hover:text-[#1089d3]">{p.name}</p>
-                          <p className="text-xs text-slate-500 font-medium">{p.email}</p>
+                          <p className="text-xs font-medium text-slate-500">{p.email}</p>
                         </div>
                       </div>
                       <ChevronRight className="text-slate-300 group-hover:text-[#1089d3]" size={20} />
                     </button>
                   ))
                 ) : searchQuery.length > 0 ? (
-                  <p className="text-center py-10 text-slate-500 font-medium">No patients found matching "{searchQuery}"</p>
+                  <p className="py-10 font-medium text-center text-slate-500">No patients found matching "{searchQuery}"</p>
                 ) : (
-                  <p className="text-center py-10 text-slate-500 font-medium italic">No active registered patients found.</p>
+                  <p className="py-10 italic font-medium text-center text-slate-500">No active registered patients found.</p>
                 )}
               </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Pre-filled Info (Read-only or just visible) */}
-              <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+              <div className="grid grid-cols-1 gap-6 p-6 border bg-slate-50 rounded-3xl border-slate-100 md:grid-cols-3">
                 <div>
                   <p className={labelClass}>Patient Name</p>
-                  <p className="font-bold text-slate-900 mt-1">{formData.first_name} {formData.middle_name} {formData.last_name}</p>
+                  <p className="mt-1 font-bold text-slate-900">{formData.first_name} {formData.middle_name} {formData.last_name}</p>
                 </div>
                 <div>
                   <p className={labelClass}>Email Address</p>
-                  <p className="font-bold text-slate-900 mt-1">{formData.email}</p>
+                  <p className="mt-1 font-bold text-slate-900">{formData.email}</p>
                 </div>
                 <div>
                   <p className={labelClass}>Contact Number</p>
-                  <p className="font-bold text-slate-900 mt-1">{formData.contact_number || 'N/A'}</p>
+                  <p className="mt-1 font-bold text-slate-900">{formData.contact_number || 'N/A'}</p>
                 </div>
                 <div>
                   <p className={labelClass}>Gender</p>
-                  <p className="font-bold text-slate-900 mt-1">{formData.gender || 'N/A'}</p>
+                  <p className="mt-1 font-bold text-slate-900">{formData.gender || 'N/A'}</p>
                 </div>
               </div>
 
-              {/* Editable Fields (New session details) */}
+             
               <div className="space-y-6">
                 <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest border-l-4 border-[#1089d3] pl-3">Session Details</h4>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div className="space-y-2">
                     <label className={labelClass}>Allergies</label>
                     <textarea
@@ -369,7 +369,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
 
                 <div className="space-y-4">
                   <label className={labelClass}>Select Services</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {services.map(svc => (
                       <button
                         key={svc.id}
@@ -387,7 +387,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                   <div className="space-y-2">
                     <label className={labelClass}>Assign Dentist</label>
                     <select
@@ -446,7 +446,7 @@ const WalkinRegisteredForm = ({ onClose, onSuccess, currentDentistId }) => {
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="flex-1 py-4 font-black text-slate-500 bg-slate-100 rounded-2xl hover:bg-slate-200 transition-all"
+                  className="flex-1 py-4 font-black transition-all text-slate-500 bg-slate-100 rounded-2xl hover:bg-slate-200"
                 >
                   Back to Search
                 </button>

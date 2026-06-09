@@ -35,20 +35,20 @@ const DoctorDashboard = () => {
     completed: 0
   });
 
-  const [showForm, setShowForm] = useState(false); //
+  const [showForm, setShowForm] = useState(false); 
   const [showBookingChoice, setShowBookingChoice] = useState(false);
-  const [bookingMode, setBookingMode] = useState(null); // 'new' or 'registered'
+  const [bookingMode, setBookingMode] = useState(null); 
   const [isAvailable, setIsAvailable] = useState(true);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [unavailableDates, setUnavailableDates] = useState([]);
   const [newUnavailableDate, setNewUnavailableDate] = useState('');
   const [unavailLoading, setUnavailLoading] = useState(false);
 
-  // Settings dropdown state
+ 
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
   const settingsDropdownRef = useRef(null);
 
-  // Password change state
+
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [passwordStatus, setPasswordStatus] = useState({ message: '', error: '' });
@@ -59,7 +59,7 @@ const DoctorDashboard = () => {
     fetchAvailability();
     fetchUnavailableDates();
 
-    // Click outside listener for settings dropdown
+    
     const handleClickOutside = (event) => {
       if (settingsDropdownRef.current && !settingsDropdownRef.current.contains(event.target)) {
         setShowSettingsDropdown(false);
@@ -226,20 +226,13 @@ const DoctorDashboard = () => {
     }
   };
 
-  /**
-   * Safely extract the intended calendar date (YYYY-MM-DD) from any format
-   * node-postgres may return:
-   *   - After db.js fix  →  "2026-04-08"  (plain string)
-   *   - Before db.js fix →  "2026-04-07T16:00:00.000Z"  (UTC-midnight of PHT date)
-   * In both cases we want "2026-04-08".
-   */
+ 
   const parseDateStr = (val) => {
     if (!val) return '';
     const s = String(val);
-    // Plain YYYY-MM-DD — already correct
+   
     if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-    // ISO timestamp: node-postgres stored PHT midnight as UTC.
-    // Use local (browser) date which reverse-shifts back to the correct calendar day.
+   
     const d = new Date(s);
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -261,7 +254,7 @@ const DoctorDashboard = () => {
     if (!dateVal || !timeStr) return false;
     const [hours, minutes] = timeStr.split(':').map(Number);
     const [year, month, day] = parseDateStr(dateVal).split('-').map(Number);
-    // Build the appointment datetime in local time (PHT)
+   
     const apptDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
     return apptDateTime < new Date();
   };
@@ -343,7 +336,7 @@ const DoctorDashboard = () => {
         </div>
       </header>
 
-      {/* Main Content */}
+    
       <main className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <StyledWrapper>
           {/* Welcome Section */}
@@ -602,7 +595,7 @@ const DoctorDashboard = () => {
             {loading ? (
               <div className="p-20 text-center">
                 <Loader />
-                <p className="font-medium text-slate-500 mt-4">Analyzing schedules...</p>
+                <p className="mt-4 font-medium text-slate-500">Analyzing schedules...</p>
               </div>
             ) : error ? (
               <div className="p-20 text-center">

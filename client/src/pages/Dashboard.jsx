@@ -147,7 +147,7 @@ const Dashboard = () => {
     }
   };
 
-  // ... (getStatusBadge, getStatusColor, etc. remain same)
+  
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -205,13 +205,13 @@ const Dashboard = () => {
     <div className="min-h-screen bg-[#e7f0fa] py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-5xl mx-auto space-y-8">
 
-        {/* NAVIGATION TABS */}
+    
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
             <button
               className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all relative bg-blue-600 text-white shadow-lg shadow-blue-600/20"
             >
-              <img src="/overview.png" alt="Overview" className="w-4 h-4 object-contain brightness-0 invert" />
+              <img src="/overview.png" alt="Overview" className="object-contain w-4 h-4 brightness-0 invert" />
               Overview
             </button>
 
@@ -219,7 +219,7 @@ const Dashboard = () => {
               onClick={() => setShowNotificationsModal(true)}
               className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all relative text-slate-500 hover:bg-white hover:text-slate-800"
             >
-              <img src="/bell.png" alt="Notifications" className="w-4 h-4 opacity-70 object-contain" />
+              <img src="/bell.png" alt="Notifications" className="object-contain w-4 h-4 opacity-70" />
               Notifications
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white ring-2 ring-white">
@@ -232,13 +232,13 @@ const Dashboard = () => {
               onClick={() => setShowSettingsModal(true)}
               className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all relative text-slate-500 hover:bg-white hover:text-slate-800"
             >
-              <img src="/settings.png" alt="Settings" className="w-4 h-4 opacity-70 object-contain" />
+              <img src="/settings.png" alt="Settings" className="object-contain w-4 h-4 opacity-70" />
               Settings
             </button>
           </div>
         </div>
 
-        {/* HEADER SECTION */}
+     
         <div className="flex flex-col items-start justify-between gap-6 mb-2 md:flex-row md:items-center">
           <div>
             <h2 className="text-3xl font-black tracking-tight text-slate-900">
@@ -250,20 +250,20 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* NOTIFICATIONS MODAL */}
+  
         {showNotificationsModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden border border-blue-50 animate-in zoom-in-95 duration-300">
               <div className="flex items-center justify-between p-10 pb-0">
                 <div>
                   <h3 className="text-2xl font-black text-slate-900">Notifications</h3>
-                  <p className="mt-1 font-medium text-slate-500 text-sm">Stay updated with your appointment activities.</p>
+                  <p className="mt-1 text-sm font-medium text-slate-500">Stay updated with your appointment activities.</p>
                 </div>
                 <div className="flex items-center gap-4">
                   {notifications.length > 0 && (
                     <button 
                       onClick={markAllAsRead}
-                      className="text-xs font-black text-blue-600 hover:text-blue-800 transition-colors uppercase tracking-widest"
+                      className="text-xs font-black tracking-widest text-blue-600 uppercase transition-colors hover:text-blue-800"
                     >
                       Mark all as read
                     </button>
@@ -306,7 +306,7 @@ const Dashboard = () => {
                           </p>
                         </div>
                         {!n.is_read && (
-                          <div className="h-2 w-2 rounded-full bg-blue-600 mt-2 shrink-0 animate-pulse"></div>
+                          <div className="w-2 h-2 mt-2 bg-blue-600 rounded-full shrink-0 animate-pulse"></div>
                         )}
                       </div>
                     </div>
@@ -315,12 +315,12 @@ const Dashboard = () => {
                   <div className="flex flex-col items-center justify-center py-20 bg-slate-50/30 rounded-[2.5rem] border-2 border-dashed border-slate-100 shadow-inner">
                     <div className="relative mb-6">
                       <div className="absolute inset-0 bg-blue-100 blur-2xl opacity-40 animate-pulse"></div>
-                      <div className="relative h-20 w-20 bg-white rounded-3xl shadow-xl flex items-center justify-center text-slate-300 rotate-12 group-hover:rotate-0 transition-transform duration-500">
+                      <div className="relative flex items-center justify-center w-20 h-20 transition-transform duration-500 bg-white shadow-xl rounded-3xl text-slate-300 rotate-12 group-hover:rotate-0">
                         <Bell size={40} />
                       </div>
                     </div>
-                    <h4 className="text-xl font-black text-slate-900 mb-2">Your notification center is empty</h4>
-                    <p className="max-w-xs text-center text-sm font-medium text-slate-500 leading-relaxed text-center">
+                    <h4 className="mb-2 text-xl font-black text-slate-900">Your notification center is empty</h4>
+                    <p className="max-w-xs text-sm font-medium leading-relaxed text-center text-slate-500">
                       We'll keep you posted here when there are updates to your appointments or clinic news.
                     </p>
                   </div>
@@ -330,7 +330,7 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* SETTINGS MODAL */}
+     
         {showSettingsModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden border border-blue-50 animate-in zoom-in-95 duration-300">
@@ -415,11 +415,11 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Remove showForm */ }
+      
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-          {/* MAIN COLUMN */}
+      
           <div className="space-y-6 lg:col-span-2">
 
             {/* UPCOMING APPOINTMENTS LIST */}
@@ -438,7 +438,7 @@ const Dashboard = () => {
                 {loading ? (
                   <div className="flex flex-col items-center py-10">
                     <Loader />
-                    <p className="font-medium text-slate-500 mt-4">Loading your appointments...</p>
+                    <p className="mt-4 font-medium text-slate-500">Loading your appointments...</p>
                   </div>
                 ) : upcomingAppointments.length > 0 ? (
                   <div className="divide-y divide-slate-50 max-h-[420px] overflow-y-auto">

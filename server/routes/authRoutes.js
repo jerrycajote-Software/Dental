@@ -11,33 +11,33 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.patch('/update-password', authMiddleware, updatePassword);
 
-// Own profile (any authenticated user)
+
 router.get('/me', authMiddleware, getMe);
 
-// Admin-only user verification/management
+
 router.patch('/verify-user/:id', authMiddleware, adminMiddleware, manualVerifyUser);
 router.patch('/reset-temp-password/:id', authMiddleware, adminMiddleware, resetToTempPassword);
 
-// Admin-only doctor management routes
+
 router.post('/doctors', authMiddleware, adminMiddleware, createDoctor);
 router.get('/doctors', authMiddleware, adminMiddleware, getDoctors);
 router.delete('/doctors/:id', authMiddleware, adminMiddleware, deleteDoctor);
 
-// Patient management routes
+
 router.get('/patients', authMiddleware, getPatients);
 router.get('/patients/:id', authMiddleware, getPatientDetails);
 router.delete('/patients/:id', authMiddleware, adminMiddleware, deletePatient);
 
-// Account management
+
 router.post('/delete-account', authMiddleware, deleteSelf);
 
-// Doctor availability management (doctor-only)
+
 router.patch('/availability', authMiddleware, updateAvailability);
 router.get('/unavailable-dates', authMiddleware, getUnavailableDates);
 router.post('/unavailable-dates', authMiddleware, addUnavailableDate);
 router.delete('/unavailable-dates/:id', authMiddleware, deleteUnavailableDate);
 
-// Temporary production sync route (to be deleted after use)
+
 router.get('/sync-db-prod', (req, res) => {
   const db = require('../config/db');
   const queries = [

@@ -109,7 +109,7 @@ const SettingsScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* HEADER */}
+    
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Account Settings</Text>
         <Text style={styles.headerSubtitle}>
@@ -122,7 +122,7 @@ const SettingsScreen = ({ navigation }) => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* USER INFO CARD */}
+      
         <View style={styles.userCard}>
           <View style={styles.avatarCircle}>
             <Text style={styles.avatarText}>
@@ -135,7 +135,7 @@ const SettingsScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* CHANGE PASSWORD SECTION */}
+       
         <View style={styles.sectionCard}>
           <TouchableOpacity
             style={styles.sectionHeader}
@@ -237,7 +237,7 @@ const SettingsScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* LOGOUT BUTTON */}
+      
         <TouchableOpacity
           style={styles.logoutBtn}
           onPress={handleLogout}

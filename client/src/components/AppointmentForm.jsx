@@ -25,15 +25,15 @@ const timeToMinutes = (timeStr) => {
 const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
   const [services, setServices] = useState([]);
   const [dentists, setDentists] = useState([]);
-  const [bookedSlots, setBookedSlots] = useState([]); // array of { time, duration } objects
-  const [doctorSchedule, setDoctorSchedule] = useState(null); // { start, end } or null
-
-  // Compute today's local date string (YYYY-MM-DD) without UTC offset issues
+  const [bookedSlots, setBookedSlots] = useState([]); 
+  const [doctorSchedule, setDoctorSchedule] = useState(null); 
+  
   const getTodayStr = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
-  // Compute tomorrow's local date string
+  
+  
   const getTomorrowStr = () => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -54,7 +54,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Fetch services once on mount
+  // Fetch services
   useEffect(() => {
     api.get('/services').then(res => setServices(res.data)).catch(console.error);
   }, []);
@@ -76,9 +76,9 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
       }
     };
     fetch();
-  }, [formData.appointment_date]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [formData.appointment_date]);
 
-  // Re-fetch booked slots whenever doctor or date changes, with 30s polling for real-time accuracy
+ 
   useEffect(() => {
     if (!formData.dentist_id || !formData.appointment_date) {
       setBookedSlots([]);
@@ -94,8 +94,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
         
         const { booked, schedule } = res.data || {};
         
-        // Defensive: handle case where backend might still return old array format
-        // or where booked is missing
+        
         const finalBooked = Array.isArray(res.data) ? res.data.map(t => typeof t === 'string' ? { time: t, duration: 60 } : t)
                          : Array.isArray(booked) ? booked
                          : [];
@@ -103,7 +102,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
         setDoctorSchedule(schedule || null);
         setBookedSlots(finalBooked);
 
-        // If the currently selected slot was just booked by someone else (or overlaps), clear it
+        
         if (formData.appointment_time && finalBooked.length > 0) {
           const isBooked = finalBooked.some(b => {
             const slotStart = timeToMinutes(formData.appointment_time);
@@ -119,7 +118,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
           );
 
           if (isBooked || isOutsideSchedule) {
-            // Check if it's the user's own appointment being edited
+           
             const isSelf = appointment &&
               appointment.appointment_time?.slice(0, 5) === formData.appointment_time &&
               String(appointment.dentist_id) === String(formData.dentist_id) &&
@@ -137,10 +136,10 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
     };
 
     fetchBookedSlots();
-    const interval = setInterval(fetchBookedSlots, 30000); // Poll every 30 seconds
+    const interval = setInterval(fetchBookedSlots, 30000); 
 
     return () => clearInterval(interval);
-  }, [formData.dentist_id, formData.appointment_date, formData.appointment_time, appointment]); // added appointment_time and appointment to deps for safety
+  }, [formData.dentist_id, formData.appointment_date, formData.appointment_time, appointment]); // added appointment_time and appointment 
 
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -151,7 +150,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
   };
 
   const isSlotBooked = (slotValue) => {
-    // When rescheduling, the original slot of this appointment isn't "booked" for the user
+    
     if (
       appointment &&
       appointment.appointment_time?.slice(0, 5) === slotValue &&
@@ -174,7 +173,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
     return (bookedSlots || []).some(booked => {
       const bookedStart = timeToMinutes(booked?.time);
       const bookedEnd = bookedStart + (booked?.duration || 60);
-      // Overlap if max(start1, start2) < min(end1, end2)
+      
       return Math.max(slotStart, bookedStart) < Math.min(slotEnd, bookedEnd);
     });
   };
@@ -197,7 +196,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
       return;
     }
 
-    // Validate appointment time is between 9:00 AM and 4:00 PM (client-side)
+    // Validate appointment time is between 9:00 AM and 4:00 PM
     const [hours, minutes] = formData.appointment_time.split(':').map(Number);
     if (hours < 9 || hours >= 16 || (hours === 16 && minutes > 0)) {
       setError('Appointment time must be between 9:00 AM and 4:00 PM only.');
@@ -205,7 +204,7 @@ const AppointmentForm = ({ onClose, onSuccess, appointment = null }) => {
       return;
     }
 
-    // Prevent booking in the past
+    // Prevent booking past
     if (formData.appointment_date && formData.appointment_time) {
       const apptDateTime = new Date(`${formData.appointment_date}T${formData.appointment_time}`);
       if (apptDateTime < new Date()) {

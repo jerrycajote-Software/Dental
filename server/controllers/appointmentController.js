@@ -4,8 +4,7 @@ const crypto = require('crypto');
 const { sendWalkinVerificationEmail, sendDoctorAppointmentNotification, sendPatientAppointmentNotification } = require('../utils/email');
 const { sendStatusUpdateNotification, sendAppointmentReminder, createWebNotification } = require('./notificationController');
 
-// Helper: get current date string in PHT (UTC+8), regardless of server timezone
-// Cloud servers run UTC — using plain `new Date()` would return yesterday's date in PHT.
+
 const getPHTDateStr = (offsetDays = 0) => {
   const now = new Date();
   // Shift to PHT (UTC+8)
@@ -14,19 +13,18 @@ const getPHTDateStr = (offsetDays = 0) => {
   return `${pht.getUTCFullYear()}-${String(pht.getUTCMonth() + 1).padStart(2, '0')}-${String(pht.getUTCDate()).padStart(2, '0')}`;
 };
 
-// Helper function to get today's date string (YYYY-MM-DD) in PHT
+
 const getTodayStr = () => getPHTDateStr(0);
 
-// Helper function to get tomorrow's date string (YYYY-MM-DD) in PHT
+
 const getTomorrowStr = () => getPHTDateStr(1);
 
-// Helper function to check if time is within doctor's schedule
+
 const isWithinDoctorSchedule = async (dentistId, apptDateStr, apptTimeStr) => {
-  // ⚠️ FIX: new Date("YYYY-MM-DD") parses as midnight UTC.
-  // On a UTC cloud server this rolls back one day in PHT (UTC+8), giving the wrong dayOfWeek.
-  // Solution: parse the date parts manually so it's always treated as a local/PHT date.
+  
+
   const [year, month, day] = apptDateStr.split('-').map(Number);
-  const dayOfWeek = new Date(year, month - 1, day).getDay(); // month is 0-indexed
+  const dayOfWeek = new Date(year, month - 1, day).getDay(); 
 
   const scheduleRes = await db.query(
     'SELECT start_time, end_time FROM schedules WHERE dentist_id = $1 AND day_of_week = $2',
@@ -38,17 +36,17 @@ const isWithinDoctorSchedule = async (dentistId, apptDateStr, apptTimeStr) => {
   }
   
   const { start_time, end_time } = scheduleRes.rows[0];
-  // Convert to strings to make comparison easier
+  
   const startStr = start_time.toString().slice(0, 5);
   const endStr = end_time.toString().slice(0, 5);
   
-  // Check if appointment time is >= start and <= end (inclusive of end hour)
+  
   return apptTimeStr >= startStr && apptTimeStr <= endStr;
 };
 
 const getAppointments = async (req, res) => {
   try {
-    // First, auto-delete past confirmed appointments
+   
     await db.query(`
       DELETE FROM appointments
       WHERE status = 'confirmed'
@@ -56,8 +54,7 @@ const getAppointments = async (req, res) => {
              (appointment_date + appointment_time) < NOW())
     `);
 
-    // COALESCE: if junction table has entries for this appointment, show all service names;
-    // otherwise fall back to the single service_id join (backward compat with old records).
+    
     let query = `
       SELECT a.*,
         COALESCE(
@@ -94,15 +91,15 @@ const getAppointments = async (req, res) => {
   }
 };
 
-// Returns booked time slots and doctor's schedule for a given doctor + date
+
 const getBookedSlots = async (req, res) => {
   const { dentist_id, date } = req.query;
   if (!dentist_id || !date) {
     return res.status(400).json({ message: 'dentist_id and date are required' });
   }
   try {
-    // ⚠️ FIX: new Date("YYYY-MM-DD") parses as midnight UTC, rolling back 1 day in PHT.
-    // Parse parts manually so dayOfWeek is always correct regardless of server timezone.
+   
+
     const [dyear, dmonth, dday] = date.split('-').map(Number);
     const dayOfWeek = new Date(dyear, dmonth - 1, dday).getDay();
 
@@ -142,31 +139,31 @@ const createAppointment = async (req, res) => {
   const client_id = req.user.id;
 
   try {
-    // Same-day booking validation
+   
     const todayStr = getTodayStr();
     if (appointment_date <= todayStr) {
       return res.status(400).json({ message: 'Same-day booking is not allowed. Please select a date starting from tomorrow.' });
     }
 
-    // Past date/time validation
+    
     const apptDateTime = new Date(`${appointment_date}T${appointment_time}`);
     if (apptDateTime < new Date()) {
       return res.status(400).json({ message: 'Cannot book an appointment in the past. Please select a future date and time.' });
     }
 
-    // Validate appointment time is between 9:00 AM and 4:00 PM
+   
     const [hours, minutes] = appointment_time.split(':').map(Number);
     if (hours < 9 || hours >= 16 || (hours === 16 && minutes > 0)) {
       return res.status(400).json({ message: 'Appointment time must be between 9:00 AM and 4:00 PM only.' });
     }
 
-    // Doctor's working hours validation
+   
     const isWithinSchedule = await isWithinDoctorSchedule(dentist_id, appointment_date, appointment_time);
     if (!isWithinSchedule) {
       return res.status(400).json({ message: 'The selected time is outside the doctor\'s working hours. Please choose another time.' });
     }
 
-    // Conflict check
+   
     const conflict = await db.query(
       `SELECT id FROM appointments
        WHERE dentist_id = $1 AND appointment_date = $2 AND appointment_time = $3
@@ -182,10 +179,10 @@ const createAppointment = async (req, res) => {
       [client_id, dentist_id, service_id, appointment_date, appointment_time, notes]
     );
 
-    // Fetch details for notifications
+    
     let doctor_name = 'Doctor';
     try {
-      // Fetch doctor, patient, and service details for the email
+      
       const detailsQuery = `
         SELECT 
           d.name as doctor_name, d.email as doctor_email,
@@ -210,7 +207,7 @@ const createAppointment = async (req, res) => {
           notes: notes
         });
 
-        // Notify patient
+       
         await sendPatientAppointmentNotification(patient_email, patient_name, {
           doctorName: doctor_name,
           date: appointment_date,
@@ -223,7 +220,7 @@ const createAppointment = async (req, res) => {
       console.error('Failed to send doctor notification email:', emailErr.message);
     }
 
-    // Add Web Notification for Patient
+   
     try {
       const aptDate = new Date(appointment_date).toLocaleDateString('en-US', { 
         weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' 
@@ -259,7 +256,7 @@ const updateAppointmentStatus = async (req, res) => {
         console.error('[Notification] Error sending status update:', err.message)
       );
 
-      // Add Web Notification
+    
       const title = {
         confirmed: 'Appointment Confirmed ✅',
         cancelled: 'Appointment Cancelled ❌',
@@ -287,31 +284,31 @@ const updateAppointment = async (req, res) => {
   const { dentist_id, service_id, appointment_date, appointment_time, notes } = req.body;
 
   try {
-    // Same-day booking validation
+   
     const todayStr = getTodayStr();
     if (appointment_date <= todayStr) {
       return res.status(400).json({ message: 'Same-day booking is not allowed. Please select a date starting from tomorrow.' });
     }
 
-    // Past date/time validation
+   
     const apptDateTime = new Date(`${appointment_date}T${appointment_time}`);
     if (apptDateTime < new Date()) {
       return res.status(400).json({ message: 'Cannot reschedule to a past date/time.' });
     }
 
-    // Validate appointment time is between 9:00 AM and 4:00 PM
+  
     const [hours, minutes] = appointment_time.split(':').map(Number);
     if (hours < 9 || hours >= 16 || (hours === 16 && minutes > 0)) {
       return res.status(400).json({ message: 'Appointment time must be between 9:00 AM and 4:00 PM only.' });
     }
 
-    // Doctor's working hours validation
+    
     const isWithinSchedule = await isWithinDoctorSchedule(dentist_id, appointment_date, appointment_time);
     if (!isWithinSchedule) {
       return res.status(400).json({ message: 'The selected time is outside the doctor\'s working hours. Please choose another time.' });
     }
 
-    // Conflict check (exclude self)
+    
     const conflict = await db.query(
       `SELECT id FROM appointments
        WHERE dentist_id = $1 AND appointment_date = $2 AND appointment_time = $3
@@ -327,7 +324,7 @@ const updateAppointment = async (req, res) => {
       [dentist_id, service_id, appointment_date, appointment_time, notes, id]
     );
 
-    // Send email notification to doctor for rescheduling
+    
     try {
       const detailsQuery = `
         SELECT 
@@ -381,12 +378,12 @@ const createWalkinAppointment = async (req, res) => {
     first_name, last_name, middle_name, age, date_of_birth,
     contact_number, email, home_address, allergies, previous_dental_history,
     blood_type, civil_status, gender,
-    service_ids,   // array of service IDs (new multi-service)
+    service_ids,   
     dentist_id, appointment_date, appointment_time, notes,
   } = req.body;
 
   try {
-    // ── Validation ──────────────────────────────────────────────────────────
+   
     const missingFields = [];
     if (!first_name) missingFields.push('First Name');
     if (!last_name) missingFields.push('Last Name');
@@ -399,7 +396,7 @@ const createWalkinAppointment = async (req, res) => {
       return res.status(400).json({ message: `Missing required fields: ${missingFields.join(', ')}` });
     }
 
-    // Normalize dentist_id to number
+    
     const dentistIdNum = Number(dentist_id);
     if (!dentistIdNum) {
       return res.status(400).json({ message: 'Invalid dentist selected.' });
@@ -410,34 +407,34 @@ const createWalkinAppointment = async (req, res) => {
       return res.status(400).json({ message: 'At least one service must be selected.' });
     }
 
-    // Same-day booking validation for walk-ins
+    
     const todayStr = getTodayStr();
     if (appointment_date <= todayStr) {
       return res.status(400).json({ message: 'Same-day booking is not allowed. Please select a date starting from tomorrow.' });
     }
 
-    // Past date/time guard
+    
     const apptDateTime = new Date(`${appointment_date}T${appointment_time}`);
     if (apptDateTime < new Date()) {
       return res.status(400).json({ message: 'Cannot book an appointment in the past.' });
     }
 
-    // Validate appointment time is between 9:00 AM and 4:00 PM
+    
     const [hours, minutes] = appointment_time.split(':').map(Number);
     if (hours < 9 || hours >= 16 || (hours === 16 && minutes > 0)) {
       return res.status(400).json({ message: 'Appointment time must be between 9:00 AM and 4:00 PM only.' });
     }
 
-    // Doctor's working hours validation for walk-ins
+    
     const isWithinSchedule = await isWithinDoctorSchedule(dentistIdNum, appointment_date, appointment_time);
     if (!isWithinSchedule) {
       return res.status(400).json({ message: 'The selected time is outside the doctor\'s working hours. Please choose another time.' });
     }
 
-    // Use first selected service as primary (backward compat with appointments.service_id FK)
+    
     const primaryServiceId = ids[0];
 
-    // Conflict check
+    
     const conflict = await db.query(
       `SELECT id FROM appointments
        WHERE dentist_id = $1 AND appointment_date = $2 AND appointment_time = $3
@@ -448,7 +445,7 @@ const createWalkinAppointment = async (req, res) => {
       return res.status(409).json({ message: 'This time slot is already booked for this doctor.' });
     }
 
-    // Upsert patient user
+   
     let user_id;
     const trimmedEmail = email.trim().toLowerCase();
     const userResult = await db.query('SELECT * FROM users WHERE email = $1', [trimmedEmail]);
@@ -456,7 +453,7 @@ const createWalkinAppointment = async (req, res) => {
     let tempPassword = null;
     if (userResult.rows.length > 0) {
       user_id = userResult.rows[0].id;
-      // Update existing user with latest info from the form
+      
       await db.query(
         `UPDATE users SET 
           age = COALESCE($1, age), 
@@ -483,8 +480,7 @@ const createWalkinAppointment = async (req, res) => {
         ]
       );
 
-      // If the existing user has never verified their email, they probably never got their password.
-      // We must regenerate the temp password and resend the Walk-in verification email to ensure they can login.
+     
       if (!userResult.rows[0].email_verified) {
         const fn = first_name.trim();
         const ln = last_name.trim();
@@ -512,9 +508,8 @@ const createWalkinAppointment = async (req, res) => {
         }
       }
     } else {
-      // ── Generate deterministic temp password ──────────────────────────────
-      // Format: first 2 letters of first name + first 2 letters of last name + birth year
-      // e.g. "Cedric Torres" born 2003 → "CeTo2003"
+      
+
       const fn = first_name.trim();
       const ln = last_name.trim();
       const birthYear = date_of_birth ? String(date_of_birth).slice(0, 4) : '0000';
@@ -557,7 +552,7 @@ const createWalkinAppointment = async (req, res) => {
       }
     }
 
-    // ── Create appointment (status = confirmed since doctor is booking) ──────
+    
     const newAppointment = await db.query(
       `INSERT INTO appointments
          (client_id, dentist_id, service_id, appointment_date, appointment_time, notes, status)
@@ -568,7 +563,7 @@ const createWalkinAppointment = async (req, res) => {
 
     const appointmentId = newAppointment.rows[0].id;
 
-    // ── Insert all selected services into the junction table ─────────────────
+   
     for (const svcId of ids) {
       await db.query(
         'INSERT INTO appointment_services (appointment_id, service_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
@@ -579,14 +574,14 @@ const createWalkinAppointment = async (req, res) => {
     res.status(201).json({
       message: 'Walk-in appointment created successfully.',
       appointment: newAppointment.rows[0],
-      tempPassword: tempPassword, // Return the password so the staff can tell the patient
+      tempPassword: tempPassword, 
       email: trimmedEmail
     });
 
-    // Fetch details for notifications
+  
     let doctor_name = 'Doctor';
     try {
-      // Fetch doctor, patient, and service details for the email
+      
       const detailsQuery = `
         SELECT 
           d.name as doctor_name, d.email as doctor_email,
@@ -604,7 +599,7 @@ const createWalkinAppointment = async (req, res) => {
         const { doctor_email, patient_name, patient_email, service_names } = details.rows[0];
         doctor_name = details.rows[0].doctor_name;
         
-        // Notify doctor
+        
         await sendDoctorAppointmentNotification(doctor_email, doctor_name, {
           patientName: patient_name,
           date: appointment_date,
@@ -613,7 +608,7 @@ const createWalkinAppointment = async (req, res) => {
           notes: notes
         });
 
-        // Notify patient
+        
         await sendPatientAppointmentNotification(patient_email, patient_name, {
           doctorName: doctor_name,
           date: appointment_date,
@@ -626,7 +621,7 @@ const createWalkinAppointment = async (req, res) => {
       console.error('Failed to send doctor notification email for walk-in:', emailErr.message);
     }
 
-    // Add Web Notification for Patient
+   
     try {
       const aptDate = new Date(appointment_date).toLocaleDateString('en-US', { 
         weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' 

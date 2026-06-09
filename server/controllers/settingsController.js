@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-// Get all settings
+
 const getSettings = async (req, res) => {
   try {
     const result = await db.query('SELECT key, value, updated_at FROM settings');
@@ -15,7 +15,7 @@ const getSettings = async (req, res) => {
   }
 };
 
-// Update a setting
+
 const updateSetting = async (req, res) => {
   const { key, value } = req.body;
 

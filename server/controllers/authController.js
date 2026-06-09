@@ -4,31 +4,31 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../utils/email');
 
-// Email format validation regex
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const register = async (req, res) => {
   const { name, email, password } = req.body;
-  const role = 'user'; // Only regular users can register via this endpoint
+  const role = 'user'; 
 
   try {
-    // Input validation
+   
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required' });
     }
 
-    // Email format validation
+    
     const trimmedEmail = email.trim().toLowerCase();
     if (!EMAIL_REGEX.test(trimmedEmail)) {
       return res.status(400).json({ message: 'Please provide a valid email address' });
     }
 
-    // Password strength validation
+   
     if (password.length < 8) {
       return res.status(400).json({ message: 'Password must be at least 8 characters long' });
     }
 
-    // Check for existing user (including soft-deleted ones)
+   
     const userResult = await db.query('SELECT * FROM users WHERE email = $1', [trimmedEmail]);
     
     if (userResult.rows.length > 0) {
@@ -38,7 +38,7 @@ const register = async (req, res) => {
         return res.status(400).json({ message: 'User already exists' });
       }
 
-      // If soft-deleted, check 10-minute restriction
+      
       const deletedAt = new Date(existingUser.deleted_at);
       const now = new Date();
       const minutesDifference = (now - deletedAt) / (1000 * 60);
@@ -49,22 +49,20 @@ const register = async (req, res) => {
         });
       }
 
-      // If more than 10 minutes, we'll permanently delete the old record and create a new one
-      // or just update it. For simplicity and to keep it clean, let's delete the old one.
+      
       await db.query('DELETE FROM users WHERE id = $1', [existingUser.id]);
     }
 
-    // Prevent anyone from registering as admin via API
-    // (admin is bootstrapped on server start only)
+    
     const adminCount = await db.query("SELECT COUNT(*) FROM users WHERE role = 'admin'");
     if (role === 'admin' && parseInt(adminCount.rows[0].count) >= 1) {
       return res.status(403).json({ message: 'Admin account already exists' });
     }
 
-    // Hash password and generate verification token
+    
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationToken = crypto.randomBytes(32).toString('hex');
-    const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); 
 
     const newUser = await db.query(
       `INSERT INTO users (name, email, password, role, email_verified, verification_token, verification_token_expires) 
@@ -73,12 +71,12 @@ const register = async (req, res) => {
       [name.trim(), trimmedEmail, hashedPassword, role, verificationToken, tokenExpires]
     );
 
-    // Send verification email
+    
     try {
       await sendVerificationEmail(trimmedEmail, name.trim(), verificationToken);
     } catch (emailErr) {
       console.error('Failed to send verification email:', emailErr.message);
-      // Don't fail registration if email fails — user can request a resend later
+     
     }
 
     res.status(201).json({
@@ -103,7 +101,7 @@ const verifyEmail = async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired verification token' });
     }
 
-    // Mark email as verified and clear the token
+    
     await db.query(
       'UPDATE users SET email_verified = TRUE, verification_token = NULL, verification_token_expires = NULL WHERE id = $1',
       [result.rows[0].id]
@@ -134,7 +132,7 @@ const resendVerification = async (req, res) => {
       return res.status(400).json({ message: 'Email is already verified' });
     }
 
-    // Generate new token
+    
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -143,8 +141,7 @@ const resendVerification = async (req, res) => {
       [verificationToken, tokenExpires, user.rows[0].id]
     );
 
-    // Send email without awaiting to prevent timeout if SMTP is slow
-    // But we still want to catch immediate errors
+    
     try {
       sendVerificationEmail(trimmedEmail, user.rows[0].name, verificationToken)
         .catch(err => console.error('Background email error:', err.message));
@@ -194,8 +191,8 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Check if customer web access is disabled
-    const platform = req.headers['x-platform'] || 'web'; // Default to web if no header
+    
+    const platform = req.headers['x-platform'] || 'web'; 
     if (user.rows[0].role === 'user' && platform === 'web') {
       const settingResult = await db.query("SELECT value FROM settings WHERE key = 'customer_web_access_enabled'");
       const webAccessEnabled = settingResult.rows.length > 0 ? settingResult.rows[0].value === 'true' : true;
@@ -209,13 +206,13 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Check if email is verified
+    
     if (!user.rows[0].email_verified) {
-      // Only allow doctors and admins to login without verification
+      
       if (user.rows[0].role === 'user') {
         return res.status(403).json({ message: 'Please verify your email address before logging in. Check your inbox for the verification link.' });
       }
-      // For doctors and admins, we allow login but log a warning
+     
       console.log(`⚠️ ${user.rows[0].role} ${trimmedEmail} logged in without email verification.`);
     }
 
@@ -241,7 +238,7 @@ const createDoctor = async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
-    // Input validation
+   
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required' });
     }
@@ -312,15 +309,15 @@ const getDoctors = async (req, res) => {
 const deleteDoctor = async (req, res) => {
   const { id } = req.params;
   try {
-    // Verify it's actually a doctor
+   
     const doctor = await db.query("SELECT * FROM users WHERE id = $1 AND role = 'doctor'", [id]);
     if (doctor.rows.length === 0) {
       return res.status(404).json({ message: 'Doctor not found' });
     }
 
-    // Delete related schedules first
+    
     await db.query('DELETE FROM schedules WHERE dentist_id = $1', [id]);
-    // Delete the doctor
+   
     await db.query('DELETE FROM users WHERE id = $1', [id]);
     
     res.json({ message: 'Doctor account deleted successfully' });
@@ -336,12 +333,12 @@ const forgotPassword = async (req, res) => {
     const user = await db.query('SELECT * FROM users WHERE email = $1', [trimmedEmail]);
     
     if (user.rows.length === 0) {
-      // Don't reveal if user exists or not for security
+     
       return res.json({ message: 'If an account exists with this email, a reset link has been sent.' });
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetExpires = new Date(Date.now() + 3600000); // 1 hour
+    const resetExpires = new Date(Date.now() + 3600000); 
 
     await db.query(
       'UPDATE users SET verification_token = $1, verification_token_expires = $2 WHERE email = $3',
@@ -399,13 +396,13 @@ const getPatients = async (req, res) => {
 const deletePatient = async (req, res) => {
   const { id } = req.params;
   try {
-    // Check if user exists and is a patient
+
     const user = await db.query("SELECT * FROM users WHERE id = $1 AND role = 'user'", [id]);
     if (user.rows.length === 0) {
       return res.status(404).json({ message: 'Patient not found' });
     }
 
-    // Soft delete the patient
+   
     await db.query(
       'UPDATE users SET is_deleted = TRUE, deleted_at = NOW() WHERE id = $1',
       [id]
@@ -430,7 +427,7 @@ const deleteSelf = async (req, res) => {
   }
 };
 
-// Return own profile (used by doctor to persist is_available on reload)
+
 const getPatientDetails = async (req, res) => {
   const { id } = req.params;
   try {
@@ -465,7 +462,7 @@ const getMe = async (req, res) => {
   }
 };
 
-// ── Doctor Availability ──────────────────────────────────────────────────────
+
 
 const updateAvailability = async (req, res) => {
   const { is_available } = req.body;
@@ -543,7 +540,7 @@ const updatePassword = async (req, res) => {
       return res.status(400).json({ message: 'Current password is incorrect' });
     }
 
-    // Check if new password is same as current password
+    
     const isSameAsCurrent = await bcrypt.compare(newPassword, user.rows[0].password);
     if (isSameAsCurrent) {
       return res.status(400).json({ 
@@ -568,14 +565,14 @@ const resetToTempPassword = async (req, res) => {
 
     let { name, first_name, last_name, date_of_birth } = user.rows[0];
     
-    // If first/last name are missing, split the "name" column
+  
     if (!first_name || !last_name) {
       const nameParts = (name || '').trim().split(' ');
       if (nameParts.length >= 1) first_name = nameParts[0];
       if (nameParts.length >= 2) last_name = nameParts[nameParts.length - 1];
     }
     
-    // Deterministic format: FiLaYYYY
+   
     const fn = (first_name || '').trim();
     const ln = (last_name || '').trim();
     const birthYear = date_of_birth ? String(date_of_birth).slice(0, 4) : '0000';

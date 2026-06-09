@@ -4,7 +4,7 @@ const { getAppointments, getBookedSlots, createAppointment, updateAppointmentSta
 const { authMiddleware, adminMiddleware } = require('../middleware/authMiddleware');
 
 router.get('/', authMiddleware, getAppointments);
-router.get('/booked-slots', authMiddleware, getBookedSlots); // must be before /:id routes
+router.get('/booked-slots', authMiddleware, getBookedSlots); 
 router.post('/', authMiddleware, createAppointment);
 router.post('/walkin', authMiddleware, createWalkinAppointment);
 router.patch('/:id/status', authMiddleware, updateAppointmentStatus);

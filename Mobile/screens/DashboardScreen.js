@@ -88,11 +88,11 @@ const DashboardScreen = ({ navigation }) => {
 
   const getBadgeStyle = (status) => {
     switch (status) {
-      case 'confirmed': return { bg: '#d1fae5', text: '#059669', label: 'Confirmed' }; // emerald
+      case 'confirmed': return { bg: '#d1fae5', text: '#059669', label: 'Confirmed' }; 
       case 'completed': return { bg: '#d1fae5', text: '#059669', label: 'Completed' };
-      case 'cancelled': return { bg: '#fee2e2', text: '#dc2626', label: 'Cancelled' }; // red
-      case 'pending': return { bg: '#fef08a', text: '#ca8a04', label: 'Pending' }; // yellow
-      default: return { bg: '#ffedd5', text: '#ea580c', label: status }; // orange
+      case 'cancelled': return { bg: '#fee2e2', text: '#dc2626', label: 'Cancelled' }; 
+      case 'pending': return { bg: '#fef08a', text: '#ca8a04', label: 'Pending' }; 
+      default: return { bg: '#ffedd5', text: '#ea580c', label: status }; 
     }
   };
 
@@ -110,7 +110,7 @@ const DashboardScreen = ({ navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
 
-        {/* HEADER SECTION */}
+      
         <View style={styles.header}>
           <Text style={styles.welcomeText}>
             Welcome back, {getUserInfo()?.name || 'User'}!
@@ -120,7 +120,7 @@ const DashboardScreen = ({ navigation }) => {
           </Text>
         </View>
 
-        {/* CURRENT APPOINTMENT SCHEDULE */}
+       
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.cardHeaderLeft}>
@@ -170,7 +170,7 @@ const DashboardScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* APPOINTMENT HISTORY BUTTON */}
+      
         <TouchableOpacity
           style={styles.historyButton}
           onPress={() => navigation.navigate('AppointmentHistory')}
@@ -187,7 +187,7 @@ const DashboardScreen = ({ navigation }) => {
 
       </ScrollView>
 
-      {/* FLOATING CHATBOT */}
+    
       <TouchableOpacity
         style={styles.chatbotBtn}
         activeOpacity={0.8}
@@ -200,7 +200,7 @@ const DashboardScreen = ({ navigation }) => {
         />
       </TouchableOpacity>
 
-      {/* CHATBOT OVERLAY */}
+   
       <Modal
         visible={isChatBotVisible}
         animationType="slide"

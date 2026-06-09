@@ -5,7 +5,7 @@ import styled from 'styled-components';
 
 const VerifyEmail = () => {
   const { token } = useParams();
-  const [status, setStatus] = useState('verifying'); // 'verifying', 'success', 'error'
+  const [status, setStatus] = useState('verifying'); 
   const [message, setMessage] = useState('');
   const verificationStarted = useRef(false);
 

@@ -10,13 +10,13 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
   const [doctorSchedule, setDoctorSchedule] = useState(null);
   const [fetchingServices, setFetchingServices] = useState(true);
 
-  // Get today's date string in local time (YYYY-MM-DD)
+
   const getTodayStr = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
   
-  // Get tomorrow's date string in local time (YYYY-MM-DD)
+
   const getTomorrowStr = () => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -50,7 +50,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Fetch services on mount
+
   useEffect(() => {
     setFetchingServices(true);
     api.get('/services')
@@ -65,7 +65,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
       });
   }, []);
 
-  // Fetch dentists when date changes
+
   useEffect(() => {
     if (!formData.appointment_date) return;
     api
@@ -77,7 +77,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
       });
   }, [formData.appointment_date]);
 
-  // Fetch booked slots when dentist or date changes
+
   useEffect(() => {
     if (!formData.dentist_id || !formData.appointment_date) {
       setBookedSlots([]);
@@ -103,7 +103,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
     return () => clearInterval(interval);
   }, [formData.dentist_id, formData.appointment_date]);
 
-  // Calculate age from date of birth
+ //calculate age
   const calculateAge = (dobStr) => {
     if (!dobStr) return '';
     const birth = new Date(dobStr);
@@ -132,7 +132,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
     });
   };
 
-  // Get minimum time for today's appointments (current time)
+ 
   const getMinTime = () => {
     if (formData.appointment_date === todayStr) {
       const now = new Date();
@@ -167,14 +167,14 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
       return;
     }
 
-    // Same-day booking validation
+   
     if (formData.appointment_date <= todayStr) {
       setError('Same-day booking is not allowed. Please select a date starting from tomorrow.');
       setLoading(false);
       return;
     }
 
-    // Doctor's working hours validation (client-side guard)
+  
     if (formData.dentist_id && doctorSchedule) {
       const timeToMinutes = (timeStr) => {
         if (!timeStr || typeof timeStr !== 'string') return 0;
@@ -193,7 +193,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
       }
     }
 
-    // Validate appointment time is between 9:00 AM and 4:00 PM (client-side)
+ 
     const [hours, minutes] = formData.appointment_time.split(':').map(Number);
     if (hours < 9 || hours >= 16 || (hours === 16 && minutes > 0)) {
       setError('Appointment time must be between 9:00 AM and 4:00 PM only.');
@@ -201,7 +201,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
       return;
     }
 
-    // Past date/time validation (client-side guard)
+   
     const apptDateTime = new Date(`${formData.appointment_date}T${formData.appointment_time}`);
     if (apptDateTime < new Date()) {
       setError('Cannot book an appointment in the past. Please select a future date and time.');
@@ -251,13 +251,13 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
             </div>
           )}
 
-          {/* PATIENT INFORMATION */}
+        
           <section>
             <h4 className="pb-2 mb-4 text-sm font-black tracking-widest uppercase border-b text-slate-400 border-slate-100">
               Patient Information
             </h4>
 
-            {/* Name row */}
+          
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <div className="space-y-1">
                 <label className={labelClass}>First Name *</label>
@@ -516,7 +516,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
               </div>
             )}
 
-            {/* Time input — doctor assigns manually */}
+           
             <div className="mt-5 space-y-1">
               <label className={`${labelClass} flex items-center gap-2`}>
                 <Clock size={14} className="text-[#1089d3]" />
@@ -540,7 +540,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
               )}
             </div>
 
-            {/* Notes */}
+          
             <div className="mt-6 space-y-1">
               <label className={labelClass}>Additional Notes</label>
               <textarea
@@ -554,7 +554,7 @@ const WalkinAppointmentForm = ({ onClose, onSuccess, currentDentistId }) => {
             </div>
           </section>
 
-          {/* Submit */}
+       
           <div className="flex gap-4 pt-6 border-t border-slate-100">
             <button
               type="button"

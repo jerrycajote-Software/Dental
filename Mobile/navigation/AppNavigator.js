@@ -3,15 +3,15 @@ import { Image, View, ActivityIndicator } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-// Auth Screens
+
 import LoginScreen from '../screens/LoginScreen';
 
-// Main Tab Screens
+
 import DashboardScreen from '../screens/DashboardScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
-// Sub-screens (accessible from Dashboard/Home tab)
+
 import BookingScreen from '../screens/BookingScreen';
 import AppointmentHistoryScreen from '../screens/AppointmentHistoryScreen';
 
@@ -20,9 +20,7 @@ import { initializeAuth } from '../services/api';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// ─────────────────────────────────────────────
-// Home Stack: Dashboard + sub-screens
-// ─────────────────────────────────────────────
+
 const HomeStack = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -33,9 +31,8 @@ const HomeStack = () => {
   );
 };
 
-// ─────────────────────────────────────────────
-// Bottom Tab Navigator
-// ─────────────────────────────────────────────
+
+
 const MainTabs = () => {
   return (
     <Tab.Navigator
@@ -114,9 +111,8 @@ const MainTabs = () => {
   );
 };
 
-// ─────────────────────────────────────────────
-// Root Auth Stack
-// ─────────────────────────────────────────────
+
+
 const AppNavigator = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);

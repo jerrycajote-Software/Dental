@@ -6,7 +6,7 @@ const bootstrapAdmin = async () => {
   const adminPassword = process.env.ADMIN_PASSWORD || '';
 
   try {
-    // 1. Database Migrations (ensure columns exist)
+   
     console.log('Running database migrations...');
     await db.query(`
       ALTER TABLE users 
@@ -15,7 +15,7 @@ const bootstrapAdmin = async () => {
     `);
     console.log('✅ Users table columns verified.');
 
-    // 2. Seed Default Services
+   
     console.log('Checking dental services...');
     const services = [
       ['Oral Prophylaxis', 'Professional teeth cleaning and scaling to remove plaque and tartar.', 1500.00, 45],
@@ -41,13 +41,45 @@ const bootstrapAdmin = async () => {
     }
     console.log('✅ Dental services verified/seeded.');
 
-    // 3. Admin User Bootstrap
+  
+    console.log('Checking doctor schedules...');
+   
+
+    await db.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'schedules_dentist_day_unique'
+        ) THEN
+          ALTER TABLE schedules ADD CONSTRAINT schedules_dentist_day_unique
+          UNIQUE (dentist_id, day_of_week);
+        END IF;
+      END $$;
+    `);
+    await db.query(`
+      DO $$
+      DECLARE
+        doc RECORD;
+        dow INTEGER;
+      BEGIN
+        FOR doc IN SELECT id FROM users WHERE role = 'doctor' LOOP
+          FOR dow IN 1..6 LOOP  -- 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+            INSERT INTO schedules (dentist_id, day_of_week, start_time, end_time)
+            VALUES (doc.id, dow, '09:00:00', '16:00:00')
+            ON CONFLICT (dentist_id, day_of_week) DO NOTHING;
+          END LOOP;
+        END LOOP;
+      END $$;
+    `);
+    console.log('✅ Doctor schedules verified/seeded.');
+
+    
     const adminResult = await db.query("SELECT * FROM users WHERE role = 'admin' ORDER BY created_at ASC LIMIT 1");
     
     if (adminResult.rows.length > 0) {
       const existingAdmin = adminResult.rows[0];
       
-      // If the existing admin's email or password doesn't match the current .env values, update it
+     
       const passwordMatch = await bcrypt.compare(adminPassword, existingAdmin.password).catch(() => false);
       
       if (existingAdmin.email !== adminEmail || !passwordMatch) {
@@ -61,7 +93,7 @@ const bootstrapAdmin = async () => {
       return;
     }
 
-    // No admin exists — create one
+  
     const hashedPassword = await bcrypt.hash(adminPassword, 10);
     await db.query(
       'INSERT INTO users (name, email, password, role, email_verified) VALUES ($1, $2, $3, $4, TRUE)',

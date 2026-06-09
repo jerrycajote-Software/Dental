@@ -1,4 +1,4 @@
--- Migration: Create medical_records table for patient dental history tracking
+
 
 CREATE TABLE IF NOT EXISTS medical_records (
   id SERIAL PRIMARY KEY,
@@ -15,11 +15,11 @@ CREATE TABLE IF NOT EXISTS medical_records (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Index for faster patient record lookups
+
 CREATE INDEX IF NOT EXISTS idx_medical_records_patient ON medical_records(patient_id);
 CREATE INDEX IF NOT EXISTS idx_medical_records_appointment ON medical_records(appointment_id);
 
--- Add has_medical_record to appointments for UI indicator
+
 ALTER TABLE appointments ADD COLUMN IF NOT EXISTS has_medical_record BOOLEAN DEFAULT FALSE;
 
 COMMENT ON TABLE medical_records IS 'Patient dental medical records linked to appointments';

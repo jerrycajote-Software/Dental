@@ -54,11 +54,11 @@ const LoginScreen = ({ navigation }) => {
         return;
       }
 
-      // Save token and info, then register for push notifications
+      
       await setAuthToken(token);
       await setUserInfo(user);
       
-      // Register for push notifications (wrapped in try-catch to prevent login failure if Firebase is not configured)
+      
       try {
         await registerForPushNotificationsAsync();
       } catch (pushError) {

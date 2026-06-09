@@ -1,20 +1,8 @@
-/**
- * Email utility using Brevo Transactional Email HTTP API.
- *
- * Why HTTP API instead of SMTP?
- * Railway (and most cloud hosts) block outbound SMTP ports (25, 465, 587).
- * The Brevo HTTP API runs over port 443 (HTTPS) which is never blocked.
- *
- * Required Railway environment variable:
- *   BREVO_API_KEY  — found in Brevo Dashboard → Settings → API Keys
- */
+
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
-/**
- * Internal helper: send an email via Brevo HTTP API.
- * Uses Node.js built-in fetch (Node 18+).
- */
+
 const sendEmail = async ({ to, subject, html }) => {
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) {
@@ -51,7 +39,7 @@ const sendEmail = async ({ to, subject, html }) => {
     );
   }
 
-  return data; // { messageId: '...' }
+  return data; 
 };
 
 /**
@@ -214,9 +202,7 @@ const sendWalkinVerificationEmail = async (to, name, token, tempPassword) => {
   }
 };
 
-/**
- * Send a password reset email.
- */
+
 const sendPasswordResetEmail = async (to, resetLink) => {
   const html = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #f8f9fd; border-radius: 16px; overflow: hidden;">
@@ -262,9 +248,7 @@ const sendPasswordResetEmail = async (to, resetLink) => {
   }
 };
 
-/**
- * Send an appointment notification to a doctor.
- */
+
 const sendDoctorAppointmentNotification = async (doctorEmail, doctorName, appointmentDetails) => {
   const { patientName, date, time, services, notes } = appointmentDetails;
 
@@ -326,13 +310,12 @@ const sendDoctorAppointmentNotification = async (doctorEmail, doctorName, appoin
     console.log(`✉️  Appointment notification sent to Dr. ${doctorName} (${doctorEmail}) (messageId: ${data?.messageId})`);
   } catch (error) {
     console.error(`❌ Error sending doctor appointment notification: ${error.message}`);
-    // Don't throw here to prevent appointment booking from failing if email fails
+   
   }
 };
 
-/**
- * Send an appointment notification to a patient.
- */
+
+
 const sendPatientAppointmentNotification = async (patientEmail, patientName, appointmentDetails) => {
   const { doctorName, date, time, services, notes } = appointmentDetails;
 

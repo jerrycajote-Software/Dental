@@ -26,7 +26,7 @@ async function updateUserPassword(email, newPassword) {
   }
 }
 
-// REPLACE WITH THE TARGET EMAIL AND DESIRED NEW PASSWORD
+
 const TARGET_EMAIL = 'patient@example.com';
 const NEW_PASSWORD = 'MyNewPassword123!';
 

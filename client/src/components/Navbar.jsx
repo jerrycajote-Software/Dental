@@ -29,7 +29,7 @@ const Navbar = () => {
           </span>
         </Link>
 
-        {/* Desktop Navigation */}
+      
         <div className="flex items-center gap-8">
           <div className="items-center hidden gap-8 text-sm font-bold md:flex">
             {user?.role === 'admin' && (
@@ -63,7 +63,7 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile Menu Toggle */}
+         
           <button
             onClick={toggleMenu}
             className="p-2 transition-colors border md:hidden rounded-xl bg-white/20 border-white/30 text-slate-900 hover:bg-white/40"
@@ -74,7 +74,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu Drawer */}
+     
       {isMenuOpen && (
         <div className="md:hidden bg-[#a1c4fd] border-t border-white/20 py-8 px-6 space-y-8 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="flex flex-col gap-6">

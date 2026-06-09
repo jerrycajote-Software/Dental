@@ -18,11 +18,11 @@ const getAIChatResponse = async (req, res) => {
   }
 
   try {
-    // Fetch available services from database
+   
     const servicesResult = await db.query('SELECT name, description, price, duration_minutes FROM services');
     const services = servicesResult.rows;
 
-    // Create services string to inject into prompt
+   
     const servicesInfo = services.map(s => 
       `- **${s.name}**: ${s.description || 'No description available'} • Price: ₱${s.price} • Duration: ${s.duration_minutes} minutes`
     ).join('\n');

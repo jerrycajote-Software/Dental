@@ -6,16 +6,16 @@ dotenv.config();
 
 const app = express();
 
-// Middleware
+
 app.use(cors());
 app.use(express.json());
 
-// Basic Route
+
 app.get('/', (req, res) => {
   res.send('Dental System API is running...');
 });
 
-// Import Routes
+
 const authRoutes = require('./routes/authRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const aiRoutes = require('./routes/aiRoutes');
@@ -26,7 +26,7 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const bootstrapAdmin = require('./utils/bootstrap');
 
-// Use Routes
+
 app.use('/api/auth', authRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/ai', aiRoutes);
@@ -42,7 +42,7 @@ app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
   await bootstrapAdmin();
 
-  // Auto-cancellation job: cancel pending appointments not approved within 1 hour
+
   const db = require('./config/db');
   const { sendAppointmentReminder, handleMissedAppointment } = require('./controllers/notificationController');
 
@@ -62,7 +62,7 @@ app.listen(PORT, async () => {
     }
   };
 
-  // Missed appointment job: cancel expired appointments and notify patients
+
   const runMissedAppointmentJob = async () => {
     try {
       const result = await db.query(
@@ -84,7 +84,7 @@ app.listen(PORT, async () => {
     }
   };
 
-  // Appointment reminder job: send push notifications 1 hour before
+
   const runReminderJob = async () => {
     try {
       const result = await db.query(
@@ -107,15 +107,15 @@ app.listen(PORT, async () => {
     }
   };
 
-  // Run immediately on startup, then every 5 minutes
+
   runAutoCancellation();
   setInterval(runAutoCancellation, 5 * 60 * 1000);
 
-  // Run missed appointment check every 5 minutes
+ 
   runMissedAppointmentJob();
   setInterval(runMissedAppointmentJob, 5 * 60 * 1000);
 
-  // Run reminder check every 15 minutes
+
   runReminderJob();
   setInterval(runReminderJob, 15 * 60 * 1000);
 });

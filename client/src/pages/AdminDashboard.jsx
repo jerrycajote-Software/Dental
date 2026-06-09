@@ -41,7 +41,7 @@ import {
 import profilePic from '../assets/admin.png';
 import Loader from '../components/Loader';
 
-// Helper to get initials
+
 const getInitials = (name) => {
   if (!name) return 'U';
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -61,25 +61,25 @@ const AdminDashboard = () => {
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterDate, setFilterDate] = useState('All');
 
-  // Doctor management state
+ 
   const [doctors, setDoctors] = useState([]);
   const [doctorForm, setDoctorForm] = useState({ name: '', email: '', password: '' });
   const [doctorError, setDoctorError] = useState('');
   const [doctorSuccess, setDoctorSuccess] = useState('');
   const [isCreatingDoctor, setIsCreatingDoctor] = useState(false);
 
-  // Patient management state
+ 
   const [patients, setPatients] = useState([]);
 
-  // Analytics state
+ 
   const [analyticsPeriod, setAnalyticsPeriod] = useState('week');
   const [analyticsData, setAnalyticsData] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   
-  // Settings state
+
   const [customerWebAccessEnabled, setCustomerWebAccessEnabled] = useState(true);
 
-  // Fetch settings
+
   const fetchSettings = async () => {
     try {
       const response = await api.get('/settings');
@@ -105,7 +105,7 @@ const AdminDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Analytics fetch function
+  
   const fetchAnalytics = async (period = 'week') => {
     setAnalyticsLoading(true);
     try {
@@ -124,9 +124,7 @@ const AdminDashboard = () => {
     }
   }, [activeTab, analyticsPeriod]);
 
-  // ... (fetchAppointments, handleStatusChange, handleDelete remain same)
-
-  // Patient management functions
+  
   const fetchPatients = async () => {
     try {
       const response = await api.get('/auth/patients');
@@ -253,7 +251,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // Sidebar navigation items
+ 
   const navItems = [
     { name: 'Overview', img: '/overview.png' },
     { name: 'Analytics', img: '/analytics.png' },
@@ -263,7 +261,7 @@ const AdminDashboard = () => {
     { name: 'Settings', img: '/settings.png' },
   ];
 
-  // Render Status Badge
+ 
   const StatusBadge = ({ status }) => {
     switch (status) {
       case 'confirmed':
@@ -277,7 +275,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // Filtered Appointments
+
   const todayStr = new Date().toISOString().split('T')[0];
   const filteredAppointments = appointments.filter(apt => {
     const matchesSearch = (apt.client_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -299,17 +297,17 @@ const AdminDashboard = () => {
   return (
     <div className="flex h-screen bg-[#c2e9fb] overflow-hidden text-slate-800 font-sans">
 
-      {/* SIDEBAR */}
+   
       <aside className="w-64 bg-[#f8fbff] border-r border-slate-200 flex flex-col justify-between shrink-0 h-full">
         <div>
-          {/* Logo */}
+      
           <div className="flex items-center h-16 px-6 border-b border-slate-200">
             <h1 className="text-xl font-bold tracking-tight">
               Dental <span className="text-blue-500">CarePlus</span>
             </h1>
           </div>
 
-          {/* Nav Links */}
+          
           <nav className="p-4 mt-4 space-y-2">
             {navItems.map((item) => (
               <button
@@ -335,7 +333,7 @@ const AdminDashboard = () => {
           </nav>
         </div>
 
-        {/* User Profile / Logout */}
+      
         <div className="p-4 border-t border-slate-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -392,19 +390,19 @@ const AdminDashboard = () => {
           </div>
         </header>
 
-        {/* SCROLLABLE DASHBOARD CONTENT */}
+       
         <main className="flex-1 p-8 overflow-y-auto">
 
-          {/* ---- OVERVIEW TAB ---- */}
+        
           {activeTab === 'Overview' && (
             <>
-              {/* Welcome Message */}
+              
               <div className="mb-8">
                 <h1 className="mb-1 text-2xl font-bold text-slate-900">Dashboard Overview</h1>
                 {/* <p className="text-sm text-slate-500">Welcome back, {user?.name || 'Admin'}.</p> */}
               </div>
 
-              {/* STATS GRID */}
+             
               <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-3">
                 <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100" style={{ fontFamily: 'Lato, sans-serif' }}>
                   <div className="flex items-start justify-between mb-4">
@@ -450,7 +448,7 @@ const AdminDashboard = () => {
             </>
           )}
 
-          {/* ---- ANALYTICS TAB ---- */}
+          {/* ANALYTICS TAB  */}
           {activeTab === 'Analytics' && (
             <>
               <div className="mb-8">
@@ -458,7 +456,7 @@ const AdminDashboard = () => {
                 <p className="text-sm text-slate-500">View detailed reports and trends.</p>
               </div>
 
-              {/* Period Selector */}
+              
               <div className="flex gap-2 mb-6">
                 {['day', 'week', 'month', 'year'].map((period) => (
                   <button
@@ -478,11 +476,11 @@ const AdminDashboard = () => {
               {analyticsLoading ? (
                 <div className="flex flex-col items-center justify-center h-64">
                   <Loader />
-                  <p className="font-medium text-slate-500 mt-4">Loading analytics...</p>
+                  <p className="mt-4 font-medium text-slate-500">Loading analytics...</p>
                 </div>
               ) : analyticsData ? (
                 <>
-                  {/* Summary Stats */}
+                  {/* Summary */}
                   <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-4">
                     <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100" style={{ fontFamily: 'Lato, sans-serif' }}>
                       <p className="text-sm text-slate-500" style={{ fontWeight: 700 }}>Total</p>
@@ -502,7 +500,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Chart */}
+                 
                   <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100 mb-6">
                     <h3 className="mb-6 text-lg font-bold text-slate-800">Appointment Trends</h3>
                     <div className="w-full h-64">
@@ -524,7 +522,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Top Services & Doctors */}
+                  
                   <div className="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-2">
                     <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
                       <h3 className="mb-4 text-lg font-bold text-slate-800">Top Services</h3>
@@ -550,7 +548,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Peak Hours & Unique Patients */}
+                 
                   <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                     <div className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100">
                       <h3 className="mb-4 text-lg font-bold text-slate-800">Peak Hours</h3>
@@ -578,10 +576,10 @@ const AdminDashboard = () => {
             </>
           )}
 
-          {/* ---- APPOINTMENTS TAB ---- */}
+          {/* APPOINTMENTS TAB */}
           {activeTab === 'Appointments' && (
             <>
-              {/* Header */}
+             
               <div className="flex items-end justify-between mb-8">
                 <div>
                   <h1 className="mb-1 text-2xl font-bold text-slate-900">Appointments</h1>
@@ -589,7 +587,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Search */}
+            
               <div className="flex items-center justify-between p-2 mb-6 bg-white border shadow-sm rounded-xl border-slate-100">
                 <div className="flex items-center flex-1 pl-3">
                   <Search size={18} className="mr-2 text-slate-400" />
@@ -601,7 +599,7 @@ const AdminDashboard = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="pl-4 pr-2 border-l border-slate-100 flex gap-4">
+                <div className="flex gap-4 pl-4 pr-2 border-l border-slate-100">
                   <select
                     className="text-sm font-semibold bg-transparent outline-none cursor-pointer text-slate-600"
                     value={filterDate}
@@ -613,7 +611,7 @@ const AdminDashboard = () => {
                     <option value="Past">Past</option>
                   </select>
                   <select
-                    className="text-sm font-semibold bg-transparent outline-none cursor-pointer text-slate-600 border-l pl-4 border-slate-100"
+                    className="pl-4 text-sm font-semibold bg-transparent border-l outline-none cursor-pointer text-slate-600 border-slate-100"
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
                   >
@@ -709,10 +707,10 @@ const AdminDashboard = () => {
             </>
           )}
 
-          {/*  PATIENTS TAB  */}
+       
           {activeTab === 'Patients' && (
             <>
-              {/* Header */}
+       
               <div className="flex items-end justify-between mb-8">
                 <div>
                   <h1 className="mb-1 text-2xl font-bold text-slate-900">Patients</h1>
@@ -720,7 +718,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Search Bar */}
+          
               <div className="p-2 mb-6 bg-white border shadow-sm rounded-xl border-slate-100">
                 <div className="flex items-center w-full pl-3">
                   <Search size={18} className="mr-2 text-slate-400" />
@@ -732,7 +730,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Patients Table */}
+           
               <div className="overflow-hidden bg-white border shadow-sm rounded-xl border-slate-100 text-slate-800">
                 <table className="w-full text-left border-collapse">
                   <thead>
@@ -833,10 +831,10 @@ const AdminDashboard = () => {
             </>
           )}
 
-          {/* ---- DOCTORS TAB ---- */}
+       
           {activeTab === 'Doctors' && (
             <>
-              {/* Header */}
+           
               <div className="flex items-end justify-between mb-8">
                 <div>
                   <h1 className="mb-1 text-2xl font-bold text-slate-900">Manage Doctors</h1>
@@ -846,7 +844,7 @@ const AdminDashboard = () => {
 
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-                {/* CREATE DOCTOR FORM */}
+           
                 <div className="lg:col-span-1 bg-white rounded-[1.25rem] shadow-sm border border-slate-100 overflow-hidden">
                   <div className="bg-[#f0fdf4] p-6 border-b border-green-50/50">
                     <div className="flex items-center gap-2">
@@ -1020,10 +1018,10 @@ const AdminDashboard = () => {
             </>
           )}
 
-          {/* SETTINGS TAB */}
+      
           {activeTab === 'Settings' && (
             <>
-              {/* Header */}
+          
               <div className="mb-8">
                 <h1 className="mb-1 text-2xl font-bold text-slate-900">Settings</h1>
                 <p className="text-sm text-slate-500">Manage your account and application preferences.</p>
@@ -1041,7 +1039,7 @@ const AdminDashboard = () => {
 
       {/* Temporary Popup Alerts */}
       {doctorError && (
-        <div className="fixed top-6 right-6 z-50 px-6 py-4 text-sm font-bold text-red-600 bg-red-50 border border-red-200 rounded-xl shadow-lg animate-in slide-in-from-top-4 fade-in duration-300">
+        <div className="fixed z-50 px-6 py-4 text-sm font-bold text-red-600 duration-300 border border-red-200 shadow-lg top-6 right-6 bg-red-50 rounded-xl animate-in slide-in-from-top-4 fade-in">
           {doctorError}
         </div>
       )}

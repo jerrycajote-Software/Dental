@@ -29,7 +29,7 @@ const BookingScreen = ({ navigation }) => {
     service_id: '',
     dentist_id: '',
     appointment_date: '',
-    appointment_time: '09:00', // Default time
+    appointment_time: '09:00', 
     notes: '',
   });
 
@@ -40,7 +40,7 @@ const BookingScreen = ({ navigation }) => {
   const [fetchingSlots, setFetchingSlots] = useState(false);
   const [availableSlots, setAvailableSlots] = useState([]);
 
-  // Custom dropdown states
+
   const [serviceOpen, setServiceOpen] = useState(false);
   const [dentistOpen, setDentistOpen] = useState(false);
   const selectedService = services.find(s => String(s.id) === String(formData.service_id));
@@ -50,7 +50,7 @@ const BookingScreen = ({ navigation }) => {
     fetchInitialData();
   }, []);
 
-  // Watch for date/dentist changes to fetch slots
+
   useEffect(() => {
     if (formData.dentist_id && formData.appointment_date.length === 10) {
       fetchAvailableSlots();
@@ -76,7 +76,7 @@ const BookingScreen = ({ navigation }) => {
     }
   };
 
-  // Fetch dentists when date changes
+
   useEffect(() => {
     if (!formData.appointment_date || formData.appointment_date.length !== 10) return;
     
@@ -111,8 +111,8 @@ const BookingScreen = ({ navigation }) => {
       });
 
       const { schedule, booked } = response.data;
-      
-      // If no schedule found, fallback to default 9AM-5PM
+   
+
       const finalSchedule = schedule || { start: '09:00', end: '17:00' };
       
       console.log('Fetching slots for:', formattedDate, 'Schedule:', finalSchedule);
@@ -128,11 +128,11 @@ const BookingScreen = ({ navigation }) => {
   const generateTimeSlots = (schedule, booked) => {
     try {
       const slots = [];
-      // Ensure time string is clean (HH:mm)
+    
       let cleanStart = schedule.start.slice(0, 5);
       let cleanEnd = schedule.end.slice(0, 5);
       
-      // Restrict to 9:00 AM - 4:00 PM
+    
       const [startHour, startMin] = cleanStart.split(':').map(Number);
       const [endHour, endMin] = cleanEnd.split(':').map(Number);
       
@@ -153,8 +153,8 @@ const BookingScreen = ({ navigation }) => {
 
       while (current < end) {
         const timeStr = current.toTimeString().slice(0, 5);
-        
-        // Check if slot is booked
+    
+
         const isBooked = booked.some(b => {
           const bStart = b.time.slice(0, 5);
           const bEnd = new Date(new Date(`2000-01-01T${bStart}:00`).getTime() + b.duration * 60000)
@@ -166,7 +166,7 @@ const BookingScreen = ({ navigation }) => {
           slots.push(timeStr);
         }
         
-        // Advance by 30 mins
+  
         current = new Date(current.getTime() + 30 * 60000);
       }
       setAvailableSlots(slots);
@@ -183,7 +183,7 @@ const BookingScreen = ({ navigation }) => {
       return;
     }
 
-    // Basic date format validation (dd/mm/yyyy)
+
     const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
     if (!dateRegex.test(formData.appointment_date)) {
       Alert.alert('Error', 'Please enter date in DD/MM/YYYY format.');
@@ -192,7 +192,7 @@ const BookingScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      // Convert DD/MM/YYYY to YYYY-MM-DD for backend
+
       const [day, month, year] = formData.appointment_date.split('/');
       const formattedDate = `${year}-${month}-${day}`;
       

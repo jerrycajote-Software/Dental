@@ -10,7 +10,7 @@ const getServices = async (req, res) => {
 };
 
 const getDentists = async (req, res) => {
-  const { date, include_all } = req.query; // optional YYYY-MM-DD, include_all flag
+  const { date, include_all } = req.query;
   try {
     let query = `
       SELECT id, name, is_available FROM users
@@ -19,7 +19,7 @@ const getDentists = async (req, res) => {
     `;
     const params = [];
 
-    // If not including all, filter by availability
+    
     if (include_all !== 'true') {
       query += ` AND is_available = TRUE `;
     }

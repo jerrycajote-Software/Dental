@@ -14,18 +14,18 @@ export const AuthProvider = ({ children }) => {
       if (currentUser) {
         setUser(currentUser);
       }
-      // Provide a small artificial delay so the app boot loader is visible to the user
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
       setLoading(false);
     };
     initAuth();
   }, []);
 
-  // SESSION TIMEOUT LOGIC
+ 
   useEffect(() => {
     if (!user) return;
 
-    // Timeout duration: 24 hour (86,400 000 ms)
+ 
     const TIMEOUT_DURATION = 86400000;
     let timeoutId;
 
@@ -38,18 +38,18 @@ export const AuthProvider = ({ children }) => {
       }, TIMEOUT_DURATION);
     };
 
-    // Events to track activity
+  
     const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
     
-    // Set initial timer
+   
     resetTimer();
 
-    // Add event listeners
+  
     events.forEach(event => {
       window.addEventListener(event, resetTimer);
     });
 
-    // Handle logout in other tabs or interceptors
+   
     const handleStorageChange = (e) => {
       if ((e.key === 'token' || e.key === 'user') && !e.newValue) {
         setUser(null);
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
     };
     window.addEventListener('storage', handleStorageChange);
 
-    // Also check periodically if the token was removed by the interceptor
+   
     const checkInterval = setInterval(() => {
       if (user && !localStorage.getItem('token')) {
         console.log('Token missing, logging out...');
@@ -87,8 +87,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
-    // Registration now requires email verification before login
-    // So we don't auto-set the user — just return the response data
+   
     const data = await authService.register(userData);
     return data;
   };

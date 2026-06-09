@@ -46,7 +46,7 @@ const AppointmentHistoryScreen = ({ navigation }) => {
     return apptDate < now;
   };
 
-  const pastAppointments = appointments; // Show all appointments
+  const pastAppointments = appointments; 
 
   const formatTime12h = (time24) => {
     if (!time24) return '';

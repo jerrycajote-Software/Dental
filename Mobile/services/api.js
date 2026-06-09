@@ -1,27 +1,27 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Production backend deployed on Railway
+
 const BASE_URL = 'https://dentalcareplus.up.railway.app/api';
 
 const api = axios.create({
   baseURL: BASE_URL,
 });
 
-// Storage keys
+
 const AUTH_TOKEN_KEY = '@dentalcare:auth_token';
 const USER_DATA_KEY = '@dentalcare:user_data';
 const LOGIN_TIMESTAMP_KEY = '@dentalcare:login_timestamp';
 
-// Session expiration: 7 days in milliseconds
+
 const SESSION_EXPIRY_DAYS = 7;
 const SESSION_EXPIRY_MS = SESSION_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
 
-// In-memory cache
+
 let authToken = null;
 let userData = null;
 
-// Initialize from AsyncStorage on app load
+
 export const initializeAuth = async () => {
   try {
     const [token, user, timestampStr] = await Promise.all([
@@ -34,7 +34,7 @@ export const initializeAuth = async () => {
       const timestamp = parseInt(timestampStr, 10);
       const now = Date.now();
 
-      // Check if session is expired
+      
       if (now - timestamp > SESSION_EXPIRY_MS) {
         await clearAuth();
         return false;
@@ -99,7 +99,7 @@ api.interceptors.response.use(
   async (error) => {
     console.error('API Error:', error.response?.data || error.message);
     
-    // If 401 Unauthorized, clear auth
+    
     if (error.response?.status === 401) {
       await clearAuth();
     }

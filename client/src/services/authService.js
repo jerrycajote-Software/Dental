@@ -11,7 +11,7 @@ const login = async (email, password) => {
 
 const register = async (userData) => {
   const response = await api.post('/auth/register', userData);
-  // Don't store token/user — email verification is required first
+  
   return response.data;
 };
 
